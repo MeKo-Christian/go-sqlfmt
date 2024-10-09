@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestStandardSqlFormatter(t *testing.T) {
+func TestFormat(t *testing.T) {
 	tests := []struct {
 		name  string
 		query string
