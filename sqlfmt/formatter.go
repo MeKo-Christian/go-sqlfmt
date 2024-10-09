@@ -47,6 +47,7 @@ func (f *formatter) format(query string) string {
 
 // getFormattedQueryFromTokens processes the tokens to create a formatted query.
 func (f *formatter) getFormattedQueryFromTokens() string {
+	// TODO: replace with string builder
 	formattedQuery := ""
 
 	for i, tok := range f.tokens {
@@ -94,7 +95,7 @@ func (f *formatter) getFormattedQueryFromTokens() string {
 			case ":":
 				formattedQuery = f.formatWithSpaceAfter(tok, formattedQuery)
 			case ".":
-				formattedQuery = f.formatWithoutSpaces(tok, formattedQuery)
+				formattedQuery = f.formatWithoutSpaceAfter(tok, formattedQuery)
 			case ";":
 				formattedQuery = f.formatQuerySeparator(tok, formattedQuery)
 			default:
@@ -126,8 +127,10 @@ func (f *formatter) formatTopLevelReservedWordNoIndent(tok token, query string) 
 func (f *formatter) formatTopLevelReservedWord(tok token, query string) string {
 	f.indentation.decreaseTopLevel()
 	query = f.addNewline(query)
+
 	f.indentation.increaseTopLevel()
 	query += f.equalizeWhitespace(f.formatReservedWord(tok.value))
+
 	return f.addNewline(query)
 }
 
@@ -140,7 +143,6 @@ func (f *formatter) equalizeWhitespace(s string) string {
 	return regexp.MustCompile(`\s+`).ReplaceAllString(s, " ")
 }
 
-// formatOpeningParentheses increases the block indent level and starts a new line.
 func (f *formatter) formatOpeningParentheses(tok token, query string) string {
 	preserveWhitespaceFor := map[tokenType]struct{}{
 		tokenTypeWhitespace:  {},
@@ -165,7 +167,8 @@ func (f *formatter) formatOpeningParentheses(tok token, query string) string {
 	return query
 }
 
-// formatClosingParentheses decreases the block indent level.
+// formatClosingParentheses ends an inline block if one is active, or decreases the
+// block level, then adds the closing paren.
 func (f *formatter) formatClosingParentheses(tok token, query string) string {
 	if f.cfg.Uppercase {
 		tok.value = strings.ToUpper(tok.value)
@@ -180,31 +183,40 @@ func (f *formatter) formatClosingParentheses(tok token, query string) string {
 	}
 }
 
+// formatPlaceholder formats a placeholder by replacing it with a param value
+// from the cfg params and adds a space after.
 func (f *formatter) formatPlaceholder(tok token, query string) string {
-	return query + f.params.get(tok.key, tok.value) + " " // TODO: args to get might be wrong here
+	return query + f.params.get(tok.key, tok.value) + " "
 }
 
-// formatComma formats commas, which start a new line.
+// formatComma adds the comma to the query and adds a space. If an inline block
+// is not active, it will add a new line too.
 func (f *formatter) formatComma(tok token, query string) string {
 	query = trimSpacesEnd(query) + tok.value + " "
 
 	if f.inlineBlock.isActive() {
 		return query
 	} else if matched, _ := regexp.MatchString(`^LIMIT$`, f.previousReservedWord.value); matched {
+		// TODO: what does this do?
 		return query
 	} else {
 		return f.addNewline(query)
 	}
 }
 
+// formatWithSpaceAfter returns the query with spaces trimmed off the end,
+// the token value, and a space (" ") at the end ("query value ")
 func (f *formatter) formatWithSpaceAfter(tok token, query string) string {
 	return trimSpacesEnd(query) + tok.value + " "
 }
 
-func (f *formatter) formatWithoutSpaces(tok token, query string) string {
+// formatWithoutSpaceAfter returns the query with spaces trimmed off the end and
+// the token value ("query value")
+func (f *formatter) formatWithoutSpaceAfter(tok token, query string) string {
 	return trimSpacesEnd(query) + tok.value
 }
 
+// TODO: this can probably be replaced with formatWithSpaceAfter
 func (f *formatter) formatWithSpaces(tok token, query string) string {
 	value := tok.value
 	if tok.typ == tokenTypeReserved {
@@ -213,6 +225,8 @@ func (f *formatter) formatWithSpaces(tok token, query string) string {
 	return query + value + " "
 }
 
+// formatReservedWord makes sure the reserved word is uppercase if the cfg
+// is set to make it uppercase.
 func (f *formatter) formatReservedWord(value string) string {
 	if f.cfg.Uppercase {
 		return strings.ToUpper(value)
@@ -225,6 +239,9 @@ func (f *formatter) formatQuerySeparator(tok token, query string) string {
 	return trimSpacesEnd(query) + tok.value + strings.Repeat("\n", f.cfg.LinesBetweenQueries)
 }
 
+// addNewline trims spaces from the end of query, adds a new line character if
+// one does not already exist at the end, and adds the indentation to the new
+// line.
 func (f *formatter) addNewline(query string) string {
 	query = trimSpacesEnd(query)
 	if !strings.HasSuffix(query, "\n") {
@@ -233,6 +250,8 @@ func (f *formatter) addNewline(query string) string {
 	return query + f.indentation.getIndent()
 }
 
+// previousToken peeks at the previous token in the formatters list of tokens with
+// the given offset. If no offset is provided, a default of 1 is used.
 func (f *formatter) previousToken(offset ...int) token {
 	o := 1
 	if len(offset) > 0 {
@@ -244,13 +263,15 @@ func (f *formatter) previousToken(offset ...int) token {
 	return f.tokens[f.index-o]
 }
 
+// nextToken peeks at the next token in the formatters list of tokens with
+// the given offset. If no offset is provided, a default of 1 is used.
 func (f *formatter) nextToken(offset ...int) token {
 	o := 1
 	if len(offset) > 0 {
 		o = offset[0]
 	}
 	if f.index+o >= len(f.tokens) {
-		return token{} // return an empty token struct
+		return token{}
 	}
 	return f.tokens[f.index+o]
 }

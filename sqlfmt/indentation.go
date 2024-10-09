@@ -4,23 +4,23 @@ import (
 	"strings"
 )
 
-// Define the indent types as constants
+type indentType string
+
 const (
-	indentTypeTopLevel   = "top-level"
-	indentTypeBlockLevel = "block-level"
+	indentTypeNone       indentType = ""
+	indentTypeTopLevel   indentType = "top-level"
+	indentTypeBlockLevel indentType = "block-level"
 )
 
-// Indentation manages indentation levels.
 type indentation struct {
 	indent      string
-	indentTypes []string
+	indentTypes []indentType
 }
 
-// newIndentation creates a new indentation instance with a default indent value of two spaces.
 func newIndentation(indent string) *indentation {
 	return &indentation{
 		indent:      indent,
-		indentTypes: []string{},
+		indentTypes: []indentType{},
 	}
 }
 
@@ -42,8 +42,8 @@ func (i *indentation) increaseBlockLevel() {
 // decreaseTopLevel decreases indentation by one top-level indent.
 // Does nothing when the previous indent is not top-level.
 func (i *indentation) decreaseTopLevel() {
-	if len(i.indentTypes) > 0 && i.indentTypes[len(i.indentTypes)-1] == indentTypeTopLevel {
-		i.indentTypes = i.indentTypes[:len(i.indentTypes)-1] // pop the last element
+	if len(i.indentTypes) > 0 && i.lastIndentType() == indentTypeTopLevel {
+		i.popIndentType()
 	}
 }
 
@@ -52,9 +52,7 @@ func (i *indentation) decreaseTopLevel() {
 // it discards those as well.
 func (i *indentation) decreaseBlockLevel() {
 	for len(i.indentTypes) > 0 {
-		type_ := i.indentTypes[len(i.indentTypes)-1]         // peek the last element
-		i.indentTypes = i.indentTypes[:len(i.indentTypes)-1] // pop the last element
-		if type_ != indentTypeTopLevel {
+		if i.popIndentType() != indentTypeTopLevel {
 			break
 		}
 	}
@@ -62,5 +60,26 @@ func (i *indentation) decreaseBlockLevel() {
 
 // resetIndentation resets the indentation levels.
 func (i *indentation) resetIndentation() {
-	i.indentTypes = []string{}
+	i.indentTypes = []indentType{}
+}
+
+// lastIndentType peeks at the last indentType in the list of indentTypes.
+// Returns indentTypeNone if the list is empty.
+func (i *indentation) lastIndentType() indentType {
+	if len(i.indentTypes) > 0 {
+		return i.indentTypes[len(i.indentTypes)-1]
+	}
+	return indentTypeNone
+}
+
+// popIndentType pops the last element from the list of indentTypes
+// and returns it. Returns indentTypeNone if the list is empty.
+func (i *indentation) popIndentType() indentType {
+	if len(i.indentTypes) == 0 {
+		return indentTypeNone
+	}
+
+	lastIndent := i.indentTypes[len(i.indentTypes)-1]
+	i.indentTypes = i.indentTypes[:len(i.indentTypes)-1] // pop the last element
+	return lastIndent
 }

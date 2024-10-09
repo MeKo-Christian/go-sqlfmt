@@ -1,6 +1,7 @@
 package sqlfmt
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -57,11 +58,8 @@ func createReservedWordRegex(reservedWords []string) *regexp.Regexp {
 }
 
 func createWordRegex(specialChars []string) *regexp.Regexp {
-	// `^([\pL\pM\pN\pPc\pCf` nope
-	// `^([\pL\pM\pN\pPc` nope
-	// `^([\pL\pM\pN` yep
-	// `^([\pL\pM\pN\pCf` yep
-	specialVariableChars := regexp.QuoteMeta(`_@'"[]$:` + "`")
+	specialVariableChars := regexp.QuoteMeta(`_@'"[]$:?` + "`")
+	// `\pPc` was removed from the regex because it was matching ")"
 	pattern := `^([\pL\pM\pN\pCf` + specialVariableChars + strings.Join(specialChars, ``) + `]+)`
 	return regexp.MustCompile(pattern)
 }
@@ -108,7 +106,8 @@ func createPlaceholderRegex(types []string, pattern string) *regexp.Regexp {
 		return nil
 	}
 	typesRegex := strings.Join(types, `|`)
-	return regexp.MustCompile(`^((?:` + escapeRegExp(typesRegex) + `)(?:` + escapeRegExp(pattern) + `))`)
+	//fmt.Println(`^((?:` + escapeRegExp(typesRegex) + `)(?:` + escapeRegExp(pattern) + `))`)
+	return regexp.MustCompile(`^((?:` + escapeRegExp(typesRegex) + `)(?:` + pattern + `))`)
 }
 
 func (t *tokenizer) tokenize(input string) []token {
@@ -117,11 +116,11 @@ func (t *tokenizer) tokenize(input string) []token {
 		toks []token
 	)
 	for len(input) > 0 {
-		//fmt.Println(
-		//	"getNextToken out",
-		//	"output tok:", t.getNextToken(input, tok),
-		//	"input:", input,
-		//)
+		fmt.Println(
+			"getNextToken out",
+			"output tok:", t.getNextToken(input, tok),
+			"input:", input,
+		)
 		tok = t.getNextToken(input, tok)
 		input = input[len(tok.value):]
 		toks = append(toks, tok)
@@ -210,7 +209,8 @@ func (t *tokenizer) getIndexedPlaceholderToken(input string) token {
 	return tok
 }
 
-// EscapeRegExp escapes special characters in a string for use in a regular expression
+// TODO: replace with QuoteMeta
+// escapeRegExp escapes special characters in a string for use in a regular expression
 func escapeRegExp(s string) string {
 	// Special characters to be escaped in regular expressions
 	re := regexp.MustCompile(`[.*+?^${}()|[\]\\]`)
@@ -230,15 +230,6 @@ func (t *tokenizer) getNumberToken(input string) token {
 	return t.getTokenOnFirstMatch(input, tokenTypeNumber, t.numberRegex)
 }
 
-// // Punctuation and symbols
-//
-//	getOperatorToken(input) {
-//	  return this.getTokenOnFirstMatch({
-//	    input,
-//	    type: tokenTypes.OPERATOR,
-//	    regex: this.OPERATOR_REGEX
-//	  });
-//	}
 func (t *tokenizer) getOperatorToken(input string) token {
 	return t.getTokenOnFirstMatch(input, tokenTypeOperator, t.operatorRegex)
 }
@@ -271,68 +262,29 @@ func (t *tokenizer) getReservedWordToken(input string, prevTok token) token {
 	)
 }
 
-//	getTopLevelReservedToken(input) {
-//	  return this.getTokenOnFirstMatch({
-//	    input,
-//	    type: tokenTypes.RESERVED_TOP_LEVEL,
-//	    regex: this.RESERVED_TOP_LEVEL_REGEX
-//	  });
-//	}
 func (t *tokenizer) getTopLevelReservedToken(input string) token {
 	return t.getTokenOnFirstMatch(input, tokenTypeReservedTopLevel, t.reservedTopLevelRegex)
 }
 
-//	getNewlineReservedToken(input) {
-//	  return this.getTokenOnFirstMatch({
-//	    input,
-//	    type: tokenTypes.RESERVED_NEWLINE,
-//	    regex: this.RESERVED_NEWLINE_REGEX
-//	  });
-//	}
 func (t *tokenizer) getNewlineReservedToken(input string) token {
 	return t.getTokenOnFirstMatch(input, tokenTypeReservedNewline, t.reservedNewlineRegex)
 }
 
-//	getTopLevelReservedTokenNoIndent(input) {
-//	  return this.getTokenOnFirstMatch({
-//	    input,
-//	    type: tokenTypes.RESERVED_TOP_LEVEL_NO_INDENT,
-//	    regex: this.RESERVED_TOP_LEVEL_NO_INDENT_REGEX
-//	  });
-//	}
 func (t *tokenizer) getTopLevelReservedTokenNoIndent(input string) token {
 	return t.getTokenOnFirstMatch(input, tokenTypeReservedTopLevelNoIndent, t.reservedTopLevelNoIndentRegex)
 }
 
-//	getPlainReservedToken(input) {
-//	  return this.getTokenOnFirstMatch({
-//	    input,
-//	    type: tokenTypes.RESERVED,
-//	    regex: this.RESERVED_PLAIN_REGEX
-//	  });
-//	}
 func (t *tokenizer) getPlainReservedToken(input string) token {
 	return t.getTokenOnFirstMatch(input, tokenTypeReserved, t.reservedPlainRegex)
 }
 
-//	getWordToken(input) {
-//	  return this.getTokenOnFirstMatch({
-//	    input,
-//	    type: tokenTypes.WORD,
-//	    regex: this.WORD_REGEX
-//	  });
-//	}
 func (t *tokenizer) getWordToken(input string) token {
 	return t.getTokenOnFirstMatch(input, tokenTypeWord, t.wordRegex)
 }
 
-//	getTokenOnFirstMatch({ input, type, regex }) {
-//	  const matches = input.match(regex);
-//
-//	  if (matches) {
-//	    return { type, value: matches[1] };
-//	  }
-//	}
+// getTokenOnFirstMatch uses the regex re to search for string submatches in input.
+// If one or more submatches are found, the first one is returned in a new token with
+// the token type typ as the tokenType.
 func (t *tokenizer) getTokenOnFirstMatch(input string, typ tokenType, re *regexp.Regexp) token {
 	matches := re.FindStringSubmatch(input)
 	//fmt.Println("getTokenOnFirstMatch", "matches:", matches, "typ:", typ, "input:", input)
@@ -344,6 +296,8 @@ func (t *tokenizer) getTokenOnFirstMatch(input string, typ tokenType, re *regexp
 	return token{}
 }
 
+// firstNonEmptyToken returns the first token in the list of given tokens, toks,
+// that is not empty.
 func firstNonEmptyToken(toks ...token) token {
 	for _, tok := range toks {
 		if !tok.empty() {

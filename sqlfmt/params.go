@@ -1,5 +1,7 @@
 package sqlfmt
 
+import "strconv"
+
 // params handles placeholder replacement with given parameters
 type params struct {
 	params Params
@@ -19,8 +21,10 @@ func (p *params) emptyParams() bool {
 }
 
 // get returns the param value that matches the given placeholder with param key.
-// If the param is missing, it returns the defaultValue.
-// If the key is empty, it assumes you are using ListParams.
+// If a key is given, it first checks the MapParams for the value,
+// and if it is not there, it will try to turn the key into an int which will be
+// used as the index for the ListParams. If it is still not found, it returns
+// the defaultValue. If the key is empty, it assumes you are using ListParams.
 func (p *params) get(key string, defaultValue string) string {
 	if p.emptyParams() {
 		return defaultValue
@@ -30,6 +34,13 @@ func (p *params) get(key string, defaultValue string) string {
 		if param, exists := p.params.MapParams[key]; exists {
 			return param
 		}
+
+		if idx, err := strconv.Atoi(key); err == nil {
+			if idx < len(p.params.ListParams) {
+				return p.params.ListParams[idx]
+			}
+		}
+
 		return defaultValue
 	}
 

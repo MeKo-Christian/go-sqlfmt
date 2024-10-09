@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-// Test cases for StandardSqlFormatter
 func TestStandardSqlFormatter(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -1190,6 +1189,9 @@ func TestStandardSqlFormatter(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var result string
 			if !tt.cfg.Empty() {
+				if tt.cfg.Indent == "" {
+					tt.cfg.Indent = DefaultIndent
+				}
 				result = Format(tt.query, tt.cfg)
 			} else {
 				result = Format(tt.query)
