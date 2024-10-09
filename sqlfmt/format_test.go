@@ -1,0 +1,1219 @@
+package sqlfmt
+
+import (
+	"fmt"
+	"github.com/stretchr/testify/require"
+	"strings"
+	"testing"
+)
+
+// Test cases for StandardSqlFormatter
+func TestStandardSqlFormatter(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
+		{
+			name:  "formats short CREATE TABLE",
+			query: "CREATE TABLE items (a INT PRIMARY KEY, b TEXT);",
+			exp:   "CREATE TABLE items (a INT PRIMARY KEY, b TEXT);",
+		},
+		{
+			name:  "formats long CREATE TABLE",
+			query: "CREATE TABLE items (a INT PRIMARY KEY, b TEXT, c INT NOT NULL, d INT NOT NULL);",
+			exp: Dedent(`
+				CREATE TABLE items (
+					a INT PRIMARY KEY,
+					b TEXT,
+					c INT NOT NULL,
+					d INT NOT NULL
+				);
+			`),
+		},
+		{
+			name:  "formats INSERT without INTO",
+			query: "INSERT Customers (ID, MoneyBalance, Address, City) VALUES (12,-123.4, 'Skagen 2111','Stv');",
+			exp: Dedent(`
+				INSERT
+					Customers (ID, MoneyBalance, Address, City)
+				VALUES
+					(12, -123.4, 'Skagen 2111', 'Stv');
+			`),
+		},
+		{
+			name:  "formats ALTER TABLE ... MODIFY query",
+			query: "ALTER TABLE supplier MODIFY supplier_name char(100) NOT NULL;",
+			exp: Dedent(`
+				ALTER TABLE
+					supplier
+				MODIFY
+					supplier_name char(100) NOT NULL;
+			`),
+		},
+		{
+			name:  "formats ALTER TABLE ... ALTER COLUMN query",
+			query: "ALTER TABLE supplier ALTER COLUMN supplier_name VARCHAR(100) NOT NULL;",
+			exp: Dedent(`
+				ALTER TABLE
+					supplier
+				ALTER COLUMN
+					supplier_name VARCHAR(100) NOT NULL;
+			`),
+		},
+		{
+			name:  "recognizes [] strings",
+			query: "[foo JOIN bar]",
+			exp:   "[foo JOIN bar]",
+		},
+		{
+			name:  "recognizes @variables",
+			query: "SELECT @variable, @a1_2.3$, @'var name', @\"var name\", @`var name`, @[var name];",
+			exp: Dedent(`
+				SELECT
+					@variable,
+					@a1_2.3$,
+					@'var name',
+					@"var name",
+					@` + "`var name`," + `
+					@[var name];
+			`),
+		},
+		{
+			name:  "replaces @variables with param values",
+			query: "SELECT @variable, @a1_2.3$, @'var name', @\"var name\", @`var name`, @[var name], @'var\\name';",
+			exp: Dedent(`
+				SELECT
+					"variable value",
+					'weird value',
+					'var value',
+					'var value',
+					'var value',
+					'var value',
+					'var\\ value';
+			`),
+			cfg: Config{
+				Params: NewMapParams(map[string]string{
+					"variable":  "\"variable value\"",
+					"a1_2.3$":   "'weird value'",
+					"var name":  "'var value'",
+					"var\\name": "'var\\ value'",
+				}),
+			},
+		},
+		{
+			name:  "recognizes :variables",
+			query: "SELECT :variable, :a1_2.3$, :'var name', :\"var name\", :`var name`, :[var name];",
+			exp: Dedent(`
+				SELECT
+					:variable,
+					:a1_2.3$,
+					:'var name',
+					:"var name",
+					:` + "`var name`," + `
+					:[var name];
+			`),
+		},
+		{
+			name:  "replaces :variables with param values",
+			query: "SELECT :variable, :a1_2.3$, :'var name', :\"var name\", :`var name`, :[var name], :'escaped \\'var\\'', :\"^*& weird \\\" var   \";",
+			exp: Dedent(`
+				SELECT
+					"variable value",
+					'weird value',
+					'var value',
+					'var value',
+					'var value',
+					'var value',
+					'weirder value',
+					'super weird value';
+			`),
+			cfg: Config{
+				Params: NewMapParams(map[string]string{
+					"variable":            "\"variable value\"",
+					"a1_2.3$":             "'weird value'",
+					"var name":            "'var value'",
+					"escaped 'var'":       "'weirder value'",
+					"^*& weird \" var   ": "'super weird value'",
+				}),
+			},
+		},
+		{
+			name:  "recognizes ?[0-9]* placeholders",
+			query: "SELECT ?1, ?25, ?;",
+			exp: Dedent(`
+				SELECT
+					?1,
+					?25,
+					?;
+			`),
+		},
+		{
+			name:  "recognizes Snowflake JSON references",
+			query: "SELECT foo:bar, foo:bar:baz",
+			exp: Dedent(`
+				SELECT
+					foo:bar,
+					foo:bar:baz
+			`),
+		},
+		{
+			name:  "replaces ? numbered placeholders with param values",
+			query: "SELECT ?1, ?2, ?0;",
+			exp: Dedent(`
+				SELECT
+					second,
+					third,
+					first;
+			`),
+			cfg: Config{
+				Params: NewMapParams(map[string]string{
+					"0": "first",
+					"1": "second",
+					"2": "third",
+				}),
+			},
+		},
+		{
+			name:  "replaces ? indexed placeholders with param values",
+			query: "SELECT ?, ?, ?;",
+			exp: Dedent(`
+				SELECT
+					first,
+					second,
+					third;
+			`),
+			cfg: Config{
+				Params: NewListParams([]string{
+					"first",
+					"second",
+					"third",
+				}),
+			},
+		},
+		{
+			name:  "uses given indent config for indention",
+			query: "SELECT count(*),Column1 FROM Table1;",
+			exp: Dedent(`
+				SELECT
+					count(*),
+					Column1
+				FROM
+					Table1;
+			`),
+		},
+		{
+			name:  "formats simple SET SCHEMA queries",
+			query: "SET SCHEMA schema1; SET CURRENT SCHEMA schema2;",
+			exp: Dedent(`
+				SET SCHEMA
+					schema1;
+				SET CURRENT SCHEMA
+					schema2;
+			`),
+		},
+		{
+			name:  "formats simple SELECT query",
+			query: "SELECT count(*),Column1 FROM Table1;",
+			exp: Dedent(`
+				SELECT
+					count(*),
+					Column1
+				FROM
+					Table1;
+			`),
+		},
+		{
+			name:  "formats complex SELECT",
+			query: "SELECT DISTINCT name, ROUND(age/7) field1, 18 + 20 AS field2, 'some string' FROM foo;",
+			exp: Dedent(`
+				SELECT
+					DISTINCT name,
+					ROUND(age / 7) field1,
+					18 + 20 AS field2,
+					'some string'
+				FROM
+					foo;
+			`),
+		},
+		{
+			name:  "formats SELECT with complex WHERE",
+			query: "SELECT * FROM foo WHERE Column1 = 'testing' AND ( (Column2 = Column3 OR Column4 >= NOW()) );",
+			exp: Dedent(`
+				SELECT
+					*
+				FROM
+					foo
+				WHERE
+					Column1 = 'testing'
+					AND (
+						(
+							Column2 = Column3
+							OR Column4 >= NOW()
+						)
+					);
+			`),
+		},
+		{
+			name:  "formats SELECT with top level reserved words",
+			query: "SELECT * FROM foo WHERE name = 'John' GROUP BY some_column HAVING column > 10 ORDER BY other_column LIMIT 5;",
+			exp: Dedent(`
+				SELECT
+					*
+				FROM
+					foo
+				WHERE
+					name = 'John'
+				GROUP BY
+					some_column
+				HAVING
+					column > 10
+				ORDER BY
+					other_column
+				LIMIT
+					5;
+			`),
+		},
+		{
+			name:  "formats LIMIT with two comma-separated values on single line",
+			query: "LIMIT 5, 10;",
+			exp: Dedent(`
+				LIMIT
+					5, 10;
+			`),
+		},
+		{
+			name:  "formats LIMIT of single value followed by another SELECT using commas",
+			query: "LIMIT 5; SELECT foo, bar;",
+			exp: Dedent(`
+				LIMIT
+					5;
+				SELECT
+					foo,
+					bar;
+			`),
+		},
+		{
+			name:  "formats LIMIT of single value and OFFSET",
+			query: "LIMIT 5 OFFSET 8;",
+			exp: Dedent(`
+				LIMIT
+					5 OFFSET 8;
+			`),
+		},
+		{
+			name:  "recognizes LIMIT in lowercase",
+			query: "limit 5, 10;",
+			exp: Dedent(`
+				limit
+					5, 10;
+			`),
+		}, {
+			name:  "preserves case of keywords",
+			query: "select distinct * frOM foo left join bar WHERe a > 1 and b = 3",
+			exp: Dedent(`
+				select
+				  distinct *
+				frOM
+				  foo
+				  left join bar
+				WHERe
+				  a > 1
+				  and b = 3
+			`),
+		},
+		{
+			name:  "formats SELECT query with SELECT query inside it",
+			query: "SELECT *, SUM(*) AS sum FROM (SELECT * FROM Posts LIMIT 30) WHERE a > b",
+			exp: Dedent(`
+				SELECT
+				  *,
+				  SUM(*) AS sum
+				FROM
+				  (
+					SELECT
+					  *
+					FROM
+					  Posts
+					LIMIT
+					  30
+				  )
+				WHERE
+				  a > b
+			`),
+		},
+		{
+			name: "formats SELECT query with INNER JOIN",
+			query: `SELECT customer_id.from, COUNT(order_id) AS total FROM customers
+				INNER JOIN orders ON customers.customer_id = orders.customer_id;`,
+			exp: Dedent(`
+				SELECT
+				  customer_id.from,
+				  COUNT(order_id) AS total
+				FROM
+				  customers
+				  INNER JOIN orders ON customers.customer_id = orders.customer_id;
+			`),
+		},
+		{
+			name: "formats SELECT query with different comments",
+			query: Dedent(`
+				SELECT
+				/*
+				 * This is a block comment
+				 */
+				* FROM
+				-- This is another comment
+				MyTable # One final comment
+				WHERE 1 = 2;
+			`),
+			exp: Dedent(`
+				SELECT
+				  /*
+				   * This is a block comment
+				   */
+				  *
+				FROM
+				  -- This is another comment
+				  MyTable # One final comment
+				WHERE
+				  1 = 2;
+			`),
+		},
+		{
+			name: "maintains block comment indentation",
+			query: Dedent(`
+				SELECT
+				  /*
+				   * This is a block comment
+				   */
+				  *
+				FROM
+				  MyTable
+				WHERE
+				  1 = 2;
+			`),
+			exp: Dedent(`
+				SELECT
+				  /*
+				   * This is a block comment
+				   */
+				  *
+				FROM
+				  MyTable
+				WHERE
+				  1 = 2;
+			`),
+		},
+		{
+			name: "formats simple INSERT query",
+			query: `INSERT INTO Customers (ID, MoneyBalance, Address, City)
+				VALUES (12, -123.4, 'Skagen 2111', 'Stv');`,
+			exp: Dedent(`
+				INSERT INTO
+				  Customers (ID, MoneyBalance, Address, City)
+				VALUES
+				  (12, -123.4, 'Skagen 2111', 'Stv');
+			`),
+		},
+		{
+			name:  "keeps short parenthesized list with nested parenthesis on single line",
+			query: "SELECT (a + b * (c - NOW()));",
+			exp: Dedent(`
+				SELECT
+				  (a + b * (c - NOW()));
+			`),
+		},
+		{
+			name: "breaks long parenthesized lists to multiple lines",
+			query: Dedent(`
+				INSERT INTO some_table (id_product, id_shop, id_currency, id_country, id_registration) (
+				  SELECT IF(dq.id_discounter_shopping = 2, dq.value, dq.value / 100),
+				  IF (dq.id_discounter_shopping = 2, 'amount', 'percentage') FROM foo);
+			`),
+			exp: Dedent(`
+				INSERT INTO
+				  some_table (
+					id_product,
+					id_shop,
+					id_currency,
+					id_country,
+					id_registration
+				  ) (
+					SELECT
+					  IF(
+						dq.id_discounter_shopping = 2,
+						dq.value,
+						dq.value / 100
+					  ),
+					  IF (
+						dq.id_discounter_shopping = 2,
+						'amount',
+						'percentage'
+					  )
+					FROM
+					  foo
+				  );
+			`),
+		},
+		{
+			name:  "formats simple UPDATE query",
+			query: `UPDATE Customers SET ContactName='Alfred Schmidt', City='Hamburg' WHERE CustomerName='Alfreds Futterkiste';`,
+			exp: Dedent(`
+				UPDATE
+				  Customers
+				SET
+				  ContactName = 'Alfred Schmidt',
+				  City = 'Hamburg'
+				WHERE
+				  CustomerName = 'Alfreds Futterkiste';
+			`),
+		},
+		{
+			name:  "formats simple DELETE query",
+			query: `DELETE FROM Customers WHERE CustomerName='Alfred' AND Phone=5002132;`,
+			exp: Dedent(`
+				DELETE FROM
+				  Customers
+				WHERE
+				  CustomerName = 'Alfred'
+				  AND Phone = 5002132;
+			`),
+		},
+		{
+			name:  "formats simple DROP query",
+			query: "DROP TABLE IF EXISTS admin_role;",
+			exp:   "DROP TABLE IF EXISTS admin_role;",
+		},
+		{
+			name:  "formats incomplete query",
+			query: "SELECT count(",
+			exp: Dedent(`
+				SELECT
+				  count(
+			`),
+		},
+		{
+			name: "formats query that ends with open comment",
+			query: Dedent(`
+				SELECT count(*)
+				/*Comment
+			`),
+			exp: Dedent(`
+				SELECT
+				  count(*)
+				  /*Comment
+			`),
+		},
+		{
+			name:  "formats UPDATE query with AS part",
+			query: `UPDATE customers SET total_orders = order_summary.total FROM (SELECT * FROM bank) AS order_summary`,
+			exp: Dedent(`
+				UPDATE
+				  customers
+				SET
+				  total_orders = order_summary.total
+				FROM
+				  (
+					SELECT
+					  *
+					FROM
+					  bank
+				  ) AS order_summary
+			`),
+		},
+		{
+			name:  "formats top-level and newline multi-word reserved words with inconsistent spacing",
+			query: "SELECT * FROM foo LEFT \t OUTER  \n JOIN bar ORDER \n BY blah",
+			exp: Dedent(`
+				SELECT
+				  *
+				FROM
+				  foo
+				  LEFT OUTER JOIN bar
+				ORDER BY
+				  blah
+			`),
+		},
+		{
+			name:  "formats long double parenthesized queries to multiple lines",
+			query: "((foo = '0123456789-0123456789-0123456789-0123456789'))",
+			exp: Dedent(`
+				(
+				  (
+					foo = '0123456789-0123456789-0123456789-0123456789'
+				  )
+				)
+			`),
+		},
+		{
+			name:  "formats short double parenthesized queries to one line",
+			query: "((foo = 'bar'))",
+			exp:   "((foo = 'bar'))",
+		},
+		{
+			name:  "formats single-char operators",
+			query: "SELECT * FROM foo WHERE bar = 'a' AND baz = 'b';",
+			exp: Dedent(`
+				SELECT
+				  *
+				FROM
+				  foo
+				WHERE
+				  bar = 'a'
+				  AND baz = 'b';
+			`),
+		},
+		{
+			name:  "formats single-char operators with tabs",
+			query: "SELECT * FROM foo WHERE bar\t = 'a' AND baz = 'b';",
+			exp: Dedent(`
+				SELECT
+				  *
+				FROM
+				  foo
+				WHERE
+				  bar = 'a'
+				  AND baz = 'b';
+			`),
+		},
+		{
+			name: "formats simple CASE query",
+			query: Dedent(`
+				SELECT CASE
+				  WHEN a = 1 THEN 1
+				  WHEN a = 2 THEN 2
+				  ELSE 3
+				END AS result
+				FROM foo;
+			`),
+			exp: Dedent(`
+				SELECT
+				  CASE
+					WHEN a = 1 THEN 1
+					WHEN a = 2 THEN 2
+					ELSE 3
+				  END AS result
+				FROM
+				  foo;
+			`),
+		},
+		{
+			name: "formats simple IF query",
+			query: Dedent(`
+				SELECT IF(a > 1, 'greater', 'lesser') AS result
+				FROM foo;
+			`),
+			exp: Dedent(`
+				SELECT
+				  IF(a > 1, 'greater', 'lesser') AS result
+				FROM
+				  foo;
+			`),
+		},
+		{
+			name:  "formats simple EXISTS query",
+			query: "SELECT EXISTS(SELECT 1 FROM foo);",
+			exp: Dedent(`
+				SELECT
+				  EXISTS(
+					SELECT
+					  1
+					FROM
+					  foo
+				  );
+			`),
+		},
+		{
+			name:  "formats simple COALESCE query",
+			query: "SELECT COALESCE(a, b, c) AS result FROM foo;",
+			exp: Dedent(`
+				SELECT
+				  COALESCE(a, b, c) AS result
+				FROM
+				  foo;
+			`),
+		},
+		{
+			name:  "formats simple NULLIF query",
+			query: "SELECT NULLIF(a, b) AS result FROM foo;",
+			exp: Dedent(`
+				SELECT
+				  NULLIF(a, b) AS result
+				FROM
+				  foo;
+			`),
+		},
+		{
+			name:  "formats simple GROUP BY query",
+			query: "SELECT COUNT(*) FROM foo GROUP BY bar;",
+			exp: Dedent(`
+				SELECT
+				  COUNT(*)
+				FROM
+				  foo
+				GROUP BY
+				  bar;
+			`),
+		},
+		{
+			name:  "formats simple ORDER BY query",
+			query: "SELECT * FROM foo ORDER BY bar DESC;",
+			exp: Dedent(`
+				SELECT
+				  *
+				FROM
+				  foo
+				ORDER BY
+				  bar DESC;
+			`),
+		},
+		{
+			name:  "formats simple HAVING query",
+			query: "SELECT bar, COUNT(*) FROM foo GROUP BY bar HAVING COUNT(*) > 1;",
+			exp: Dedent(`
+				SELECT
+				  bar,
+				  COUNT(*)
+				FROM
+				  foo
+				GROUP BY
+				  bar
+				HAVING
+				  COUNT(*) > 1;
+			`),
+		},
+		{
+			name:  "formats simple LIMIT query",
+			query: "SELECT * FROM foo LIMIT 10;",
+			exp: Dedent(`
+				SELECT
+				  *
+				FROM
+				  foo
+				LIMIT
+				  10;
+			`),
+		},
+		{
+			name:  "formats simple OFFSET query",
+			query: "SELECT * FROM foo LIMIT 10 OFFSET 5;",
+			exp: Dedent(`
+				SELECT
+				  *
+				FROM
+				  foo
+				LIMIT
+				  10
+				OFFSET
+				  5;
+			`),
+		},
+		{
+			name:  "formats simple UNION query",
+			query: "SELECT * FROM foo UNION SELECT * FROM bar;",
+			exp: Dedent(`
+				SELECT
+				  *
+				FROM
+				  foo
+				UNION
+				SELECT
+				  *
+				FROM
+				  bar;
+			`),
+		},
+		{
+			name:  "formats simple INTERSECT query",
+			query: "SELECT * FROM foo INTERSECT SELECT * FROM bar;",
+			exp: Dedent(`
+				SELECT
+				  *
+				FROM
+				  foo
+				INTERSECT
+				SELECT
+				  *
+				FROM
+				  bar;
+			`),
+		},
+		{
+			name:  "formats short double parenthesized queries to one line",
+			query: "((foo = 'bar'))",
+			exp:   "((foo = 'bar'))",
+		},
+		{
+			name:  "formats single-char operators",
+			query: "foo = bar",
+			exp:   "foo = bar",
+		},
+		{
+			name:  "formats single-char operators (<)",
+			query: "foo < bar",
+			exp:   "foo < bar",
+		},
+		{
+			name:  "formats single-char operators (>)",
+			query: "foo > bar",
+			exp:   "foo > bar",
+		},
+		{
+			name:  "formats single-char operators (+)",
+			query: "foo + bar",
+			exp:   "foo + bar",
+		},
+		{
+			name:  "formats single-char operators (-)",
+			query: "foo - bar",
+			exp:   "foo - bar",
+		},
+		{
+			name:  "formats single-char operators (*)",
+			query: "foo * bar",
+			exp:   "foo * bar",
+		},
+		{
+			name:  "formats single-char operators (/) ",
+			query: "foo / bar",
+			exp:   "foo / bar",
+		},
+		{
+			name:  "formats single-char operators (%) ",
+			query: "foo % bar",
+			exp:   "foo % bar",
+		},
+		{
+			name:  "formats multi-char operators (!=)",
+			query: "foo != bar",
+			exp:   "foo != bar",
+		},
+		{
+			name:  "formats multi-char operators (<>)",
+			query: "foo <> bar",
+			exp:   "foo <> bar",
+		},
+		{
+			name:  "formats multi-char operators (==)", // N1QL
+			query: "foo == bar",
+			exp:   "foo == bar",
+		},
+		{
+			name:  "formats multi-char operators (||)", // Oracle, Postgre, N1QL string concat
+			query: "foo || bar",
+			exp:   "foo || bar",
+		},
+		{
+			name:  "formats multi-char operators (<=)",
+			query: "foo <= bar",
+			exp:   "foo <= bar",
+		},
+		{
+			name:  "formats multi-char operators (>=)",
+			query: "foo >= bar",
+			exp:   "foo >= bar",
+		},
+		{
+			name:  "formats multi-char operators (!<)",
+			query: "foo !< bar",
+			exp:   "foo !< bar",
+		},
+		{
+			name:  "formats multi-char operators (!>)",
+			query: "foo !> bar",
+			exp:   "foo !> bar",
+		},
+		{
+			name:  "formats logical operators (ALL)",
+			query: "foo ALL bar",
+			exp:   "foo ALL bar",
+		},
+		{
+			name:  "formats logical operators (= ANY)",
+			query: "foo = ANY (1, 2, 3)",
+			exp:   "foo = ANY (1, 2, 3)",
+		},
+		{
+			name:  "formats logical operators (EXISTS)",
+			query: "EXISTS bar",
+			exp:   "EXISTS bar",
+		},
+		{
+			name:  "formats logical operators (IN)",
+			query: "foo IN (1, 2, 3)",
+			exp:   "foo IN (1, 2, 3)",
+		},
+		{
+			name:  "formats logical operators (LIKE)",
+			query: "foo LIKE 'hello%'",
+			exp:   "foo LIKE 'hello%'",
+		},
+		{
+			name:  "formats logical operators (IS NULL)",
+			query: "foo IS NULL",
+			exp:   "foo IS NULL",
+		},
+		{
+			name:  "formats logical operators (UNIQUE)",
+			query: "UNIQUE foo",
+			exp:   "UNIQUE foo",
+		},
+		{
+			name:  "formats AND/OR operators (BETWEEN)",
+			query: "foo BETWEEN bar AND baz",
+			exp:   "foo BETWEEN bar\nAND baz",
+		},
+		{
+			name:  "formats AND/OR operators (AND)",
+			query: "foo AND bar",
+			exp:   "foo\nAND bar",
+		},
+		{
+			name:  "formats AND/OR operators (OR)",
+			query: "foo OR bar",
+			exp:   "foo\nOR bar",
+		},
+		{
+			name:  "recognizes strings (double quotes)",
+			query: "\"foo JOIN bar\"",
+			exp:   "\"foo JOIN bar\"",
+		},
+		{
+			name:  "recognizes strings (single quotes)",
+			query: "'foo JOIN bar'",
+			exp:   "'foo JOIN bar'",
+		},
+		{
+			name:  "recognizes strings (backticks)",
+			query: "`foo JOIN bar`",
+			exp:   "`foo JOIN bar`",
+		},
+		{
+			name:  "recognizes escaped strings (double quotes)",
+			query: "\"foo \\\" JOIN bar\"",
+			exp:   "\"foo \\\" JOIN bar\"",
+		},
+		{
+			name:  "recognizes escaped strings (single quotes)",
+			query: "'foo \\' JOIN bar'",
+			exp:   "'foo \\' JOIN bar'",
+		},
+		{
+			name:  "recognizes escaped strings (backticks)",
+			query: "`foo `` JOIN bar`",
+			exp:   "`foo `` JOIN bar`",
+		},
+		{
+			name:  "formats postgre specific operators (::)",
+			query: "column::int",
+			exp:   "column :: int",
+		},
+		{
+			name:  "formats postgre specific operators (->)",
+			query: "v->2",
+			exp:   "v -> 2",
+		},
+		{
+			name:  "formats postgre specific operators (->>)",
+			query: "v->>2",
+			exp:   "v ->> 2",
+		},
+		{
+			name:  "formats postgre specific operators (~~)",
+			query: "foo ~~ 'hello'",
+			exp:   "foo ~~ 'hello'",
+		},
+		{
+			name:  "formats postgre specific operators (!~)",
+			query: "foo !~ 'hello'",
+			exp:   "foo !~ 'hello'",
+		},
+		{
+			name:  "formats postgre specific operators (~*)",
+			query: "foo ~* 'hello'",
+			exp:   "foo ~* 'hello'",
+		},
+		{
+			name:  "formats postgre specific operators (~~*)",
+			query: "foo ~~* 'hello'",
+			exp:   "foo ~~* 'hello'",
+		},
+		{
+			name:  "formats postgre specific operators (!~~)",
+			query: "foo !~~ 'hello'",
+			exp:   "foo !~~ 'hello'",
+		},
+		{
+			name:  "formats postgre specific operators (!~*)",
+			query: "foo !~* 'hello'",
+			exp:   "foo !~* 'hello'",
+		},
+		{
+			name:  "formats postgre specific operators (!~~*)",
+			query: "foo !~~* 'hello'",
+			exp:   "foo !~~* 'hello'",
+		},
+		{
+			name:  "keeps separation between multiple statements (semicolon)",
+			query: "foo;bar;",
+			exp:   "foo;\nbar;",
+		},
+		{
+			name:  "keeps separation between multiple statements (newline)",
+			query: "foo\n;bar;",
+			exp:   "foo;\nbar;",
+		},
+		{
+			name:  "keeps separation between multiple statements (multiple newlines)",
+			query: "foo\n\n\n;bar;\n\n",
+			exp:   "foo;\nbar;",
+		},
+		{
+			name: "keeps separation between multiple statements (SELECT)",
+			query: `
+				SELECT count(*),Column1 FROM Table1;
+				SELECT count(*),Column1 FROM Table2;
+			`,
+			exp: Dedent(`
+				SELECT
+					count(*),
+					Column1
+				FROM
+					Table1;
+				SELECT
+					count(*),
+					Column1
+				FROM
+					Table2;
+			`),
+		},
+		{
+			name:  "formats unicode correctly",
+			query: "SELECT test, тест FROM table;",
+			exp: Dedent(`
+				SELECT
+					test,
+					тест
+				FROM
+					table;
+			`),
+		},
+		{
+			name:  "converts keywords to uppercase when option passed in",
+			query: "select distinct * frOM foo left join bar WHERe cola > 1 and colb = 3",
+			exp: Dedent(`
+				SELECT
+					DISTINCT *
+				FROM
+					foo
+					LEFT JOIN bar
+				WHERE
+					cola > 1
+					AND colb = 3
+			`),
+		},
+		{
+			name:  "line breaks between queries change with config",
+			query: "SELECT * FROM foo; SELECT * FROM bar;",
+			exp: Dedent(`
+				SELECT
+					*
+				FROM
+					foo;
+
+				SELECT
+					*
+				FROM
+					bar;
+			`),
+			cfg: Config{LinesBetweenQueries: 2},
+		},
+		{
+			name: "correctly indents create statement after select",
+			query: `
+				SELECT * FROM test;
+				CREATE TABLE TEST(id NUMBER NOT NULL, col1 VARCHAR2(20), col2 VARCHAR2(20));
+			`,
+			exp: Dedent(`
+				SELECT
+					*
+				FROM
+					test;
+				CREATE TABLE TEST(
+					id NUMBER NOT NULL,
+					col1 VARCHAR2(20),
+					col2 VARCHAR2(20)
+				);
+			`),
+		},
+		{
+			name: "formats $$ correctly",
+			query: Dedent(`
+				CREATE
+				OR REPLACE FUNCTION RECURSION_TEST (STR VARCHAR) RETURNS VARCHAR LANGUAGE JAVASCRIPT AS $$
+				return (STR.length <= 1
+					? STR : STR.substring(0,1) + '_' + RECURSION_TEST(STR.substring(1)));
+				$$;
+			`),
+			exp: Dedent(`
+				CREATE
+				OR REPLACE FUNCTION RECURSION_TEST (STR VARCHAR) RETURNS VARCHAR LANGUAGE JAVASCRIPT AS $$
+				return (STR.length <= 1
+					? STR : STR.substring(0,1) + '_' + RECURSION_TEST(STR.substring(1)));
+				$$;
+			`),
+		},
+		{
+			name:  "formats => correctly",
+			query: `select seq4(), uniform(1, 10, random(12)) from table(generator(rowcount => 11000)) v`,
+			exp: Dedent(`
+				select
+					seq4(),
+					uniform(1, 10, random(12))
+				from
+					table(generator(rowcount => 11000)) v
+			`),
+		},
+		{
+			name: "formats complex WITH statements correctly",
+			query: Dedent(`
+				WITH expr_0 AS (
+					SELECT 'foo' AS db, 'foo' AS another
+					FROM foo
+				),
+				expr_1 AS (
+					WITH expr_2 AS (
+						SELECT 'bar' AS db, 'bar' AS another
+						FROM bar
+					),
+					expr_3 AS (
+						WITH expr_4 AS (
+							SELECT 'goob' AS db, 'goob' AS another,
+							FROM goob
+						)
+						SELECT expr_4.db AS db, expr_4.another AS another, expr_4.p_timeline AS p_timeline,
+							OBJECT_INSERT( expr_4.row_object, 'vroom', row_object:r / 2, TRUE) AS row_object
+						FROM expr_4
+					),
+					expr_6 AS (
+						SELECT *
+						FROM expr_2
+						LIMIT
+							10
+						UNION ALL
+						SELECT *
+						FROM expr_3
+					)
+					SELECT *
+					FROM expr_6
+					WHERE EQUAL_NULL(row_object:p, row_object:h)
+				)
+				SELECT *
+				FROM expr_0
+				UNION ALL
+				SELECT *
+				FROM expr_1
+			`),
+			exp: Dedent(`
+				WITH expr_0 AS (
+					SELECT
+						'foo' AS db,
+						'foo' AS another,
+					FROM
+						foo
+				),
+				expr_1 AS (
+					WITH expr_2 AS (
+						SELECT
+							'bar' AS db,
+							'bar' AS another,
+						FROM
+							bar
+					),
+					expr_3 AS (
+						WITH expr_4 AS (
+							SELECT
+								'goob' AS db,
+								'goob' AS another,
+							FROM
+								goob
+						)
+						SELECT
+							expr_4.db AS db,
+							expr_4.another AS another,
+							expr_4.p_timeline AS p_timeline,
+							OBJECT_INSERT(
+								expr_4.row_object,
+								'vroom',
+								row_object:r / 2,
+								TRUE
+							) AS row_object
+						FROM
+							expr_4
+					),
+					expr_6 AS (
+						SELECT
+							*
+						FROM
+							expr_2
+						LIMIT
+							10
+						UNION ALL
+						SELECT
+							*
+						FROM
+							expr_3
+					)
+					SELECT
+						*
+					FROM
+						expr_6
+					WHERE
+						EQUAL_NULL(row_object:p, row_object:h)
+				)
+				SELECT
+					*
+				FROM
+					expr_0
+				UNION ALL
+				SELECT
+					*
+				FROM
+					expr_1
+			`),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result string
+			if !tt.cfg.Empty() {
+				result = Format(tt.query, tt.cfg)
+			} else {
+				result = Format(tt.query)
+			}
+
+			//exp := Dedent(tt.exp)
+			exp := strings.TrimRight(tt.exp, "\n\t ")
+			exp = strings.TrimLeft(exp, "\n")
+			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
+
+			if result != exp {
+				fmt.Println("=== QUERY ===")
+				fmt.Println(tt.query)
+				fmt.Println()
+
+				fmt.Println("=== EXP ===")
+				fmt.Println(exp)
+				fmt.Println()
+
+				fmt.Println("=== RESULT ===")
+				fmt.Println(result)
+				fmt.Println()
+			}
+			require.Equal(t, exp, result)
+		})
+	}
+}

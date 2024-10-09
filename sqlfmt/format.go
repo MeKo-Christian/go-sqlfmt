@@ -1,0 +1,24 @@
+package sqlfmt
+
+import "fmt"
+
+func Format(query string, cfg ...Config) string {
+	if len(cfg) == 1 {
+		switch cfg[0].Language {
+		default:
+			return NewStandardSqlFormatter(cfg[0]).Format(query)
+		}
+	}
+
+	if len(cfg) > 1 {
+		panic("cannot have more than one config")
+	}
+
+	return NewStandardSqlFormatter(NewDefaultConfig()).Format(query)
+}
+
+func PrettyPrint(query string, cfg ...Config) {
+	// TODO: colors
+	// TODO: cfg
+	fmt.Println(NewStandardSqlFormatter(NewDefaultConfig()).Format(query))
+}
