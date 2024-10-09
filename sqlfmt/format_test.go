@@ -90,7 +90,7 @@ func TestFormat(t *testing.T) {
 					'var value',
 					'var value',
 					'var value',
-					'var\\ value';
+					'var\ value';
 			`),
 			cfg: Config{
 				Params: NewMapParams(map[string]string{

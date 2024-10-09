@@ -62,29 +62,33 @@ var (
 	}
 )
 
-type StandardSqlFormatter struct {
+type StandardSQLFormatter struct {
 	cfg Config
 }
 
-func NewStandardSqlFormatter(cfg Config) *StandardSqlFormatter {
-	return &StandardSqlFormatter{cfg: cfg}
+func NewStandardSQLFormatter(cfg Config) *StandardSQLFormatter {
+	return &StandardSQLFormatter{cfg: cfg}
 }
 
-func (ssf *StandardSqlFormatter) Format(query string) string {
+func NewStandardSQLTokenizerConfig() TokenizerConfig {
+	return TokenizerConfig{
+		ReservedWords:                 reservedWords,
+		ReservedTopLevelWords:         reservedTopLevelWords,
+		ReservedNewlineWords:          reservedNewlineWords,
+		ReservedTopLevelWordsNoIndent: reservedTopLevelWordsNoIndent,
+		StringTypes:                   []string{`""`, "N''", "''", "``", "[]", "$$"},
+		OpenParens:                    []string{"(", "CASE"},
+		CloseParens:                   []string{")", "END"},
+		IndexedPlaceholderTypes:       []string{"?"},
+		NamedPlaceholderTypes:         []string{"@", ":"},
+		LineCommentTypes:              []string{"#", "--"},
+	}
+}
+
+func (ssf *StandardSQLFormatter) Format(query string) string {
 	return newFormatter(
 		ssf.cfg,
-		newTokenizer(TokenizerConfig{
-			ReservedWords:                 reservedWords,
-			ReservedTopLevelWords:         reservedTopLevelWords,
-			ReservedNewlineWords:          reservedNewlineWords,
-			ReservedTopLevelWordsNoIndent: reservedTopLevelWordsNoIndent,
-			StringTypes:                   []string{`""`, "N''", "''", "``", "[]", "$$"},
-			OpenParens:                    []string{"(", "CASE"},
-			CloseParens:                   []string{")", "END"},
-			IndexedPlaceholderTypes:       []string{"?"},
-			NamedPlaceholderTypes:         []string{"@", ":"},
-			LineCommentTypes:              []string{"#", "--"},
-		}),
+		newTokenizer(NewStandardSQLTokenizerConfig()),
 		nil,
 	).format(query)
 }

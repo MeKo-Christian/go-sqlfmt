@@ -105,9 +105,12 @@ func createPlaceholderRegex(types []string, pattern string) *regexp.Regexp {
 	if len(types) == 0 {
 		return nil
 	}
-	typesRegex := strings.Join(types, `|`)
-	//fmt.Println(`^((?:` + escapeRegExp(typesRegex) + `)(?:` + escapeRegExp(pattern) + `))`)
-	return regexp.MustCompile(`^((?:` + escapeRegExp(typesRegex) + `)(?:` + pattern + `))`)
+	esc := make([]string, 0, len(types))
+	for _, t := range types {
+		esc = append(esc, escapeRegExp(t))
+	}
+	typesRegex := strings.Join(esc, `|`)
+	return regexp.MustCompile(`^((?:` + typesRegex + `)(?:` + pattern + `))`)
 }
 
 func (t *tokenizer) tokenize(input string) []token {
