@@ -7,7 +7,8 @@ type Language string
 const (
 	StandardSQL Language = "sql"
 
-	DefaultIndent = "  " // two spaces
+	DefaultIndent              = "  " // two spaces
+	DefaultLinesBetweenQueries = 2
 )
 
 type Config struct {
@@ -20,8 +21,9 @@ type Config struct {
 
 func NewDefaultConfig() Config {
 	return Config{
-		Language: StandardSQL,
-		Indent:   DefaultIndent,
+		Language:            StandardSQL,
+		Indent:              DefaultIndent,
+		LinesBetweenQueries: DefaultLinesBetweenQueries,
 	}
 }
 

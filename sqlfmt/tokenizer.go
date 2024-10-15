@@ -1,7 +1,6 @@
 package sqlfmt
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 )
@@ -54,13 +53,14 @@ func createLineCommentRegex(lineCommentTypes []string) *regexp.Regexp {
 func createReservedWordRegex(reservedWords []string) *regexp.Regexp {
 	pattern := strings.Join(reservedWords, `|`)
 	pattern = strings.ReplaceAll(pattern, " ", `\s+`)
-	return regexp.MustCompile(`^(` + pattern + `)\b`)
+	return regexp.MustCompile(`(?i)^(` + pattern + `)\b`)
 }
 
 func createWordRegex(specialChars []string) *regexp.Regexp {
-	specialVariableChars := regexp.QuoteMeta(`_@'"[]$:?` + "`")
-	// `\pPc` was removed from the regex because it was matching ")"
-	pattern := `^([\pL\pM\pN\pCf` + specialVariableChars + strings.Join(specialChars, ``) + `]+)`
+	specialVariableChars := regexp.QuoteMeta(`_@'"[]$?` + "`")
+	// `\pPc` was removed from the regex because it was matching ")" like in "TEXT);"
+	// `\pCf` was removed from the regex because it was matching "\n" and such
+	pattern := `^([\pL\pM\pN` + specialVariableChars + strings.Join(specialChars, ``) + `]+)`
 	return regexp.MustCompile(pattern)
 }
 
@@ -119,11 +119,6 @@ func (t *tokenizer) tokenize(input string) []token {
 		toks []token
 	)
 	for len(input) > 0 {
-		fmt.Println(
-			"getNextToken out",
-			"output tok:", t.getNextToken(input, tok),
-			"input:", input,
-		)
 		tok = t.getNextToken(input, tok)
 		input = input[len(tok.value):]
 		toks = append(toks, tok)
@@ -290,7 +285,6 @@ func (t *tokenizer) getWordToken(input string) token {
 // the token type typ as the tokenType.
 func (t *tokenizer) getTokenOnFirstMatch(input string, typ tokenType, re *regexp.Regexp) token {
 	matches := re.FindStringSubmatch(input)
-	//fmt.Println("getTokenOnFirstMatch", "matches:", matches, "typ:", typ, "input:", input)
 
 	if len(matches) > 0 {
 		return token{typ: typ, value: matches[0]} // TODO: might be matches[1]

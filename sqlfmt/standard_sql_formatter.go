@@ -40,25 +40,13 @@ var (
 	}
 
 	reservedTopLevelWordsNoIndent = []string{
-		"INTERSECT", "INTERSECT ALL", "MINUS", "UNION", "UNION ALL",
+		// strings with spaces must come first
+		"INTERSECT ALL", "INTERSECT", "MINUS", "UNION ALL", "UNION",
 	}
 
 	reservedNewlineWords = []string{
-		"AND",
-		"CROSS APPLY",
-		"CROSS JOIN",
-		"ELSE",
-		"INNER JOIN",
-		"JOIN",
-		"LEFT JOIN",
-		"LEFT OUTER JOIN",
-		"OR",
-		"OUTER APPLY",
-		"OUTER JOIN",
-		"RIGHT JOIN",
-		"RIGHT OUTER JOIN",
-		"WHEN",
-		"XOR",
+		"AND", "CROSS APPLY", "CROSS JOIN", "ELSE", "INNER JOIN", "JOIN", "LEFT JOIN", "LEFT OUTER JOIN", "OR",
+		"OUTER APPLY", "OUTER JOIN", "RIGHT JOIN", "RIGHT OUTER JOIN", "WHEN", "XOR",
 	}
 )
 

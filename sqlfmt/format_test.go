@@ -208,6 +208,7 @@ func TestFormat(t *testing.T) {
 			exp: Dedent(`
 				SET SCHEMA
 					schema1;
+
 				SET CURRENT SCHEMA
 					schema2;
 			`),
@@ -288,6 +289,7 @@ func TestFormat(t *testing.T) {
 			exp: Dedent(`
 				LIMIT
 					5;
+
 				SELECT
 					foo,
 					bar;
@@ -326,159 +328,159 @@ func TestFormat(t *testing.T) {
 			name:  "formats SELECT query with SELECT query inside it",
 			query: "SELECT *, SUM(*) AS sum FROM (SELECT * FROM Posts LIMIT 30) WHERE a > b",
 			exp: Dedent(`
-				SELECT
-				  *,
-				  SUM(*) AS sum
-				FROM
-				  (
-					SELECT
-					  *
-					FROM
-					  Posts
-					LIMIT
-					  30
-				  )
-				WHERE
-				  a > b
-			`),
+                SELECT
+                  *,
+                  SUM(*) AS sum
+                FROM
+                  (
+                    SELECT
+                      *
+                    FROM
+                      Posts
+                    LIMIT
+                      30
+                  )
+                WHERE
+                  a > b
+            `),
 		},
 		{
 			name: "formats SELECT query with INNER JOIN",
 			query: `SELECT customer_id.from, COUNT(order_id) AS total FROM customers
-				INNER JOIN orders ON customers.customer_id = orders.customer_id;`,
+                INNER JOIN orders ON customers.customer_id = orders.customer_id;`,
 			exp: Dedent(`
-				SELECT
-				  customer_id.from,
-				  COUNT(order_id) AS total
-				FROM
-				  customers
-				  INNER JOIN orders ON customers.customer_id = orders.customer_id;
-			`),
+                SELECT
+                  customer_id.from,
+                  COUNT(order_id) AS total
+                FROM
+                  customers
+                  INNER JOIN orders ON customers.customer_id = orders.customer_id;
+            `),
 		},
 		{
 			name: "formats SELECT query with different comments",
 			query: Dedent(`
-				SELECT
-				/*
-				 * This is a block comment
-				 */
-				* FROM
-				-- This is another comment
-				MyTable # One final comment
-				WHERE 1 = 2;
-			`),
+                SELECT
+                /*
+                 * This is a block comment
+                 */
+                * FROM
+                -- This is another comment
+                MyTable # One final comment
+                WHERE 1 = 2;
+            `),
 			exp: Dedent(`
-				SELECT
-				  /*
-				   * This is a block comment
-				   */
-				  *
-				FROM
-				  -- This is another comment
-				  MyTable # One final comment
-				WHERE
-				  1 = 2;
-			`),
+                SELECT
+                  /*
+                   * This is a block comment
+                   */
+                  *
+                FROM
+                  -- This is another comment
+                  MyTable # One final comment
+                WHERE
+                  1 = 2;
+            `),
 		},
 		{
 			name: "maintains block comment indentation",
 			query: Dedent(`
-				SELECT
-				  /*
-				   * This is a block comment
-				   */
-				  *
-				FROM
-				  MyTable
-				WHERE
-				  1 = 2;
-			`),
+                SELECT
+                  /*
+                   * This is a block comment
+                   */
+                  *
+                FROM
+                  MyTable
+                WHERE
+                  1 = 2;
+            `),
 			exp: Dedent(`
-				SELECT
-				  /*
-				   * This is a block comment
-				   */
-				  *
-				FROM
-				  MyTable
-				WHERE
-				  1 = 2;
-			`),
+                SELECT
+                  /*
+                   * This is a block comment
+                   */
+                  *
+                FROM
+                  MyTable
+                WHERE
+                  1 = 2;
+            `),
 		},
 		{
 			name: "formats simple INSERT query",
 			query: `INSERT INTO Customers (ID, MoneyBalance, Address, City)
-				VALUES (12, -123.4, 'Skagen 2111', 'Stv');`,
+                VALUES (12, -123.4, 'Skagen 2111', 'Stv');`,
 			exp: Dedent(`
-				INSERT INTO
-				  Customers (ID, MoneyBalance, Address, City)
-				VALUES
-				  (12, -123.4, 'Skagen 2111', 'Stv');
-			`),
+                INSERT INTO
+                  Customers (ID, MoneyBalance, Address, City)
+                VALUES
+                  (12, -123.4, 'Skagen 2111', 'Stv');
+            `),
 		},
 		{
 			name:  "keeps short parenthesized list with nested parenthesis on single line",
 			query: "SELECT (a + b * (c - NOW()));",
 			exp: Dedent(`
-				SELECT
-				  (a + b * (c - NOW()));
-			`),
+                SELECT
+                  (a + b * (c - NOW()));
+            `),
 		},
 		{
 			name: "breaks long parenthesized lists to multiple lines",
 			query: Dedent(`
-				INSERT INTO some_table (id_product, id_shop, id_currency, id_country, id_registration) (
-				  SELECT IF(dq.id_discounter_shopping = 2, dq.value, dq.value / 100),
-				  IF (dq.id_discounter_shopping = 2, 'amount', 'percentage') FROM foo);
-			`),
+                INSERT INTO some_table (id_product, id_shop, id_currency, id_country, id_registration) (
+                  SELECT IF(dq.id_discounter_shopping = 2, dq.value, dq.value / 100),
+                  IF (dq.id_discounter_shopping = 2, 'amount', 'percentage') FROM foo);
+            `),
 			exp: Dedent(`
-				INSERT INTO
-				  some_table (
-					id_product,
-					id_shop,
-					id_currency,
-					id_country,
-					id_registration
-				  ) (
-					SELECT
-					  IF(
-						dq.id_discounter_shopping = 2,
-						dq.value,
-						dq.value / 100
-					  ),
-					  IF (
-						dq.id_discounter_shopping = 2,
-						'amount',
-						'percentage'
-					  )
-					FROM
-					  foo
-				  );
-			`),
+                INSERT INTO
+                  some_table (
+                    id_product,
+                    id_shop,
+                    id_currency,
+                    id_country,
+                    id_registration
+                  ) (
+                    SELECT
+                      IF(
+                        dq.id_discounter_shopping = 2,
+                        dq.value,
+                        dq.value / 100
+                      ),
+                      IF (
+                        dq.id_discounter_shopping = 2,
+                        'amount',
+                        'percentage'
+                      )
+                    FROM
+                      foo
+                  );
+            `),
 		},
 		{
 			name:  "formats simple UPDATE query",
 			query: `UPDATE Customers SET ContactName='Alfred Schmidt', City='Hamburg' WHERE CustomerName='Alfreds Futterkiste';`,
 			exp: Dedent(`
-				UPDATE
-				  Customers
-				SET
-				  ContactName = 'Alfred Schmidt',
-				  City = 'Hamburg'
-				WHERE
-				  CustomerName = 'Alfreds Futterkiste';
-			`),
+                UPDATE
+                  Customers
+                SET
+                  ContactName = 'Alfred Schmidt',
+                  City = 'Hamburg'
+                WHERE
+                  CustomerName = 'Alfreds Futterkiste';
+            `),
 		},
 		{
 			name:  "formats simple DELETE query",
 			query: `DELETE FROM Customers WHERE CustomerName='Alfred' AND Phone=5002132;`,
 			exp: Dedent(`
-				DELETE FROM
-				  Customers
-				WHERE
-				  CustomerName = 'Alfred'
-				  AND Phone = 5002132;
-			`),
+                DELETE FROM
+                  Customers
+                WHERE
+                  CustomerName = 'Alfred'
+                  AND Phone = 5002132;
+            `),
 		},
 		{
 			name:  "formats simple DROP query",
@@ -489,62 +491,62 @@ func TestFormat(t *testing.T) {
 			name:  "formats incomplete query",
 			query: "SELECT count(",
 			exp: Dedent(`
-				SELECT
-				  count(
-			`),
+                SELECT
+                  count(
+            `),
 		},
 		{
 			name: "formats query that ends with open comment",
 			query: Dedent(`
-				SELECT count(*)
-				/*Comment
-			`),
+                SELECT count(*)
+                /*Comment
+            `),
 			exp: Dedent(`
-				SELECT
-				  count(*)
-				  /*Comment
-			`),
+                SELECT
+                  count(*)
+                  /*Comment
+            `),
 		},
 		{
 			name:  "formats UPDATE query with AS part",
 			query: `UPDATE customers SET total_orders = order_summary.total FROM (SELECT * FROM bank) AS order_summary`,
 			exp: Dedent(`
-				UPDATE
-				  customers
-				SET
-				  total_orders = order_summary.total
-				FROM
-				  (
-					SELECT
-					  *
-					FROM
-					  bank
-				  ) AS order_summary
-			`),
+                UPDATE
+                  customers
+                SET
+                  total_orders = order_summary.total
+                FROM
+                  (
+                    SELECT
+                      *
+                    FROM
+                      bank
+                  ) AS order_summary
+            `),
 		},
 		{
 			name:  "formats top-level and newline multi-word reserved words with inconsistent spacing",
 			query: "SELECT * FROM foo LEFT \t OUTER  \n JOIN bar ORDER \n BY blah",
 			exp: Dedent(`
-				SELECT
-				  *
-				FROM
-				  foo
-				  LEFT OUTER JOIN bar
-				ORDER BY
-				  blah
-			`),
+                SELECT
+                  *
+                FROM
+                  foo
+                  LEFT OUTER JOIN bar
+                ORDER BY
+                  blah
+            `),
 		},
 		{
 			name:  "formats long double parenthesized queries to multiple lines",
 			query: "((foo = '0123456789-0123456789-0123456789-0123456789'))",
 			exp: Dedent(`
-				(
-				  (
-					foo = '0123456789-0123456789-0123456789-0123456789'
-				  )
-				)
-			`),
+                (
+                  (
+                    foo = '0123456789-0123456789-0123456789-0123456789'
+                  )
+                )
+            `),
 		},
 		{
 			name:  "formats short double parenthesized queries to one line",
@@ -555,94 +557,94 @@ func TestFormat(t *testing.T) {
 			name:  "formats single-char operators",
 			query: "SELECT * FROM foo WHERE bar = 'a' AND baz = 'b';",
 			exp: Dedent(`
-				SELECT
-				  *
-				FROM
-				  foo
-				WHERE
-				  bar = 'a'
-				  AND baz = 'b';
-			`),
+                SELECT
+                  *
+                FROM
+                  foo
+                WHERE
+                  bar = 'a'
+                  AND baz = 'b';
+            `),
 		},
 		{
 			name:  "formats single-char operators with tabs",
 			query: "SELECT * FROM foo WHERE bar\t = 'a' AND baz = 'b';",
 			exp: Dedent(`
-				SELECT
-				  *
-				FROM
-				  foo
-				WHERE
-				  bar = 'a'
-				  AND baz = 'b';
-			`),
+                SELECT
+                  *
+                FROM
+                  foo
+                WHERE
+                  bar = 'a'
+                  AND baz = 'b';
+            `),
 		},
 		{
 			name: "formats simple CASE query",
 			query: Dedent(`
-				SELECT CASE
-				  WHEN a = 1 THEN 1
-				  WHEN a = 2 THEN 2
-				  ELSE 3
-				END AS result
-				FROM foo;
-			`),
+                SELECT CASE
+                  WHEN a = 1 THEN 1
+                  WHEN a = 2 THEN 2
+                  ELSE 3
+                END AS result
+                FROM foo;
+            `),
 			exp: Dedent(`
-				SELECT
-				  CASE
-					WHEN a = 1 THEN 1
-					WHEN a = 2 THEN 2
-					ELSE 3
-				  END AS result
-				FROM
-				  foo;
-			`),
+                SELECT
+                  CASE
+                    WHEN a = 1 THEN 1
+                    WHEN a = 2 THEN 2
+                    ELSE 3
+                  END AS result
+                FROM
+                  foo;
+            `),
 		},
 		{
 			name: "formats simple IF query",
 			query: Dedent(`
-				SELECT IF(a > 1, 'greater', 'lesser') AS result
-				FROM foo;
-			`),
+                SELECT IF(a > 1, 'greater', 'lesser') AS result
+                FROM foo;
+            `),
 			exp: Dedent(`
-				SELECT
-				  IF(a > 1, 'greater', 'lesser') AS result
-				FROM
-				  foo;
-			`),
+                SELECT
+                  IF(a > 1, 'greater', 'lesser') AS result
+                FROM
+                  foo;
+            `),
 		},
 		{
 			name:  "formats simple EXISTS query",
 			query: "SELECT EXISTS(SELECT 1 FROM foo);",
 			exp: Dedent(`
-				SELECT
-				  EXISTS(
-					SELECT
-					  1
-					FROM
-					  foo
-				  );
-			`),
+                SELECT
+                  EXISTS(
+                    SELECT
+                      1
+                    FROM
+                      foo
+                  );
+            `),
 		},
 		{
 			name:  "formats simple COALESCE query",
 			query: "SELECT COALESCE(a, b, c) AS result FROM foo;",
 			exp: Dedent(`
-				SELECT
-				  COALESCE(a, b, c) AS result
-				FROM
-				  foo;
-			`),
+                SELECT
+                  COALESCE(a, b, c) AS result
+                FROM
+                  foo;
+            `),
 		},
 		{
 			name:  "formats simple NULLIF query",
 			query: "SELECT NULLIF(a, b) AS result FROM foo;",
 			exp: Dedent(`
-				SELECT
-				  NULLIF(a, b) AS result
-				FROM
-				  foo;
-			`),
+                SELECT
+                  NULLIF(a, b) AS result
+                FROM
+                  foo;
+            `),
 		},
 		{
 			name:  "formats simple GROUP BY query",
@@ -704,9 +706,7 @@ func TestFormat(t *testing.T) {
 				FROM
 				  foo
 				LIMIT
-				  10
-				OFFSET
-				  5;
+				  10 OFFSET 5;
 			`),
 		},
 		{
@@ -905,69 +905,69 @@ func TestFormat(t *testing.T) {
 			exp:   "`foo `` JOIN bar`",
 		},
 		{
-			name:  "formats postgre specific operators (::)",
+			name:  "formats postgres specific operators (::)",
 			query: "column::int",
 			exp:   "column :: int",
 		},
 		{
-			name:  "formats postgre specific operators (->)",
+			name:  "formats postgres specific operators (->)",
 			query: "v->2",
 			exp:   "v -> 2",
 		},
 		{
-			name:  "formats postgre specific operators (->>)",
+			name:  "formats postgres specific operators (->>)",
 			query: "v->>2",
 			exp:   "v ->> 2",
 		},
 		{
-			name:  "formats postgre specific operators (~~)",
+			name:  "formats postgres specific operators (~~)",
 			query: "foo ~~ 'hello'",
 			exp:   "foo ~~ 'hello'",
 		},
 		{
-			name:  "formats postgre specific operators (!~)",
+			name:  "formats postgres specific operators (!~)",
 			query: "foo !~ 'hello'",
 			exp:   "foo !~ 'hello'",
 		},
 		{
-			name:  "formats postgre specific operators (~*)",
+			name:  "formats postgres specific operators (~*)",
 			query: "foo ~* 'hello'",
 			exp:   "foo ~* 'hello'",
 		},
 		{
-			name:  "formats postgre specific operators (~~*)",
+			name:  "formats postgres specific operators (~~*)",
 			query: "foo ~~* 'hello'",
 			exp:   "foo ~~* 'hello'",
 		},
 		{
-			name:  "formats postgre specific operators (!~~)",
+			name:  "formats postgres specific operators (!~~)",
 			query: "foo !~~ 'hello'",
 			exp:   "foo !~~ 'hello'",
 		},
 		{
-			name:  "formats postgre specific operators (!~*)",
+			name:  "formats postgres specific operators (!~*)",
 			query: "foo !~* 'hello'",
 			exp:   "foo !~* 'hello'",
 		},
 		{
-			name:  "formats postgre specific operators (!~~*)",
+			name:  "formats postgres specific operators (!~~*)",
 			query: "foo !~~* 'hello'",
 			exp:   "foo !~~* 'hello'",
 		},
 		{
 			name:  "keeps separation between multiple statements (semicolon)",
 			query: "foo;bar;",
-			exp:   "foo;\nbar;",
+			exp:   "foo;\n\nbar;",
 		},
 		{
 			name:  "keeps separation between multiple statements (newline)",
 			query: "foo\n;bar;",
-			exp:   "foo;\nbar;",
+			exp:   "foo;\n\nbar;",
 		},
 		{
 			name:  "keeps separation between multiple statements (multiple newlines)",
 			query: "foo\n\n\n;bar;\n\n",
-			exp:   "foo;\nbar;",
+			exp:   "foo;\n\nbar;",
 		},
 		{
 			name: "keeps separation between multiple statements (SELECT)",
@@ -981,6 +981,7 @@ func TestFormat(t *testing.T) {
 					Column1
 				FROM
 					Table1;
+
 				SELECT
 					count(*),
 					Column1
@@ -1012,6 +1013,7 @@ func TestFormat(t *testing.T) {
 					cola > 1
 					AND colb = 3
 			`),
+			cfg: Config{Uppercase: true},
 		},
 		{
 			name:  "line breaks between queries change with config",
@@ -1040,6 +1042,7 @@ func TestFormat(t *testing.T) {
 					*
 				FROM
 					test;
+
 				CREATE TABLE TEST(
 					id NUMBER NOT NULL,
 					col1 VARCHAR2(20),
@@ -1053,14 +1056,14 @@ func TestFormat(t *testing.T) {
 				CREATE
 				OR REPLACE FUNCTION RECURSION_TEST (STR VARCHAR) RETURNS VARCHAR LANGUAGE JAVASCRIPT AS $$
 				return (STR.length <= 1
-					? STR : STR.substring(0,1) + '_' + RECURSION_TEST(STR.substring(1)));
+                    ? STR : STR.substring(0,1) + '_' + RECURSION_TEST(STR.substring(1)));
 				$$;
 			`),
 			exp: Dedent(`
 				CREATE
 				OR REPLACE FUNCTION RECURSION_TEST (STR VARCHAR) RETURNS VARCHAR LANGUAGE JAVASCRIPT AS $$
 				return (STR.length <= 1
-					? STR : STR.substring(0,1) + '_' + RECURSION_TEST(STR.substring(1)));
+                    ? STR : STR.substring(0,1) + '_' + RECURSION_TEST(STR.substring(1)));
 				$$;
 			`),
 		},
@@ -1073,6 +1076,21 @@ func TestFormat(t *testing.T) {
 					uniform(1, 10, random(12))
 				from
 					table(generator(rowcount => 11000)) v
+			`),
+		},
+		{
+			name:  "formats UNION ALL on one line",
+			query: `SELECT * FROM expr_0 UNION ALL SELECT * FROM expr_1`,
+			exp: Dedent(`
+                SELECT
+                  *
+                FROM
+                  expr_0
+                UNION ALL
+                SELECT
+                  *
+                FROM
+                  expr_1
 			`),
 		},
 		{
@@ -1119,7 +1137,7 @@ func TestFormat(t *testing.T) {
 				WITH expr_0 AS (
 					SELECT
 						'foo' AS db,
-						'foo' AS another,
+						'foo' AS another
 					FROM
 						foo
 				),
@@ -1127,7 +1145,7 @@ func TestFormat(t *testing.T) {
 					WITH expr_2 AS (
 						SELECT
 							'bar' AS db,
-							'bar' AS another,
+							'bar' AS another
 						FROM
 							bar
 					),
@@ -1197,7 +1215,6 @@ func TestFormat(t *testing.T) {
 				result = Format(tt.query)
 			}
 
-			//exp := Dedent(tt.exp)
 			exp := strings.TrimRight(tt.exp, "\n\t ")
 			exp = strings.TrimLeft(exp, "\n")
 			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)

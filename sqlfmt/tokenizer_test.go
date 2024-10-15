@@ -16,6 +16,9 @@ func TestRegexes(t *testing.T) {
 	}{
 		{input: "TEXT", match: "TEXT", re: tz.wordRegex},
 		{input: "TEXT);", match: "TEXT", re: tz.wordRegex},
+		{input: "table\nWHERE", match: "table", re: tz.wordRegex},
+		{input: "table\rWHERE", match: "table", re: tz.wordRegex},
+		{input: "column::int", match: "column", re: tz.wordRegex},
 
 		{input: "?", match: "?", re: tz.indexedPlaceholderRegex},
 		{input: "?0", match: "?0", re: tz.indexedPlaceholderRegex},
@@ -32,6 +35,8 @@ func TestRegexes(t *testing.T) {
 		{input: "@`var name`", match: "@`var name`", re: tz.stringNamedPlaceholderRegex},
 		{input: "@`var name`, ", match: "@`var name`", re: tz.stringNamedPlaceholderRegex},
 		{input: "@[var name]", match: "@[var name]", re: tz.stringNamedPlaceholderRegex},
+
+		{input: "UNION ALL", match: "UNION ALL", re: tz.reservedTopLevelNoIndentRegex},
 	}
 
 	for _, tt := range tests {

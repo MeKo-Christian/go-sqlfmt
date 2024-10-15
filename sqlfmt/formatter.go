@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+var limitKeywordRegex = regexp.MustCompile(`(?i)^LIMIT$`)
+
 // trimSpacesEnd removes trailing spaces and tabs from a string.
 func trimSpacesEnd(str string) string {
 	return strings.TrimRight(str, " \t")
@@ -155,7 +157,7 @@ func (f *formatter) formatOpeningParentheses(tok token, query string) string {
 	}
 	query += tok.value
 	if f.cfg.Uppercase {
-		query = strings.ToUpper(query)
+		query = strings.ToUpper(query) // TODO uppercase the whole query?
 	}
 
 	f.inlineBlock.beginIfPossible(f.tokens, f.index)
@@ -196,8 +198,8 @@ func (f *formatter) formatComma(tok token, query string) string {
 
 	if f.inlineBlock.isActive() {
 		return query
-	} else if matched, _ := regexp.MatchString(`^LIMIT$`, f.previousReservedWord.value); matched {
-		// TODO: what does this do?
+	} else if limitKeywordRegex.MatchString(f.previousReservedWord.value) {
+		// avoids creating new lines after LIMIT keyword so that two limit items appear on one line for nicer formatting
 		return query
 	} else {
 		return f.addNewline(query)
