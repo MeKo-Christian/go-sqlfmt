@@ -1,6 +1,8 @@
 package sqlfmt
 
-import "reflect"
+import (
+	"reflect"
+)
 
 type Language string
 
@@ -17,6 +19,7 @@ type Config struct {
 	Uppercase           bool
 	LinesBetweenQueries int
 	Params              Params
+	ColorConfig         ColorConfig
 }
 
 func NewDefaultConfig() Config {
@@ -87,5 +90,25 @@ func NewTokenizerConfig(
 		NamedPlaceholderTypes:         namedPlaceholderTypes,
 		LineCommentTypes:              lineCommentTypes,
 		SpecialWordChars:              specialWordChars,
+	}
+}
+
+type ColorConfig struct {
+	ReservedWordFormatOptions []ANSIFormatOption
+	StringFormatOptions       []ANSIFormatOption
+	NumberFormatOptions       []ANSIFormatOption
+	BooleanFormatOptions      []ANSIFormatOption
+	CommentFormatOptions      []ANSIFormatOption
+	FunctionCallFormatOptions []ANSIFormatOption
+}
+
+func NewDefaultColorConfig() ColorConfig {
+	return ColorConfig{
+		ReservedWordFormatOptions: []ANSIFormatOption{ColorCyan, FormatBold},
+		StringFormatOptions:       []ANSIFormatOption{ColorGreen},
+		NumberFormatOptions:       []ANSIFormatOption{ColorBrightBlue},
+		BooleanFormatOptions:      []ANSIFormatOption{ColorPurple, FormatBold},
+		CommentFormatOptions:      []ANSIFormatOption{ColorGray},
+		FunctionCallFormatOptions: []ANSIFormatOption{ColorBrightCyan},
 	}
 }

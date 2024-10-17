@@ -18,6 +18,7 @@ const (
 	tokenTypeBlockComment             tokenType = "block-comment"
 	tokenTypeNumber                   tokenType = "number"
 	tokenTypePlaceholder              tokenType = "placeholder"
+	tokenTypeBoolean                  tokenType = "boolean"
 )
 
 type token struct {

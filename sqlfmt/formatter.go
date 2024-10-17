@@ -90,6 +90,12 @@ func (f *formatter) getFormattedQueryFromTokens() string {
 			} else {
 				formattedQuery = f.formatWithSpaces(tok, formattedQuery)
 			}
+		case tokenTypeString:
+			formattedQuery = f.formatString(tok, formattedQuery)
+		case tokenTypeNumber:
+			formattedQuery = f.formatNumber(tok, formattedQuery)
+		case tokenTypeBoolean:
+			formattedQuery = f.formatBoolean(tok, formattedQuery)
 		default:
 			switch tok.value {
 			case ",":
@@ -109,11 +115,16 @@ func (f *formatter) getFormattedQueryFromTokens() string {
 }
 
 func (f *formatter) formatLineComment(tok token, query string) string {
-	return f.addNewline(query + tok.value)
+	value := tok.value
+	value = addANSIFormats(f.cfg.ColorConfig.CommentFormatOptions, value)
+	return f.addNewline(query + value)
 }
 
 func (f *formatter) formatBlockComment(tok token, query string) string {
-	return f.addNewline(f.addNewline(query) + f.indentComment(tok.value))
+	value := tok.value
+	value = f.indentComment(value)
+	value = addANSIFormats(f.cfg.ColorConfig.CommentFormatOptions, value)
+	return f.addNewline(f.addNewline(query) + value)
 }
 
 func (f *formatter) indentComment(comment string) string {
@@ -224,21 +235,45 @@ func (f *formatter) formatWithSpaces(tok token, query string) string {
 	if tok.typ == tokenTypeReserved {
 		value = f.formatReservedWord(tok.value)
 	}
+
+	next := f.nextToken()
+	if tok.typ == tokenTypeWord && !next.empty() && next.value == "(" {
+		value = addANSIFormats(f.cfg.ColorConfig.FunctionCallFormatOptions, value)
+	}
+
 	return query + value + " "
 }
 
-// formatReservedWord makes sure the reserved word is uppercase if the cfg
-// is set to make it uppercase.
+// formatReservedWord makes sure the reserved word is formatted according to the Config.
 func (f *formatter) formatReservedWord(value string) string {
 	if f.cfg.Uppercase {
-		return strings.ToUpper(value)
+		value = strings.ToUpper(value)
 	}
+	value = addANSIFormats(f.cfg.ColorConfig.ReservedWordFormatOptions, value)
 	return value
 }
 
 func (f *formatter) formatQuerySeparator(tok token, query string) string {
 	f.indentation.resetIndentation()
 	return trimSpacesEnd(query) + tok.value + strings.Repeat("\n", f.cfg.LinesBetweenQueries)
+}
+
+func (f *formatter) formatString(tok token, query string) string {
+	value := tok.value
+	value = addANSIFormats(f.cfg.ColorConfig.StringFormatOptions, value)
+	return query + value + " "
+}
+
+func (f *formatter) formatNumber(tok token, query string) string {
+	value := tok.value
+	value = addANSIFormats(f.cfg.ColorConfig.NumberFormatOptions, value)
+	return query + value + " "
+}
+
+func (f *formatter) formatBoolean(tok token, query string) string {
+	value := tok.value
+	value = addANSIFormats(f.cfg.ColorConfig.BooleanFormatOptions, value)
+	return query + value + " "
 }
 
 // addNewline trims spaces from the end of query, adds a new line character if
@@ -266,7 +301,8 @@ func (f *formatter) previousToken(offset ...int) token {
 }
 
 // nextToken peeks at the next token in the formatters list of tokens with
-// the given offset. If no offset is provided, a default of 1 is used.
+// the given offset. If no offset is provided, a default of 1 is used. If
+// there is no next token, it returns an empty token.
 func (f *formatter) nextToken(offset ...int) token {
 	o := 1
 	if len(offset) > 0 {

@@ -1236,3 +1236,128 @@ func TestFormat(t *testing.T) {
 		})
 	}
 }
+
+func TestPrettyFormat(t *testing.T) {
+	q := Dedent(`
+        WITH expr_0 AS (
+			SELECT
+				'foo' AS db, -- inline comment
+				'foo' AS another,
+                COUNT_ME(*) AS count,
+				true AS bool,
+				TRUE as tuk,
+                false AS bool2,
+                8 AS number,
+                6.8 AS number2,
+				"hi"::int,
+                obj:subfield,
+			FROM
+                /*
+                 * block comment
+                 */
+				foo
+		),
+        SELECT
+			*,
+            3 + (4-5) AS that,
+		FROM
+			expr_0
+	`)
+
+	PrettyPrint(q)
+	println()
+	fmt.Println(Format(q))
+
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+	}{
+		{
+			name:  "colors reserved words",
+			query: `SELECT * FROM foo`,
+			exp: Dedent(fmt.Sprintf(`
+			    %s%sSELECT%s%s
+			      *
+			    %s%sFROM%s%s
+			      foo
+			`, FormatBold, ColorCyan, FormatReset, FormatReset,
+				FormatBold, ColorCyan, FormatReset, FormatReset)),
+		},
+		{
+			name:  "colors strings",
+			query: `SELECT 'foo'`,
+			exp: Dedent(fmt.Sprintf(`
+			    %s%sSELECT%s%s
+			      %s'foo'%s
+			`, FormatBold, ColorCyan, FormatReset, FormatReset,
+				ColorGreen, FormatReset)),
+		},
+		{
+			name:  "colors numbers",
+			query: `SELECT 9.7`,
+			exp: Dedent(fmt.Sprintf(`
+			    %s%sSELECT%s%s
+			      %s9.7%s
+			`, FormatBold, ColorCyan, FormatReset, FormatReset,
+				ColorBrightBlue, FormatReset)),
+		},
+		{
+			name:  "colors booleans",
+			query: `SELECT true`,
+			exp: Dedent(fmt.Sprintf(`
+			    %s%sSELECT%s%s
+			      %s%strue%s%s
+			`, FormatBold, ColorCyan, FormatReset, FormatReset,
+				FormatBold, ColorPurple, FormatReset, FormatReset)),
+		},
+		{
+			name:  "colors inline comments",
+			query: `SELECT foo -- this is a comment`,
+			exp: Dedent(fmt.Sprintf(`
+			    %s%sSELECT%s%s
+			      foo %s-- this is a comment%s
+			`, FormatBold, ColorCyan, FormatReset, FormatReset,
+				ColorGray, FormatReset)),
+		},
+		{
+			name: "colors block comments",
+			query: `
+				SELECT 
+				  /*
+				   * block comment
+				   */
+				  foo`,
+			exp: Dedent(fmt.Sprintf(`
+                %s%sSELECT%s%s
+                  %s/*%s
+                %s   * block comment%s
+                %s   */%s
+                  foo
+            `, FormatBold, ColorCyan, FormatReset, FormatReset,
+				ColorGray, FormatReset,
+				ColorGray, FormatReset,
+				ColorGray, FormatReset)),
+		},
+		{
+			name:  "colors functions",
+			query: `SELECT COUNT_ME(*)`,
+			exp: Dedent(fmt.Sprintf(`
+			    %s%sSELECT%s%s
+			      %sCOUNT_ME%s(*)
+			`, FormatBold, ColorCyan, FormatReset, FormatReset,
+				ColorBrightCyan, FormatReset)),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			exp := strings.TrimRight(tt.exp, "\n\t ")
+			exp = strings.TrimLeft(exp, "\n")
+			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
+
+			p := PrettyFormat(tt.query)
+			require.Equal(t, exp, p)
+		})
+	}
+}

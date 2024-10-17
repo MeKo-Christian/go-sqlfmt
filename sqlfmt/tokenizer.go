@@ -9,6 +9,8 @@ type tokenizer struct {
 	whitespaceRegex               *regexp.Regexp
 	numberRegex                   *regexp.Regexp
 	operatorRegex                 *regexp.Regexp
+	booleanRegex                  *regexp.Regexp
+	functionCallRegex             *regexp.Regexp
 	blockCommentRegex             *regexp.Regexp
 	lineCommentRegex              *regexp.Regexp
 	reservedTopLevelRegex         *regexp.Regexp
@@ -29,6 +31,8 @@ func newTokenizer(cfg TokenizerConfig) *tokenizer {
 		whitespaceRegex:               regexp.MustCompile(`^(\s+)`),
 		numberRegex:                   regexp.MustCompile(`^((-\s*)?[0-9]+(\.[0-9]+)?|0x[0-9a-fA-F]+|0b[01]+)\b`),
 		operatorRegex:                 regexp.MustCompile(`^(!=|<>|==|<=|>=|=>|!<|!>|\|\||::|->>|->|~~\*|~~|!~~\*|!~~|~\*|!~\*|!~|.)`),
+		booleanRegex:                  regexp.MustCompile(`(?i)^(\b(true|false)\b)`),
+		functionCallRegex:             regexp.MustCompile(`(?i)^(\b(\w+)\s*\(([^)]*)\))`),
 		blockCommentRegex:             regexp.MustCompile(`^(/\*(?s:.)*?(?:\*/|$))`),
 		lineCommentRegex:              createLineCommentRegex(cfg.LineCommentTypes),
 		reservedTopLevelRegex:         createReservedWordRegex(cfg.ReservedTopLevelWords),
@@ -136,6 +140,7 @@ func (t *tokenizer) getNextToken(input string, prevTok token) token {
 		t.getPlaceholderToken(input),
 		t.getNumberToken(input),
 		t.getReservedWordToken(input, prevTok),
+		t.getBooleanToken(input),
 		t.getWordToken(input),
 		t.getOperatorToken(input),
 	)
@@ -274,6 +279,10 @@ func (t *tokenizer) getTopLevelReservedTokenNoIndent(input string) token {
 
 func (t *tokenizer) getPlainReservedToken(input string) token {
 	return t.getTokenOnFirstMatch(input, tokenTypeReserved, t.reservedPlainRegex)
+}
+
+func (t *tokenizer) getBooleanToken(input string) token {
+	return t.getTokenOnFirstMatch(input, tokenTypeBoolean, t.booleanRegex)
 }
 
 func (t *tokenizer) getWordToken(input string) token {
