@@ -1,6 +1,7 @@
 package sqlfmt
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -14,7 +15,7 @@ func trimSpacesEnd(str string) string {
 
 // formatter formats SQL queries for better readability.
 type formatter struct {
-	cfg                  Config
+	cfg                  *Config
 	indentation          *indentation
 	inlineBlock          *inlineBlock
 	params               *params
@@ -26,7 +27,10 @@ type formatter struct {
 }
 
 // newFormatter creates a new formatter instance.
-func newFormatter(cfg Config, tokenizer *tokenizer, tokenOverride func(tok token, previousReservedWord token) token) *formatter {
+func newFormatter(cfg *Config, tokenizer *tokenizer, tokenOverride func(tok token, previousReservedWord token) token) *formatter {
+	if cfg.ColorConfig == nil {
+		cfg.ColorConfig = &ColorConfig{}
+	}
 	return &formatter{
 		cfg:                  cfg,
 		indentation:          newIndentation(cfg.Indent),
@@ -53,6 +57,9 @@ func (f *formatter) getFormattedQueryFromTokens() string {
 	formattedQuery := ""
 
 	for i, tok := range f.tokens {
+		if tok.typ != tokenTypeWhitespace {
+			fmt.Println(tok.typ, tok.value)
+		}
 		f.index = i
 
 		if f.tokenOverride != nil {
@@ -166,13 +173,14 @@ func (f *formatter) formatOpeningParentheses(tok token, query string) string {
 	if _, ok := preserveWhitespaceFor[f.previousToken().typ]; !ok {
 		query = trimSpacesEnd(query)
 	}
-	query += tok.value
+
+	value := tok.value
 	if f.cfg.Uppercase {
-		query = strings.ToUpper(query) // TODO uppercase the whole query?
+		value = strings.ToUpper(value)
 	}
+	query += value
 
 	f.inlineBlock.beginIfPossible(f.tokens, f.index)
-
 	if !f.inlineBlock.isActive() {
 		f.indentation.increaseBlockLevel()
 		query = f.addNewline(query)

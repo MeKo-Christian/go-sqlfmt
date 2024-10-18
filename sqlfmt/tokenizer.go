@@ -26,7 +26,7 @@ type tokenizer struct {
 	stringNamedPlaceholderRegex   *regexp.Regexp
 }
 
-func newTokenizer(cfg TokenizerConfig) *tokenizer {
+func newTokenizer(cfg *TokenizerConfig) *tokenizer {
 	return &tokenizer{
 		whitespaceRegex:               regexp.MustCompile(`^(\s+)`),
 		numberRegex:                   regexp.MustCompile(`^((-\s*)?[0-9]+(\.[0-9]+)?|0x[0-9a-fA-F]+|0b[01]+)\b`),
@@ -94,7 +94,7 @@ func createParenRegex(parens []string) *regexp.Regexp {
 	for i, p := range parens {
 		patterns[i] = escapeParen(p)
 	}
-	return regexp.MustCompile(`^(` + strings.Join(patterns, `|`) + `)`)
+	return regexp.MustCompile(`(?i)^(` + strings.Join(patterns, `|`) + `)`)
 }
 
 func escapeParen(paren string) string {
@@ -293,6 +293,10 @@ func (t *tokenizer) getWordToken(input string) token {
 // If one or more submatches are found, the first one is returned in a new token with
 // the token type typ as the tokenType.
 func (t *tokenizer) getTokenOnFirstMatch(input string, typ tokenType, re *regexp.Regexp) token {
+	if re == nil {
+		return token{}
+	}
+
 	matches := re.FindStringSubmatch(input)
 
 	if len(matches) > 0 {

@@ -1,7 +1,7 @@
 package sqlfmt
 
 var (
-	reservedWords = []string{
+	standardSQLReservedWords = []string{
 		"ACCESSIBLE", "ACTION", "AGAINST", "AGGREGATE", "ALGORITHM", "ALL", "ALTER", "ANALYSE", "ANALYZE", "AS", "ASC",
 		"AUTOCOMMIT", "AUTO_INCREMENT", "BACKUP", "BEGIN", "BETWEEN", "BINLOG", "BOTH", "CASCADE", "CASE", "CHANGE",
 		"CHANGED", "CHARACTER SET", "CHARSET", "CHECK", "CHECKSUM", "COLLATE", "COLLATION", "COLUMN", "COLUMNS",
@@ -33,37 +33,38 @@ var (
 		"UNLOCK", "UNSIGNED", "USAGE", "USE", "USING", "VARIABLES", "VIEW", "WHEN", "WITH", "WORK", "WRITE", "YEAR_MONTH",
 	}
 
-	reservedTopLevelWords = []string{
+	standardSQLReservedTopLevelWords = []string{
 		"ADD", "AFTER", "ALTER COLUMN", "ALTER TABLE", "DELETE FROM", "EXCEPT", "FETCH FIRST", "FROM", "GROUP BY", "GO",
 		"HAVING", "INSERT INTO", "INSERT", "LIMIT", "MODIFY", "ORDER BY", "SELECT", "SET CURRENT SCHEMA", "SET SCHEMA",
 		"SET", "UPDATE", "VALUES", "WHERE",
 	}
 
-	reservedTopLevelWordsNoIndent = []string{
+	standardSQLReservedTopLevelWordsNoIndent = []string{
 		// strings with spaces must come first
 		"INTERSECT ALL", "INTERSECT", "MINUS", "UNION ALL", "UNION",
 	}
 
-	reservedNewlineWords = []string{
+	standardSQLReservedNewlineWords = []string{
 		"AND", "CROSS APPLY", "CROSS JOIN", "ELSE", "INNER JOIN", "JOIN", "LEFT JOIN", "LEFT OUTER JOIN", "OR",
 		"OUTER APPLY", "OUTER JOIN", "RIGHT JOIN", "RIGHT OUTER JOIN", "WHEN", "XOR",
 	}
 )
 
 type StandardSQLFormatter struct {
-	cfg Config
+	cfg *Config
 }
 
-func NewStandardSQLFormatter(cfg Config) *StandardSQLFormatter {
+func NewStandardSQLFormatter(cfg *Config) *StandardSQLFormatter {
+	cfg.TokenizerConfig = NewStandardSQLTokenizerConfig()
 	return &StandardSQLFormatter{cfg: cfg}
 }
 
-func NewStandardSQLTokenizerConfig() TokenizerConfig {
-	return TokenizerConfig{
-		ReservedWords:                 reservedWords,
-		ReservedTopLevelWords:         reservedTopLevelWords,
-		ReservedNewlineWords:          reservedNewlineWords,
-		ReservedTopLevelWordsNoIndent: reservedTopLevelWordsNoIndent,
+func NewStandardSQLTokenizerConfig() *TokenizerConfig {
+	return &TokenizerConfig{
+		ReservedWords:                 standardSQLReservedWords,
+		ReservedTopLevelWords:         standardSQLReservedTopLevelWords,
+		ReservedNewlineWords:          standardSQLReservedNewlineWords,
+		ReservedTopLevelWordsNoIndent: standardSQLReservedTopLevelWordsNoIndent,
 		StringTypes:                   []string{`""`, "N''", "''", "``", "[]", "$$"},
 		OpenParens:                    []string{"(", "CASE"},
 		CloseParens:                   []string{")", "END"},

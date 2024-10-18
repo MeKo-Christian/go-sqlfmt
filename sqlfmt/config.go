@@ -8,6 +8,9 @@ type Language string
 
 const (
 	StandardSQL Language = "sql"
+	PLSQL       Language = "pl/sql"
+	DB2         Language = "db2"
+	N1QL        Language = "n1ql"
 
 	DefaultIndent              = "  " // two spaces
 	DefaultLinesBetweenQueries = 2
@@ -18,15 +21,19 @@ type Config struct {
 	Indent              string
 	Uppercase           bool
 	LinesBetweenQueries int
-	Params              Params
-	ColorConfig         ColorConfig
+	Params              *Params
+	ColorConfig         *ColorConfig
+	TokenizerConfig     *TokenizerConfig
 }
 
-func NewDefaultConfig() Config {
-	return Config{
+func NewDefaultConfig() *Config {
+	return &Config{
 		Language:            StandardSQL,
 		Indent:              DefaultIndent,
 		LinesBetweenQueries: DefaultLinesBetweenQueries,
+		Params:              NewMapParams(nil),
+		ColorConfig:         &ColorConfig{},
+		TokenizerConfig:     &TokenizerConfig{},
 	}
 }
 
@@ -39,14 +46,20 @@ type Params struct {
 	ListParams []string
 }
 
-func NewMapParams(params map[string]string) Params {
-	return Params{
+func NewMapParams(params map[string]string) *Params {
+	if params == nil {
+		params = map[string]string{}
+	}
+	return &Params{
 		MapParams: params,
 	}
 }
 
-func NewListParams(params []string) Params {
-	return Params{
+func NewListParams(params []string) *Params {
+	if params == nil {
+		params = []string{}
+	}
+	return &Params{
 		ListParams: params,
 	}
 }
@@ -65,34 +78,6 @@ type TokenizerConfig struct {
 	SpecialWordChars              []string
 }
 
-func NewTokenizerConfig(
-	reservedWords []string,
-	reservedTopLevelWords []string,
-	reservedNewlineWords []string,
-	reservedTopLevelWordsNoIndent []string,
-	stringTypes []string,
-	openParens []string,
-	closeParens []string,
-	indexedPlaceholderTypes []string,
-	namedPlaceholderTypes []string,
-	lineCommentTypes []string,
-	specialWordChars []string,
-) TokenizerConfig {
-	return TokenizerConfig{
-		ReservedWords:                 reservedWords,
-		ReservedTopLevelWords:         reservedTopLevelWords,
-		ReservedNewlineWords:          reservedNewlineWords,
-		ReservedTopLevelWordsNoIndent: reservedTopLevelWordsNoIndent,
-		StringTypes:                   stringTypes,
-		OpenParens:                    openParens,
-		CloseParens:                   closeParens,
-		IndexedPlaceholderTypes:       indexedPlaceholderTypes,
-		NamedPlaceholderTypes:         namedPlaceholderTypes,
-		LineCommentTypes:              lineCommentTypes,
-		SpecialWordChars:              specialWordChars,
-	}
-}
-
 type ColorConfig struct {
 	ReservedWordFormatOptions []ANSIFormatOption
 	StringFormatOptions       []ANSIFormatOption
@@ -102,8 +87,8 @@ type ColorConfig struct {
 	FunctionCallFormatOptions []ANSIFormatOption
 }
 
-func NewDefaultColorConfig() ColorConfig {
-	return ColorConfig{
+func NewDefaultColorConfig() *ColorConfig {
+	return &ColorConfig{
 		ReservedWordFormatOptions: []ANSIFormatOption{ColorCyan, FormatBold},
 		StringFormatOptions:       []ANSIFormatOption{ColorGreen},
 		NumberFormatOptions:       []ANSIFormatOption{ColorBrightBlue},

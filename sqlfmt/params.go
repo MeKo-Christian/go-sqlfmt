@@ -4,12 +4,21 @@ import "strconv"
 
 // params handles placeholder replacement with given parameters
 type params struct {
-	params Params
+	params *Params
 	index  int
 }
 
 // newParams creates a new params object
-func newParams(p Params) *params {
+func newParams(p *Params) *params {
+	if p == nil {
+		p = &Params{}
+	}
+	if p.MapParams == nil {
+		p.MapParams = make(map[string]string)
+	}
+	if p.ListParams == nil {
+		p.ListParams = make([]string, 0)
+	}
 	return &params{
 		params: p,
 		index:  0,

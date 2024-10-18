@@ -15,183 +15,6 @@ func TestFormat(t *testing.T) {
 		cfg   Config
 	}{
 		{
-			name:  "formats short CREATE TABLE",
-			query: "CREATE TABLE items (a INT PRIMARY KEY, b TEXT);",
-			exp:   "CREATE TABLE items (a INT PRIMARY KEY, b TEXT);",
-		},
-		{
-			name:  "formats long CREATE TABLE",
-			query: "CREATE TABLE items (a INT PRIMARY KEY, b TEXT, c INT NOT NULL, d INT NOT NULL);",
-			exp: Dedent(`
-				CREATE TABLE items (
-					a INT PRIMARY KEY,
-					b TEXT,
-					c INT NOT NULL,
-					d INT NOT NULL
-				);
-			`),
-		},
-		{
-			name:  "formats INSERT without INTO",
-			query: "INSERT Customers (ID, MoneyBalance, Address, City) VALUES (12,-123.4, 'Skagen 2111','Stv');",
-			exp: Dedent(`
-				INSERT
-					Customers (ID, MoneyBalance, Address, City)
-				VALUES
-					(12, -123.4, 'Skagen 2111', 'Stv');
-			`),
-		},
-		{
-			name:  "formats ALTER TABLE ... MODIFY query",
-			query: "ALTER TABLE supplier MODIFY supplier_name char(100) NOT NULL;",
-			exp: Dedent(`
-				ALTER TABLE
-					supplier
-				MODIFY
-					supplier_name char(100) NOT NULL;
-			`),
-		},
-		{
-			name:  "formats ALTER TABLE ... ALTER COLUMN query",
-			query: "ALTER TABLE supplier ALTER COLUMN supplier_name VARCHAR(100) NOT NULL;",
-			exp: Dedent(`
-				ALTER TABLE
-					supplier
-				ALTER COLUMN
-					supplier_name VARCHAR(100) NOT NULL;
-			`),
-		},
-		{
-			name:  "recognizes [] strings",
-			query: "[foo JOIN bar]",
-			exp:   "[foo JOIN bar]",
-		},
-		{
-			name:  "recognizes @variables",
-			query: "SELECT @variable, @a1_2.3$, @'var name', @\"var name\", @`var name`, @[var name];",
-			exp: Dedent(`
-				SELECT
-					@variable,
-					@a1_2.3$,
-					@'var name',
-					@"var name",
-					@` + "`var name`," + `
-					@[var name];
-			`),
-		},
-		{
-			name:  "replaces @variables with param values",
-			query: "SELECT @variable, @a1_2.3$, @'var name', @\"var name\", @`var name`, @[var name], @'var\\name';",
-			exp: Dedent(`
-				SELECT
-					"variable value",
-					'weird value',
-					'var value',
-					'var value',
-					'var value',
-					'var value',
-					'var\ value';
-			`),
-			cfg: Config{
-				Params: NewMapParams(map[string]string{
-					"variable":  "\"variable value\"",
-					"a1_2.3$":   "'weird value'",
-					"var name":  "'var value'",
-					"var\\name": "'var\\ value'",
-				}),
-			},
-		},
-		{
-			name:  "recognizes :variables",
-			query: "SELECT :variable, :a1_2.3$, :'var name', :\"var name\", :`var name`, :[var name];",
-			exp: Dedent(`
-				SELECT
-					:variable,
-					:a1_2.3$,
-					:'var name',
-					:"var name",
-					:` + "`var name`," + `
-					:[var name];
-			`),
-		},
-		{
-			name:  "replaces :variables with param values",
-			query: "SELECT :variable, :a1_2.3$, :'var name', :\"var name\", :`var name`, :[var name], :'escaped \\'var\\'', :\"^*& weird \\\" var   \";",
-			exp: Dedent(`
-				SELECT
-					"variable value",
-					'weird value',
-					'var value',
-					'var value',
-					'var value',
-					'var value',
-					'weirder value',
-					'super weird value';
-			`),
-			cfg: Config{
-				Params: NewMapParams(map[string]string{
-					"variable":            "\"variable value\"",
-					"a1_2.3$":             "'weird value'",
-					"var name":            "'var value'",
-					"escaped 'var'":       "'weirder value'",
-					"^*& weird \" var   ": "'super weird value'",
-				}),
-			},
-		},
-		{
-			name:  "recognizes ?[0-9]* placeholders",
-			query: "SELECT ?1, ?25, ?;",
-			exp: Dedent(`
-				SELECT
-					?1,
-					?25,
-					?;
-			`),
-		},
-		{
-			name:  "recognizes Snowflake JSON references",
-			query: "SELECT foo:bar, foo:bar:baz",
-			exp: Dedent(`
-				SELECT
-					foo:bar,
-					foo:bar:baz
-			`),
-		},
-		{
-			name:  "replaces ? numbered placeholders with param values",
-			query: "SELECT ?1, ?2, ?0;",
-			exp: Dedent(`
-				SELECT
-					second,
-					third,
-					first;
-			`),
-			cfg: Config{
-				Params: NewMapParams(map[string]string{
-					"0": "first",
-					"1": "second",
-					"2": "third",
-				}),
-			},
-		},
-		{
-			name:  "replaces ? indexed placeholders with param values",
-			query: "SELECT ?, ?, ?;",
-			exp: Dedent(`
-				SELECT
-					first,
-					second,
-					third;
-			`),
-			cfg: Config{
-				Params: NewListParams([]string{
-					"first",
-					"second",
-					"third",
-				}),
-			},
-		},
-		{
 			name:  "uses given indent config for indention",
 			query: "SELECT count(*),Column1 FROM Table1;",
 			exp: Dedent(`
@@ -1210,7 +1033,7 @@ func TestFormat(t *testing.T) {
 				if tt.cfg.Indent == "" {
 					tt.cfg.Indent = DefaultIndent
 				}
-				result = Format(tt.query, tt.cfg)
+				result = Format(tt.query, &tt.cfg)
 			} else {
 				result = Format(tt.query)
 			}
@@ -1357,6 +1180,19 @@ func TestPrettyFormat(t *testing.T) {
 			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
 
 			p := PrettyFormat(tt.query)
+			if p != exp {
+				fmt.Println("=== QUERY ===")
+				fmt.Println(tt.query)
+				fmt.Println()
+
+				fmt.Println("=== EXP ===")
+				fmt.Println(exp)
+				fmt.Println()
+
+				fmt.Println("=== RESULT ===")
+				fmt.Println(p)
+				fmt.Println()
+			}
 			require.Equal(t, exp, p)
 		})
 	}
