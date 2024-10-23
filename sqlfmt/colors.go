@@ -59,17 +59,6 @@ const (
 	BgColorBrightWhite  ANSIFormatOption = "\033[107m"
 )
 
-var (
-	rainbowFormatOptions = []ANSIFormatOption{
-		ColorRed,
-		ColorOrange,
-		ColorYellow,
-		ColorGreen,
-		ColorBlue,
-		ColorPurple,
-	}
-)
-
 func addANSIFormats(options []ANSIFormatOption, s string) string {
 	for _, o := range options {
 		s = addANSIFormat(o, s)
@@ -77,6 +66,8 @@ func addANSIFormats(options []ANSIFormatOption, s string) string {
 	return s
 }
 
+// addANSIFormat adds the formatting option to the beginning of each line
+// in the given string, and the reset option to the end of each line.
 func addANSIFormat(option ANSIFormatOption, s string) string {
 	if option == NoFormatting {
 		return s

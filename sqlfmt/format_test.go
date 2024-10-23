@@ -1060,37 +1060,37 @@ func TestFormat(t *testing.T) {
 	}
 }
 
-func TestPrettyFormat(t *testing.T) {
+func TestPrettyPrint(t *testing.T) {
 	q := Dedent(`
         WITH expr_0 AS (
-			SELECT
-				'foo' AS db, -- inline comment
-				'foo' AS another,
+            SELECT
+                'foo' AS db, -- inline comment
+                'foo' AS another,
                 COUNT_ME(*) AS count,
-				true AS bool,
-				TRUE as tuk,
+                true AS bool,
+                TRUE as tuk,
                 false AS bool2,
                 8 AS number,
                 6.8 AS number2,
-				"hi"::int,
+                "hi"::int,
                 obj:subfield,
-			FROM
+            FROM
                 /*
                  * block comment
                  */
-				foo
-		),
+                foo
+        ),
         SELECT
-			*,
+            *,
             3 + (4-5) AS that,
-		FROM
-			expr_0
-	`)
+        FROM
+            expr_0
+    `)
 
 	PrettyPrint(q)
-	println()
-	fmt.Println(Format(q))
+}
 
+func TestPrettyFormat(t *testing.T) {
 	tests := []struct {
 		name  string
 		query string
@@ -1195,5 +1195,17 @@ func TestPrettyFormat(t *testing.T) {
 			}
 			require.Equal(t, exp, p)
 		})
+	}
+}
+
+func BenchmarkFormat(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Format(`SELECT foo AS a, boo AS b FROM table WHERE foo = bar LIMIT 10`)
+	}
+}
+
+func BenchmarkPrettyFormat(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		PrettyFormat(`SELECT foo AS a, boo AS b FROM table WHERE foo = bar LIMIT 10`)
 	}
 }

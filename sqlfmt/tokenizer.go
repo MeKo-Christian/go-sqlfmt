@@ -111,7 +111,7 @@ func createPlaceholderRegex(types []string, pattern string) *regexp.Regexp {
 	}
 	esc := make([]string, 0, len(types))
 	for _, t := range types {
-		esc = append(esc, escapeRegExp(t))
+		esc = append(esc, regexp.QuoteMeta(t))
 	}
 	typesRegex := strings.Join(esc, `|`)
 	return regexp.MustCompile(`^((?:` + typesRegex + `)(?:` + pattern + `))`)
@@ -212,17 +212,9 @@ func (t *tokenizer) getIndexedPlaceholderToken(input string) token {
 	return tok
 }
 
-// TODO: replace with QuoteMeta
-// escapeRegExp escapes special characters in a string for use in a regular expression
-func escapeRegExp(s string) string {
-	// Special characters to be escaped in regular expressions
-	re := regexp.MustCompile(`[.*+?^${}()|[\]\\]`)
-	return re.ReplaceAllString(s, `\$0`)
-}
-
 func (t *tokenizer) getEscapedPlaceholderKey(key string, quoteChar string) string {
 	// Create a regex to match the quote character
-	escapedQuote := escapeRegExp("\\" + quoteChar)
+	escapedQuote := regexp.QuoteMeta("\\" + quoteChar)
 	re := regexp.MustCompile(escapedQuote)
 
 	// Replace the quoteChar with quoteChar
@@ -237,24 +229,11 @@ func (t *tokenizer) getOperatorToken(input string) token {
 	return t.getTokenOnFirstMatch(input, tokenTypeOperator, t.operatorRegex)
 }
 
-//	getReservedWordToken(input, previousToken) {
-//	  // A reserved word cannot be preceded by a "."
-//	  // this makes it so in "my_table.from", "from" is not considered a reserved word
-//	  if (previousToken && previousToken.value && previousToken.value === '.') {
-//	    return;
-//	  }
-//	  return (
-//	    this.getTopLevelReservedToken(input) ||
-//	    this.getNewlineReservedToken(input) ||
-//	    this.getTopLevelReservedTokenNoIndent(input) ||
-//	    this.getPlainReservedToken(input)
-//	  );
-//	}
 func (t *tokenizer) getReservedWordToken(input string, prevTok token) token {
 	// A reserved word cannot be preceded by a "."
 	// this makes it so in "my_table.from", "from" is not considered a reserved word
 	if !prevTok.empty() && prevTok.value == "." {
-		return token{} // TODO: this return value might be wrong
+		return token{}
 	}
 
 	return firstNonEmptyToken(
@@ -300,7 +279,7 @@ func (t *tokenizer) getTokenOnFirstMatch(input string, typ tokenType, re *regexp
 	matches := re.FindStringSubmatch(input)
 
 	if len(matches) > 0 {
-		return token{typ: typ, value: matches[0]} // TODO: might be matches[1]
+		return token{typ: typ, value: matches[0]}
 	}
 
 	return token{}

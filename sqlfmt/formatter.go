@@ -1,16 +1,22 @@
 package sqlfmt
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 )
 
-var limitKeywordRegex = regexp.MustCompile(`(?i)^LIMIT$`)
+var (
+	limitKeywordRegex              = regexp.MustCompile(`(?i)^LIMIT$`)
+	newLineFollowByWhitespaceRegex = regexp.MustCompile(`\n[ \t]*`)
+	atLeastOneWhitespaceRegex      = regexp.MustCompile(`\s+`)
+)
 
 // trimSpacesEnd removes trailing spaces and tabs from a string.
-func trimSpacesEnd(str string) string {
-	return strings.TrimRight(str, " \t")
+func trimSpacesEnd(b *strings.Builder) {
+	s := b.String()
+	s = strings.TrimRight(s, " \t")
+	b.Reset()
+	b.WriteString(s)
 }
 
 // formatter formats SQL queries for better readability.
@@ -53,13 +59,9 @@ func (f *formatter) format(query string) string {
 
 // getFormattedQueryFromTokens processes the tokens to create a formatted query.
 func (f *formatter) getFormattedQueryFromTokens() string {
-	// TODO: replace with string builder
-	formattedQuery := ""
+	formattedQuery := &strings.Builder{}
 
 	for i, tok := range f.tokens {
-		if tok.typ != tokenTypeWhitespace {
-			fmt.Println(tok.typ, tok.value)
-		}
 		f.index = i
 
 		if f.tokenOverride != nil {
@@ -70,100 +72,106 @@ func (f *formatter) getFormattedQueryFromTokens() string {
 		case tokenTypeWhitespace:
 			// Ignore whitespace
 		case tokenTypeLineComment:
-			formattedQuery = f.formatLineComment(tok, formattedQuery)
+			f.formatLineComment(tok, formattedQuery)
 		case tokenTypeBlockComment:
-			formattedQuery = f.formatBlockComment(tok, formattedQuery)
+			f.formatBlockComment(tok, formattedQuery)
 		case tokenTypeReservedTopLevel:
-			formattedQuery = f.formatTopLevelReservedWord(tok, formattedQuery)
+			f.formatTopLevelReservedWord(tok, formattedQuery)
 			f.previousReservedWord = tok
 		case tokenTypeReservedTopLevelNoIndent:
-			formattedQuery = f.formatTopLevelReservedWordNoIndent(tok, formattedQuery)
+			f.formatTopLevelReservedWordNoIndent(tok, formattedQuery)
 			f.previousReservedWord = tok
 		case tokenTypeReservedNewline:
-			formattedQuery = f.formatNewlineReservedWord(tok, formattedQuery)
+			f.formatNewlineReservedWord(tok, formattedQuery)
 			f.previousReservedWord = tok
 		case tokenTypeReserved:
-			formattedQuery = f.formatWithSpaces(tok, formattedQuery)
+			f.formatWithSpaces(tok, formattedQuery)
 			f.previousReservedWord = tok
 		case tokenTypeOpenParen:
-			formattedQuery = f.formatOpeningParentheses(tok, formattedQuery)
+			f.formatOpeningParentheses(tok, formattedQuery)
 		case tokenTypeCloseParen:
-			formattedQuery = f.formatClosingParentheses(tok, formattedQuery)
+			f.formatClosingParentheses(tok, formattedQuery)
 		case tokenTypeWord, tokenTypePlaceholder:
 			if f.nextToken().typ == tokenTypePlaceholder {
-				formattedQuery += tok.value
+				formattedQuery.WriteString(tok.value)
 			} else if tok.typ == tokenTypePlaceholder {
-				formattedQuery = f.formatPlaceholder(tok, formattedQuery)
+				f.formatPlaceholder(tok, formattedQuery)
 			} else {
-				formattedQuery = f.formatWithSpaces(tok, formattedQuery)
+				f.formatWithSpaces(tok, formattedQuery)
 			}
 		case tokenTypeString:
-			formattedQuery = f.formatString(tok, formattedQuery)
+			f.formatString(tok, formattedQuery)
 		case tokenTypeNumber:
-			formattedQuery = f.formatNumber(tok, formattedQuery)
+			f.formatNumber(tok, formattedQuery)
 		case tokenTypeBoolean:
-			formattedQuery = f.formatBoolean(tok, formattedQuery)
+			f.formatBoolean(tok, formattedQuery)
 		default:
 			switch tok.value {
 			case ",":
-				formattedQuery = f.formatComma(tok, formattedQuery)
+				f.formatComma(tok, formattedQuery)
 			case ":":
-				formattedQuery = f.formatWithSpaceAfter(tok, formattedQuery)
+				f.formatWithSpaceAfter(tok, formattedQuery)
 			case ".":
-				formattedQuery = f.formatWithoutSpaceAfter(tok, formattedQuery)
+				f.formatWithoutSpaceAfter(tok, formattedQuery)
 			case ";":
-				formattedQuery = f.formatQuerySeparator(tok, formattedQuery)
+				f.formatQuerySeparator(tok, formattedQuery)
 			default:
-				formattedQuery = f.formatWithSpaces(tok, formattedQuery)
+				f.formatWithSpaces(tok, formattedQuery)
 			}
 		}
 	}
-	return formattedQuery
+	return formattedQuery.String()
 }
 
-func (f *formatter) formatLineComment(tok token, query string) string {
+func (f *formatter) formatLineComment(tok token, query *strings.Builder) {
 	value := tok.value
 	value = addANSIFormats(f.cfg.ColorConfig.CommentFormatOptions, value)
-	return f.addNewline(query + value)
+	query.WriteString(value)
+	f.addNewline(query)
 }
 
-func (f *formatter) formatBlockComment(tok token, query string) string {
+func (f *formatter) formatBlockComment(tok token, query *strings.Builder) {
 	value := tok.value
 	value = f.indentComment(value)
 	value = addANSIFormats(f.cfg.ColorConfig.CommentFormatOptions, value)
-	return f.addNewline(f.addNewline(query) + value)
+	f.addNewline(query)
+	query.WriteString(value)
+	f.addNewline(query)
 }
 
 func (f *formatter) indentComment(comment string) string {
-	return regexp.MustCompile(`\n[ \t]*`).ReplaceAllString(comment, "\n"+f.indentation.getIndent()+" ")
+	return newLineFollowByWhitespaceRegex.ReplaceAllString(comment, "\n"+f.indentation.getIndent()+" ")
 }
 
-func (f *formatter) formatTopLevelReservedWordNoIndent(tok token, query string) string {
+func (f *formatter) formatTopLevelReservedWordNoIndent(tok token, query *strings.Builder) {
 	f.indentation.decreaseTopLevel()
-	query = f.addNewline(query) + f.equalizeWhitespace(f.formatReservedWord(tok.value))
-	return f.addNewline(query)
+	f.addNewline(query)
+	query.WriteString(f.equalizeWhitespace(f.formatReservedWord(tok.value)))
+	f.addNewline(query)
 }
 
-func (f *formatter) formatTopLevelReservedWord(tok token, query string) string {
+func (f *formatter) formatTopLevelReservedWord(tok token, query *strings.Builder) {
 	f.indentation.decreaseTopLevel()
-	query = f.addNewline(query)
+	f.addNewline(query)
 
 	f.indentation.increaseTopLevel()
-	query += f.equalizeWhitespace(f.formatReservedWord(tok.value))
+	query.WriteString(f.equalizeWhitespace(f.formatReservedWord(tok.value)))
 
-	return f.addNewline(query)
+	f.addNewline(query)
 }
 
-func (f *formatter) formatNewlineReservedWord(tok token, query string) string {
-	return f.addNewline(query) + f.equalizeWhitespace(f.formatReservedWord(tok.value)) + " "
+func (f *formatter) formatNewlineReservedWord(tok token, query *strings.Builder) {
+	f.addNewline(query)
+	query.WriteString(f.equalizeWhitespace(f.formatReservedWord(tok.value)))
+	query.WriteString(" ")
 }
 
 // equalizeWhitespace replaces any sequence of whitespace characters with a single space.
 func (f *formatter) equalizeWhitespace(s string) string {
-	return regexp.MustCompile(`\s+`).ReplaceAllString(s, " ")
+	return atLeastOneWhitespaceRegex.ReplaceAllString(s, " ")
 }
 
-func (f *formatter) formatOpeningParentheses(tok token, query string) string {
+func (f *formatter) formatOpeningParentheses(tok token, query *strings.Builder) {
 	preserveWhitespaceFor := map[tokenType]struct{}{
 		tokenTypeWhitespace:  {},
 		tokenTypeOpenParen:   {},
@@ -171,74 +179,82 @@ func (f *formatter) formatOpeningParentheses(tok token, query string) string {
 	}
 
 	if _, ok := preserveWhitespaceFor[f.previousToken().typ]; !ok {
-		query = trimSpacesEnd(query)
+		trimSpacesEnd(query)
 	}
 
 	value := tok.value
 	if f.cfg.Uppercase {
 		value = strings.ToUpper(value)
 	}
-	query += value
+	query.WriteString(value)
 
 	f.inlineBlock.beginIfPossible(f.tokens, f.index)
 	if !f.inlineBlock.isActive() {
 		f.indentation.increaseBlockLevel()
-		query = f.addNewline(query)
+		f.addNewline(query)
 	}
-	return query
 }
 
 // formatClosingParentheses ends an inline block if one is active, or decreases the
 // block level, then adds the closing paren.
-func (f *formatter) formatClosingParentheses(tok token, query string) string {
+func (f *formatter) formatClosingParentheses(tok token, query *strings.Builder) {
 	if f.cfg.Uppercase {
 		tok.value = strings.ToUpper(tok.value)
 	}
 
 	if f.inlineBlock.isActive() {
 		f.inlineBlock.end()
-		return f.formatWithSpaceAfter(tok, query)
+		f.formatWithSpaceAfter(tok, query)
 	} else {
 		f.indentation.decreaseBlockLevel()
-		return f.formatWithSpaces(tok, f.addNewline(query))
+		f.addNewline(query)
+		f.formatWithSpaces(tok, query)
 	}
 }
 
 // formatPlaceholder formats a placeholder by replacing it with a param value
 // from the cfg params and adds a space after.
-func (f *formatter) formatPlaceholder(tok token, query string) string {
-	return query + f.params.get(tok.key, tok.value) + " "
+func (f *formatter) formatPlaceholder(tok token, query *strings.Builder) {
+	query.WriteString(f.params.get(tok.key, tok.value))
+	query.WriteString(" ")
 }
 
 // formatComma adds the comma to the query and adds a space. If an inline block
 // is not active, it will add a new line too.
-func (f *formatter) formatComma(tok token, query string) string {
-	query = trimSpacesEnd(query) + tok.value + " "
+func (f *formatter) formatComma(tok token, query *strings.Builder) {
+	trimSpacesEnd(query)
+	query.WriteString(tok.value)
+	query.WriteString(" ")
 
 	if f.inlineBlock.isActive() {
-		return query
-	} else if limitKeywordRegex.MatchString(f.previousReservedWord.value) {
+		return
+	}
+	if limitKeywordRegex.MatchString(f.previousReservedWord.value) {
 		// avoids creating new lines after LIMIT keyword so that two limit items appear on one line for nicer formatting
-		return query
+		return
 	} else {
-		return f.addNewline(query)
+		f.addNewline(query)
 	}
 }
 
 // formatWithSpaceAfter returns the query with spaces trimmed off the end,
 // the token value, and a space (" ") at the end ("query value ")
-func (f *formatter) formatWithSpaceAfter(tok token, query string) string {
-	return trimSpacesEnd(query) + tok.value + " "
+func (f *formatter) formatWithSpaceAfter(tok token, query *strings.Builder) {
+	trimSpacesEnd(query)
+	query.WriteString(tok.value)
+	query.WriteString(" ")
 }
 
 // formatWithoutSpaceAfter returns the query with spaces trimmed off the end and
 // the token value ("query value")
-func (f *formatter) formatWithoutSpaceAfter(tok token, query string) string {
-	return trimSpacesEnd(query) + tok.value
+func (f *formatter) formatWithoutSpaceAfter(tok token, query *strings.Builder) {
+	trimSpacesEnd(query)
+	query.WriteString(tok.value)
 }
 
-// TODO: this can probably be replaced with formatWithSpaceAfter
-func (f *formatter) formatWithSpaces(tok token, query string) string {
+// formatWithSpaces returns the query with the value and a space added, plus
+// a few more special formatting items.
+func (f *formatter) formatWithSpaces(tok token, query *strings.Builder) {
 	value := tok.value
 	if tok.typ == tokenTypeReserved {
 		value = f.formatReservedWord(tok.value)
@@ -249,7 +265,8 @@ func (f *formatter) formatWithSpaces(tok token, query string) string {
 		value = addANSIFormats(f.cfg.ColorConfig.FunctionCallFormatOptions, value)
 	}
 
-	return query + value + " "
+	query.WriteString(value)
+	query.WriteString(" ")
 }
 
 // formatReservedWord makes sure the reserved word is formatted according to the Config.
@@ -261,38 +278,43 @@ func (f *formatter) formatReservedWord(value string) string {
 	return value
 }
 
-func (f *formatter) formatQuerySeparator(tok token, query string) string {
+func (f *formatter) formatQuerySeparator(tok token, query *strings.Builder) {
 	f.indentation.resetIndentation()
-	return trimSpacesEnd(query) + tok.value + strings.Repeat("\n", f.cfg.LinesBetweenQueries)
+	trimSpacesEnd(query)
+	query.WriteString(tok.value)
+	query.WriteString(strings.Repeat("\n", f.cfg.LinesBetweenQueries))
 }
 
-func (f *formatter) formatString(tok token, query string) string {
+func (f *formatter) formatString(tok token, query *strings.Builder) {
 	value := tok.value
 	value = addANSIFormats(f.cfg.ColorConfig.StringFormatOptions, value)
-	return query + value + " "
+	query.WriteString(value)
+	query.WriteString(" ")
 }
 
-func (f *formatter) formatNumber(tok token, query string) string {
+func (f *formatter) formatNumber(tok token, query *strings.Builder) {
 	value := tok.value
 	value = addANSIFormats(f.cfg.ColorConfig.NumberFormatOptions, value)
-	return query + value + " "
+	query.WriteString(value)
+	query.WriteString(" ")
 }
 
-func (f *formatter) formatBoolean(tok token, query string) string {
+func (f *formatter) formatBoolean(tok token, query *strings.Builder) {
 	value := tok.value
 	value = addANSIFormats(f.cfg.ColorConfig.BooleanFormatOptions, value)
-	return query + value + " "
+	query.WriteString(value)
+	query.WriteString(" ")
 }
 
 // addNewline trims spaces from the end of query, adds a new line character if
 // one does not already exist at the end, and adds the indentation to the new
 // line.
-func (f *formatter) addNewline(query string) string {
-	query = trimSpacesEnd(query)
-	if !strings.HasSuffix(query, "\n") {
-		query += "\n"
+func (f *formatter) addNewline(query *strings.Builder) {
+	trimSpacesEnd(query)
+	if !strings.HasSuffix(query.String(), "\n") {
+		query.WriteString("\n")
 	}
-	return query + f.indentation.getIndent()
+	query.WriteString(f.indentation.getIndent())
 }
 
 // previousToken peeks at the previous token in the formatters list of tokens with
