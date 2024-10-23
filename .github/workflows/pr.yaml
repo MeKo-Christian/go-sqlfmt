@@ -1,0 +1,35 @@
+name: Go Tests and Lint
+
+# This workflow runs on pull request events
+on:
+  pull_request:
+    branches:
+      - '*'
+
+env:
+  GO_VERSION: '1.23.2'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Run Go tests
+        run: go test -v ./...
+
+      - name: Run Go benchmarks
+        run: go test -bench=. ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54.2 # Specify the version
