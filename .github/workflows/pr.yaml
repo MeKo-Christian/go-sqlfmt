@@ -29,7 +29,7 @@ jobs:
       - name: Run Go benchmarks
         run: go test -bench=. ./...
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.54.2 # Specify the version
+          version: v1.60
