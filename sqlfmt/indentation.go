@@ -13,9 +13,8 @@ const (
 )
 
 type indentation struct {
-	indent             string
-	indentTypes        []indentType
-	rainbowIndentation bool
+	indent      string
+	indentTypes []indentType
 }
 
 func newIndentation(indent string) *indentation {
