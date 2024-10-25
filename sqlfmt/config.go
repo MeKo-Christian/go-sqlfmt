@@ -37,7 +37,42 @@ func NewDefaultConfig() *Config {
 	}
 }
 
-func (c Config) Empty() bool {
+func (c *Config) WithLang(lang Language) *Config {
+	c.Language = lang
+	return c
+}
+
+func (c *Config) WithIndent(indent string) *Config {
+	c.Indent = indent
+	return c
+}
+
+func (c *Config) WithUppercase() *Config {
+	c.Uppercase = true
+	return c
+}
+
+func (c *Config) WithLinesBetweenQueries(linesBetweenQueries int) *Config {
+	c.LinesBetweenQueries = linesBetweenQueries
+	return c
+}
+
+func (c *Config) WithParams(params *Params) *Config {
+	c.Params = params
+	return c
+}
+
+func (c *Config) WithColorConfig(config *ColorConfig) *Config {
+	c.ColorConfig = config
+	return c
+}
+
+func (c *Config) WithTokenizerConfig(config *TokenizerConfig) *Config {
+	c.TokenizerConfig = config
+	return c
+}
+
+func (c *Config) Empty() bool {
 	return reflect.DeepEqual(c, Config{})
 }
 
@@ -96,4 +131,13 @@ func NewDefaultColorConfig() *ColorConfig {
 		CommentFormatOptions:      []ANSIFormatOption{ColorGray},
 		FunctionCallFormatOptions: []ANSIFormatOption{ColorBrightCyan},
 	}
+}
+
+func (c *ColorConfig) Empty() bool {
+	return len(c.ReservedWordFormatOptions) == 0 &&
+		len(c.StringFormatOptions) == 0 &&
+		len(c.NumberFormatOptions) == 0 &&
+		len(c.BooleanFormatOptions) == 0 &&
+		len(c.CommentFormatOptions) == 0 &&
+		len(c.FunctionCallFormatOptions) == 0
 }
