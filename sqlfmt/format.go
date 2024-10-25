@@ -32,7 +32,7 @@ func getFormatter(forceWithColor bool, cfg ...*Config) Formatter {
 		panic("cannot have more than one config")
 	}
 
-	if forceWithColor {
+	if forceWithColor && (c.ColorConfig == nil || c.ColorConfig.Empty()) {
 		c.ColorConfig = NewDefaultColorConfig()
 	}
 

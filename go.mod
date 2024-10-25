@@ -1,6 +1,6 @@
-module github.com/maxrichie5/sqlfmt
+module github.com/maxrichie5/go-sqlfmt
 
-go 1.22.8
+go 1.23.2
 
 require github.com/stretchr/testify v1.9.0
 
