@@ -73,7 +73,7 @@ func (c *Config) WithTokenizerConfig(config *TokenizerConfig) *Config {
 }
 
 func (c *Config) Empty() bool {
-	return reflect.DeepEqual(c, Config{})
+	return reflect.DeepEqual(*c, Config{})
 }
 
 type Params struct {
