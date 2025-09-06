@@ -47,16 +47,16 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
 
 ## Phase 5: Type Cast Operator (::)
 
-- [ ] Implement cast operator support
-  - [ ] Recognize `::` as a special operator in tokenizer
-  - [ ] Add `::` to operator regex pattern
-  - [ ] Create special formatting rule for `::` (no spaces)
-  - [ ] Update `formatWithSpaces()` to handle `::` specially
-- [ ] Add type cast tests
-  - [ ] Test basic type casts (`expr::type`)
-  - [ ] Test complex type casts with functions
-  - [ ] Test array type casts
-  - [ ] Test chained operations with casts
+- [x] Implement cast operator support
+  - [x] Recognize `::` as a special operator in tokenizer
+  - [x] Add `::` to operator regex pattern
+  - [x] Create special formatting rule for `::` (no spaces)
+  - [x] Update `formatWithSpaces()` to handle `::` specially
+- [x] Add type cast tests
+  - [x] Test basic type casts (`expr::type`)
+  - [x] Test complex type casts with functions
+  - [x] Test array type casts
+  - [x] Test chained operations with casts
 
 ## Phase 6: JSON/JSONB Operators
 

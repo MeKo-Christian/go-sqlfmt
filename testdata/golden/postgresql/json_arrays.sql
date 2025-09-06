@@ -6,9 +6,9 @@ select
 from
   users
 where
-  data?'active'and(data ->> 'active') :: boolean = true
+  data?'active'and(data ->> 'active')::boolean = true
 order by
-(data ->> 'created_at') :: timestamp desc;
+(data ->> 'created_at')::timestamp desc;
 
 select
   name,

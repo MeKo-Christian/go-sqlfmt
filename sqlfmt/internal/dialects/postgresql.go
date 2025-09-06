@@ -2,6 +2,7 @@ package dialects
 
 import (
 	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/core"
+	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/types"
 )
 
 var (
@@ -40,7 +41,21 @@ func NewPostgreSQLTokenizerConfig() *TokenizerConfig {
 func (psf *PostgreSQLFormatter) Format(query string) string {
 	return core.FormatQuery(
 		psf.cfg,
-		nil,
+		psf.tokenOverride,
 		query,
 	)
+}
+
+// tokenOverride handles PostgreSQL-specific token formatting.
+func (psf *PostgreSQLFormatter) tokenOverride(tok types.Token, previousReservedWord types.Token) types.Token {
+	// Handle type cast operator :: - format without spaces (PostgreSQL convention)
+	if tok.Type == types.TokenTypeOperator && tok.Value == "::" {
+		// Create a new token with a modified type to handle special formatting
+		return types.Token{
+			Type:  types.TokenTypeSpecialOperator,
+			Value: tok.Value,
+			Key:   tok.Key,
+		}
+	}
+	return tok
 }

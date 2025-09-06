@@ -37,7 +37,7 @@ WHERE
 			input: "SELECT 'test'::text FROM users",
 			args:  []string{"--lang=postgresql", "-"},
 			expected: `SELECT
-  'test' :: text
+  'test'::text
 FROM
   users`,
 		},

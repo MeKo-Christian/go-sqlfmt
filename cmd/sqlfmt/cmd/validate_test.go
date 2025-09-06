@@ -35,7 +35,7 @@ func TestValidateCommand(t *testing.T) {
 		},
 		{
 			name:        "postgresql already formatted",
-			input:       "SELECT\n  'test' :: text\nFROM\n  users",
+			input:       "SELECT\n  'test'::text\nFROM\n  users",
 			args:        []string{"--lang=postgresql", "-"},
 			expectValid: true,
 		},

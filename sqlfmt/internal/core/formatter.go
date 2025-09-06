@@ -113,6 +113,8 @@ func (f *formatter) formatToken(tok types.Token, formattedQuery *strings.Builder
 		f.formatNumber(tok, formattedQuery)
 	case types.TokenTypeBoolean:
 		f.formatBoolean(tok, formattedQuery)
+	case types.TokenTypeSpecialOperator:
+		f.formatSpecialOperator(tok, formattedQuery)
 	default:
 		f.formatDefaultToken(tok, formattedQuery)
 	}
@@ -345,6 +347,12 @@ func (f *formatter) formatBoolean(tok types.Token, query *strings.Builder) {
 	value = utils.AddANSIFormats(f.cfg.ColorConfig.BooleanFormatOptions, value)
 	query.WriteString(value)
 	query.WriteString(" ")
+}
+
+func (f *formatter) formatSpecialOperator(tok types.Token, query *strings.Builder) {
+	// Special operators like :: (type cast) should be formatted without spaces
+	trimSpacesEnd(query)
+	query.WriteString(tok.Value)
 }
 
 // addNewline trims spaces from the end of query, adds a new line character if

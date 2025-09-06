@@ -29,8 +29,8 @@ type tokenizer struct {
 }
 
 func newTokenizer(cfg *TokenizerConfig) *tokenizer {
-	regex := `^(!=|<>|==|<=|>=|=>|!<|!>|\|\||::|->>|->|` +
-		`~~\*|~~|!~~\*|!~~|~\*|!~\*|!~|.)`
+	regex := `^(!=|<>|==|<=|>=|=>|!<|!>|\|\||::|->>|->|#>>|#>|` +
+		`\?\||\?&|\?|@>|<@|~~\*|~~|!~~\*|!~~|~\*|!~\*|!~|.)`
 	return &tokenizer{
 		whitespaceRegex:               regexp.MustCompile(`^(\s+)`),
 		numberRegex:                   regexp.MustCompile(`^((-\s*)?[0-9]+(\.[0-9]+)?|0x[0-9a-fA-F]+|0b[01]+)\b`),
@@ -201,6 +201,14 @@ func (t *tokenizer) getPlaceholderToken(input string) types.Token {
 }
 
 func (t *tokenizer) getIdentNamedPlaceholderToken(input string) types.Token {
+	// Don't match @ if it's part of @> or <@ JSON operators
+	if len(input) >= 2 && input[0] == '@' && input[1] == '>' {
+		return types.Token{}
+	}
+	if len(input) >= 2 && input[0] == '<' && input[1] == '@' {
+		return types.Token{}
+	}
+	
 	tok := t.getTokenOnFirstMatch(input, types.TokenTypePlaceholder, t.identNamedPlaceholderRegex)
 	if tok.Value != "" {
 		tok.Key = tok.Value[1:] // Remove the first character
@@ -209,6 +217,18 @@ func (t *tokenizer) getIdentNamedPlaceholderToken(input string) types.Token {
 }
 
 func (t *tokenizer) getStringNamedPlaceholderToken(input string) types.Token {
+	// Don't match @ if it's part of @> or <@ JSON operators
+	if len(input) >= 2 && input[0] == '@' && input[1] == '>' {
+		return types.Token{}
+	}
+	if len(input) >= 2 && input[0] == '<' && input[1] == '@' {
+		return types.Token{}
+	}
+	// Don't match ? if it's part of ?|, ?& JSON existence operators  
+	if len(input) >= 2 && input[0] == '?' && (input[1] == '|' || input[1] == '&') {
+		return types.Token{}
+	}
+	
 	tok := t.getTokenOnFirstMatch(input, types.TokenTypePlaceholder, t.stringNamedPlaceholderRegex)
 	if tok.Value != "" {
 		l := len(tok.Value)
@@ -218,6 +238,11 @@ func (t *tokenizer) getStringNamedPlaceholderToken(input string) types.Token {
 }
 
 func (t *tokenizer) getIndexedPlaceholderToken(input string) types.Token {
+	// Don't match ? if it's part of ?|, ?& JSON existence operators
+	if len(input) >= 2 && input[0] == '?' && (input[1] == '|' || input[1] == '&') {
+		return types.Token{}
+	}
+	
 	tok := t.getTokenOnFirstMatch(input, types.TokenTypePlaceholder, t.indexedPlaceholderRegex)
 	if tok.Value != "" {
 		// Remove the first character so ?2 becomes 2
@@ -279,7 +304,26 @@ func (t *tokenizer) getBooleanToken(input string) types.Token {
 }
 
 func (t *tokenizer) getWordToken(input string) types.Token {
-	return t.getTokenOnFirstMatch(input, types.TokenTypeWord, t.wordRegex)
+	// Don't match single @ if it's part of @> JSON operator
+	if len(input) >= 2 && input[0] == '@' && input[1] == '>' {
+		return types.Token{}
+	}
+	// Don't match single ? if it's part of ?|, ?& JSON operators
+	if len(input) >= 2 && input[0] == '?' && (input[1] == '|' || input[1] == '&') {
+		return types.Token{}
+	}
+	
+	tok := t.getTokenOnFirstMatch(input, types.TokenTypeWord, t.wordRegex)
+	
+	// Additional check: if we matched a single @ or ?, and it's followed by operator chars, skip
+	if tok.Value == "@" && len(input) >= 2 && input[1] == '>' {
+		return types.Token{}
+	}
+	if tok.Value == "?" && len(input) >= 2 && (input[1] == '|' || input[1] == '&') {
+		return types.Token{}
+	}
+	
+	return tok
 }
 
 // getTokenOnFirstMatch uses the regex re to search for string submatches in input.

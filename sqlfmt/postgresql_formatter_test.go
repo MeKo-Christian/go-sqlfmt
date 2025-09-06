@@ -435,6 +435,301 @@ func TestPostgreSQLFormatter_ParameterSubstitution(t *testing.T) {
 	})
 }
 
+func TestPostgreSQLFormatter_TypeCasts(t *testing.T) {
+	t.Run("formats basic type casts", func(t *testing.T) {
+		query := "SELECT id::integer, name::text FROM users;"
+		exp := Dedent(`
+            SELECT
+              id::integer,
+              name::text
+            FROM
+              users;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats complex type casts with functions", func(t *testing.T) {
+		query := "SELECT json_data::jsonb->>'key'::text, UPPER(name)::varchar(50) FROM users;"
+		exp := Dedent(`
+            SELECT
+              json_data::jsonb ->> 'key'::text,
+              UPPER(name)::varchar(50)
+            FROM
+              users;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats array type casts", func(t *testing.T) {
+		query := "SELECT ARRAY[1,2,3]::integer[], tags::text[] FROM posts;"
+		exp := Dedent(`
+            SELECT
+              ARRAY[1,
+              2,
+              3 ]::integer[],
+              tags::text[]
+            FROM
+              posts;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats chained operations with casts", func(t *testing.T) {
+		query := "SELECT (price * 1.1)::numeric(10,2), LENGTH(description::text)::integer FROM products;"
+		exp := Dedent(`
+            SELECT
+              (price * 1.1)::numeric(10, 2),
+              LENGTH(description::text)::integer
+            FROM
+              products;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats date/time casts", func(t *testing.T) {
+		query := `SELECT created_at::date, updated_at::timestamp, '2023-01-01'::date FROM events ` +
+			`WHERE created_at::date = '2023-01-01'::date;`
+		exp := Dedent(`
+            SELECT
+              created_at::date,
+              updated_at::timestamp,
+              '2023-01-01'::date
+            FROM
+              events
+            WHERE
+              created_at::date = '2023-01-01'::date;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats nested casts and complex expressions", func(t *testing.T) {
+		query := "SELECT ((data->>'count')::integer * 2)::text, COALESCE(value::numeric, 0)::integer FROM analytics;"
+		exp := Dedent(`
+            SELECT
+              ((data ->> 'count')::integer * 2)::text,
+              COALESCE(value::numeric, 0)::integer
+            FROM
+              analytics;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats casts in WHERE clauses", func(t *testing.T) {
+		query := `SELECT * FROM users WHERE id::text LIKE '%5%' ` +
+			`AND created_at::date BETWEEN '2023-01-01'::date AND '2023-12-31'::date;`
+		exp := Dedent(`
+            SELECT
+              *
+            FROM
+              users
+            WHERE
+              id::text LIKE '%5%'
+              AND created_at::date BETWEEN '2023-01-01'::date
+              AND '2023-12-31'::date;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats casts with custom types", func(t *testing.T) {
+		query := "SELECT location::geography, status::user_status_enum, metadata::custom_type FROM users;"
+		exp := Dedent(`
+            SELECT
+              location::geography,
+              status::user_status_enum,
+              metadata::custom_type
+            FROM
+              users;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles cast operator mixed with other PostgreSQL operators", func(t *testing.T) {
+		query := `SELECT data::jsonb->>'key', data::jsonb->'array'->0::text, ` +
+			`tags::text[] @> ARRAY['tag1']::text[] FROM posts;`
+		exp := Dedent(`
+            SELECT
+              data::jsonb ->> 'key',
+              data::jsonb -> 'array' -> 0::text,
+              tags::text[] @> ARRAY['tag1']::text[]
+            FROM
+              posts;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+}
+
+func TestPostgreSQLFormatter_JSONOperators(t *testing.T) {
+	t.Run("formats JSON path extraction operators", func(t *testing.T) {
+		query := "SELECT data->'name', data->>'email', info->'address'->>'city' FROM users;"
+		exp := Dedent(`
+            SELECT
+              data -> 'name',
+              data ->> 'email',
+              info -> 'address' ->> 'city'
+            FROM
+              users;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats JSONB path operators", func(t *testing.T) {
+		query := "SELECT data#>'{name,first}', data#>>'{contact,email}' FROM profiles;"
+		exp := Dedent(`
+            SELECT
+              data #> '{name,first}',
+              data #>> '{contact,email}'
+            FROM
+              profiles;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats JSONB containment operators", func(t *testing.T) {
+		query := "SELECT * FROM products WHERE tags @> '[\"electronics\"]' AND price <@ '[100, 200]';"
+		exp := Dedent(`
+            SELECT
+              *
+            FROM
+              products
+            WHERE
+              tags @> '["electronics"]'
+              AND price <@ '[100, 200]';
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats JSONB existence operators", func(t *testing.T) {
+		query := "SELECT * FROM docs WHERE data ? 'key1' AND data ?| array['key2','key3'] AND data ?& array['req1','req2'];"
+		exp := Dedent(`
+            SELECT
+              *
+            FROM
+              docs
+            WHERE
+              data ? 'key1'
+              AND data ?| array['key2',
+              'key3' ]
+              AND data ?& array['req1',
+              'req2' ];
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats complex nested JSON operations", func(t *testing.T) {
+		query := "SELECT users.id, profile.data->'settings'->>'theme', metadata#>'{tags,0}' FROM users JOIN profiles profile ON users.id = profile.user_id WHERE profile.data @> '{\"active\": true}' AND metadata ? 'priority';"
+		exp := Dedent(`
+            SELECT
+              users.id,
+              profile.data -> 'settings' ->> 'theme',
+              metadata #> '{tags,0}'
+            FROM
+              users
+              JOIN profiles profile ON users.id = profile.user_id
+            WHERE
+              profile.data @> '{"active": true}'
+              AND metadata ? 'priority';
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats JSON operators with type casts", func(t *testing.T) {
+		query := "SELECT (data->>'count')::integer, (info#>>'{price,amount}')::numeric(10,2) FROM items;"
+		exp := Dedent(`
+            SELECT
+              (data ->> 'count')::integer,
+              (info #>> '{price,amount}')::numeric(10, 2)
+            FROM
+              items;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats JSON operations in WHERE clauses", func(t *testing.T) {
+		query := "UPDATE users SET data = data || '{\"updated\": true}' WHERE data->>'status' = 'active' AND settings @> '{\"notifications\": true}';"
+		exp := Dedent(`
+            UPDATE
+              users
+            SET
+              data = data || '{"updated": true}'
+            WHERE
+              data ->> 'status' = 'active'
+              AND settings @> '{"notifications": true}';
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats JSON array operations", func(t *testing.T) {
+		query := "SELECT array_data->0, array_data#>'{0,name}', tags[1], items @> '[{\"type\": \"book\"}]' FROM collections;"
+		exp := Dedent(`
+            SELECT
+              array_data -> 0,
+              array_data #> '{0,name}',
+              tags[1],
+              items @> '[{"type": "book"}]'
+            FROM
+              collections;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats mixed JSON and SQL operations", func(t *testing.T) {
+		query := "SELECT CASE WHEN data ? 'premium' THEN data->>'premium_feature' ELSE 'standard' END, LENGTH(info#>>'{description}') FROM accounts WHERE created_at > '2023-01-01' AND (settings @> '{\"beta\": true}' OR data->>'tier' = 'pro');"
+		exp := Dedent(`
+            SELECT
+              CASE
+                WHEN data ? 'premium' THEN data ->> 'premium_feature'
+                ELSE 'standard'
+              END,
+              LENGTH(info #>> '{description}')
+            FROM
+              accounts
+            WHERE
+              created_at > '2023-01-01'
+              AND (
+                settings @> '{"beta": true}'
+                OR data ->> 'tier' = 'pro'
+              );
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+}
+
 func ExamplePostgreSQLFormatter_Format() {
 	cfg := NewDefaultConfig().WithLang(PostgreSQL)
 	formatter := NewPostgreSQLFormatter(cfg)

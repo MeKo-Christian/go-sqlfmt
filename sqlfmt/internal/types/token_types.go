@@ -22,6 +22,7 @@ const (
 	TokenTypeReservedTopLevelNoIndent TokenType = "reserved-top-level-no-indent"
 	TokenTypeReservedNewline          TokenType = "reserved-newline"
 	TokenTypeOperator                 TokenType = "operator"
+	TokenTypeSpecialOperator          TokenType = "special-operator"
 	TokenTypeOpenParen                TokenType = "open-paren"
 	TokenTypeCloseParen               TokenType = "close-paren"
 	TokenTypeLineComment              TokenType = "line-comment"
