@@ -1,10 +1,14 @@
 package sqlfmt
 
-import "fmt"
+import (
+	"fmt"
 
-type Formatter interface {
-	Format(query string) string
-}
+	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/core"
+	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/dialects"
+	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/utils"
+)
+
+type Formatter = dialects.Formatter
 
 // Format formats the SQL query according to an optional config.
 func Format(query string, cfg ...*Config) string {
@@ -40,16 +44,165 @@ func getFormatter(forceWithColor bool, cfg ...*Config) Formatter {
 }
 
 func createFormatterForLanguage(c *Config) Formatter {
-	switch c.Language {
-	case DB2:
-		return NewDB2Formatter(c)
-	case N1QL:
-		return NewN1QLFormatter(c)
-	case PLSQL:
-		return NewPLSQLFormatter(c)
-	case PostgreSQL:
-		return NewPostgreSQLFormatter(c)
-	default:
-		return NewStandardSQLFormatter(c)
+	// Convert public Config to internal core.Config
+	coreCfg := &core.Config{
+		Language:            core.Language(c.Language),
+		Indent:              c.Indent,
+		Uppercase:           c.Uppercase,
+		LinesBetweenQueries: c.LinesBetweenQueries,
+		Params:              convertParams(c.Params),
+		ColorConfig:         convertColorConfig(c.ColorConfig),
+		TokenizerConfig:     convertTokenizerConfig(c.TokenizerConfig),
+	}
+
+	return dialects.CreateFormatterForLanguage(coreCfg)
+}
+
+func convertParams(p *Params) *utils.ParamsConfig {
+	if p == nil {
+		return nil
+	}
+	return &utils.ParamsConfig{
+		MapParams:  p.MapParams,
+		ListParams: p.ListParams,
+	}
+}
+
+func convertColorConfig(cc *ColorConfig) *core.ColorConfig {
+	if cc == nil {
+		return nil
+	}
+	return &core.ColorConfig{
+		ReservedWordFormatOptions: cc.ReservedWordFormatOptions,
+		StringFormatOptions:       cc.StringFormatOptions,
+		NumberFormatOptions:       cc.NumberFormatOptions,
+		BooleanFormatOptions:      cc.BooleanFormatOptions,
+		CommentFormatOptions:      cc.CommentFormatOptions,
+		FunctionCallFormatOptions: cc.FunctionCallFormatOptions,
+	}
+}
+
+func convertTokenizerConfig(tc *TokenizerConfig) *core.TokenizerConfig {
+	if tc == nil {
+		return nil
+	}
+	return &core.TokenizerConfig{
+		ReservedWords:                 tc.ReservedWords,
+		ReservedTopLevelWords:         tc.ReservedTopLevelWords,
+		ReservedNewlineWords:          tc.ReservedNewlineWords,
+		ReservedTopLevelWordsNoIndent: tc.ReservedTopLevelWordsNoIndent,
+		StringTypes:                   tc.StringTypes,
+		OpenParens:                    tc.OpenParens,
+		CloseParens:                   tc.CloseParens,
+		IndexedPlaceholderTypes:       tc.IndexedPlaceholderTypes,
+		NamedPlaceholderTypes:         tc.NamedPlaceholderTypes,
+		LineCommentTypes:              tc.LineCommentTypes,
+		SpecialWordChars:              tc.SpecialWordChars,
+	}
+}
+
+// Dedent removes any common leading whitespace from every line in a block of text.
+// This function is provided for test compatibility.
+func Dedent(text string) string {
+	return utils.Dedent(text)
+}
+
+// Color constants - provided for test compatibility.
+const (
+	FormatReset = utils.FormatReset
+	FormatBold  = utils.FormatBold
+
+	ColorRed        = utils.ColorRed
+	ColorGreen      = utils.ColorGreen
+	ColorBlue       = utils.ColorBlue
+	ColorCyan       = utils.ColorCyan
+	ColorPurple     = utils.ColorPurple
+	ColorGray       = utils.ColorGray
+	ColorBrightBlue = utils.ColorBrightBlue
+	ColorBrightCyan = utils.ColorBrightCyan
+)
+
+func convertToInternalConfig(c *Config) *core.Config {
+	if c == nil {
+		c = NewDefaultConfig()
+	}
+	return &core.Config{
+		Language:            core.Language(c.Language),
+		Indent:              c.Indent,
+		Uppercase:           c.Uppercase,
+		LinesBetweenQueries: c.LinesBetweenQueries,
+		Params:              convertParams(c.Params),
+		ColorConfig:         convertColorConfig(c.ColorConfig),
+		TokenizerConfig:     convertTokenizerConfig(c.TokenizerConfig),
+	}
+}
+
+// NewStandardSQLFormatter creates a new standard SQL formatter.
+// This function is provided for test compatibility.
+func NewStandardSQLFormatter(cfg *Config) Formatter {
+	coreCfg := convertToInternalConfig(cfg)
+	return dialects.NewStandardSQLFormatter(coreCfg)
+}
+
+// NewDB2Formatter creates a new DB2 SQL formatter.
+// This function is provided for test compatibility.
+func NewDB2Formatter(cfg *Config) Formatter {
+	coreCfg := convertToInternalConfig(cfg)
+	return dialects.NewDB2Formatter(coreCfg)
+}
+
+// NewPostgreSQLFormatter creates a new PostgreSQL formatter.
+// This function is provided for test compatibility.
+func NewPostgreSQLFormatter(cfg *Config) Formatter {
+	coreCfg := convertToInternalConfig(cfg)
+	return dialects.NewPostgreSQLFormatter(coreCfg)
+}
+
+// NewPLSQLFormatter creates a new PL/SQL formatter.
+// This function is provided for test compatibility.
+func NewPLSQLFormatter(cfg *Config) Formatter {
+	coreCfg := convertToInternalConfig(cfg)
+	return dialects.NewPLSQLFormatter(coreCfg)
+}
+
+// NewN1QLFormatter creates a new N1QL formatter.
+// This function is provided for test compatibility.
+func NewN1QLFormatter(cfg *Config) Formatter {
+	coreCfg := convertToInternalConfig(cfg)
+	return dialects.NewN1QLFormatter(coreCfg)
+}
+
+// Tokenizer configuration functions - provided for test compatibility.
+func NewStandardSQLTokenizerConfig() *TokenizerConfig {
+	internal := dialects.NewStandardSQLTokenizerConfig()
+	return &TokenizerConfig{
+		ReservedWords:                 internal.ReservedWords,
+		ReservedTopLevelWords:         internal.ReservedTopLevelWords,
+		ReservedNewlineWords:          internal.ReservedNewlineWords,
+		ReservedTopLevelWordsNoIndent: internal.ReservedTopLevelWordsNoIndent,
+		StringTypes:                   internal.StringTypes,
+		OpenParens:                    internal.OpenParens,
+		CloseParens:                   internal.CloseParens,
+		IndexedPlaceholderTypes:       internal.IndexedPlaceholderTypes,
+		NamedPlaceholderTypes:         internal.NamedPlaceholderTypes,
+		LineCommentTypes:              internal.LineCommentTypes,
+		SpecialWordChars:              internal.SpecialWordChars,
+	}
+}
+
+func NewPostgreSQLTokenizerConfig() *TokenizerConfig {
+	internal := dialects.NewPostgreSQLTokenizerConfig()
+	return &TokenizerConfig{
+		ReservedWords:                 internal.ReservedWords,
+		ReservedTopLevelWords:         internal.ReservedTopLevelWords,
+		ReservedNewlineWords:          internal.ReservedNewlineWords,
+		ReservedTopLevelWordsNoIndent: internal.ReservedTopLevelWordsNoIndent,
+		StringTypes:                   internal.StringTypes,
+		OpenParens:                    internal.OpenParens,
+		CloseParens:                   internal.CloseParens,
+		IndexedPlaceholderTypes:       internal.IndexedPlaceholderTypes,
+		NamedPlaceholderTypes:         internal.NamedPlaceholderTypes,
+		LineCommentTypes:              internal.LineCommentTypes,
+		SpecialWordChars:              internal.SpecialWordChars,
 	}
 }

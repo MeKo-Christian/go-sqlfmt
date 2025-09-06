@@ -2,6 +2,8 @@ package sqlfmt
 
 import (
 	"reflect"
+
+	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/utils"
 )
 
 type Language string
@@ -115,22 +117,22 @@ type TokenizerConfig struct {
 }
 
 type ColorConfig struct {
-	ReservedWordFormatOptions []ANSIFormatOption
-	StringFormatOptions       []ANSIFormatOption
-	NumberFormatOptions       []ANSIFormatOption
-	BooleanFormatOptions      []ANSIFormatOption
-	CommentFormatOptions      []ANSIFormatOption
-	FunctionCallFormatOptions []ANSIFormatOption
+	ReservedWordFormatOptions []utils.ANSIFormatOption
+	StringFormatOptions       []utils.ANSIFormatOption
+	NumberFormatOptions       []utils.ANSIFormatOption
+	BooleanFormatOptions      []utils.ANSIFormatOption
+	CommentFormatOptions      []utils.ANSIFormatOption
+	FunctionCallFormatOptions []utils.ANSIFormatOption
 }
 
 func NewDefaultColorConfig() *ColorConfig {
 	return &ColorConfig{
-		ReservedWordFormatOptions: []ANSIFormatOption{ColorCyan, FormatBold},
-		StringFormatOptions:       []ANSIFormatOption{ColorGreen},
-		NumberFormatOptions:       []ANSIFormatOption{ColorBrightBlue},
-		BooleanFormatOptions:      []ANSIFormatOption{ColorPurple, FormatBold},
-		CommentFormatOptions:      []ANSIFormatOption{ColorGray},
-		FunctionCallFormatOptions: []ANSIFormatOption{ColorBrightCyan},
+		ReservedWordFormatOptions: []utils.ANSIFormatOption{utils.ColorCyan, utils.FormatBold},
+		StringFormatOptions:       []utils.ANSIFormatOption{utils.ColorGreen},
+		NumberFormatOptions:       []utils.ANSIFormatOption{utils.ColorBrightBlue},
+		BooleanFormatOptions:      []utils.ANSIFormatOption{utils.ColorPurple, utils.FormatBold},
+		CommentFormatOptions:      []utils.ANSIFormatOption{utils.ColorGray},
+		FunctionCallFormatOptions: []utils.ANSIFormatOption{utils.ColorBrightCyan},
 	}
 }
 

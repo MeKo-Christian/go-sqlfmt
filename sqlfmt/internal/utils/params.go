@@ -1,17 +1,23 @@
-package sqlfmt
+package utils
 
 import "strconv"
 
-// params handles placeholder replacement with given parameters.
-type params struct {
-	params *Params
+// ParamsConfig represents the public params configuration.
+type ParamsConfig struct {
+	MapParams  map[string]string
+	ListParams []string
+}
+
+// Params handles placeholder replacement with given parameters.
+type Params struct {
+	params *ParamsConfig
 	index  int
 }
 
-// newParams creates a new params object.
-func newParams(p *Params) *params {
+// NewParams creates a new params object.
+func NewParams(p *ParamsConfig) *Params {
 	if p == nil {
-		p = &Params{}
+		p = &ParamsConfig{}
 	}
 	if p.MapParams == nil {
 		p.MapParams = make(map[string]string)
@@ -19,13 +25,13 @@ func newParams(p *Params) *params {
 	if p.ListParams == nil {
 		p.ListParams = make([]string, 0)
 	}
-	return &params{
+	return &Params{
 		params: p,
 		index:  0,
 	}
 }
 
-func (p *params) emptyParams() bool {
+func (p *Params) EmptyParams() bool {
 	return len(p.params.MapParams) == 0 && len(p.params.ListParams) == 0
 }
 
@@ -34,8 +40,8 @@ func (p *params) emptyParams() bool {
 // and if it is not there, it will try to turn the key into an int which will be
 // used as the index for the ListParams. If it is still not found, it returns
 // the defaultValue. If the key is empty, it assumes you are using ListParams.
-func (p *params) get(key string, defaultValue string) string {
-	if p.emptyParams() {
+func (p *Params) Get(key string, defaultValue string) string {
+	if p.EmptyParams() {
 		return defaultValue
 	}
 

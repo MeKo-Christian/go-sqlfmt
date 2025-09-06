@@ -1126,7 +1126,7 @@ func TestFormatSpecialConfig(t *testing.T) {
 	})
 }
 
-func TestFormatSpecialAdvanced(t *testing.T) {
+func TestFormatSpecialAdvancedSimple(t *testing.T) {
 	tests := []struct {
 		name  string
 		query string
@@ -1176,6 +1176,20 @@ func TestFormatSpecialAdvanced(t *testing.T) {
                   expr_1
 			`),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatSpecialAdvancedComplex(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name: "formats complex WITH statements correctly",
 			query: Dedent(`
@@ -1295,7 +1309,8 @@ func TestFormatSpecial(t *testing.T) {
 	TestFormatSpecialStatements(t)
 	TestFormatSpecialUnicode(t)
 	TestFormatSpecialConfig(t)
-	TestFormatSpecialAdvanced(t)
+	TestFormatSpecialAdvancedSimple(t)
+	TestFormatSpecialAdvancedComplex(t)
 }
 
 func TestFormat(t *testing.T) {
@@ -1464,7 +1479,8 @@ func runFormatterTests(t *testing.T, tests []struct {
 	query string
 	exp   string
 	cfg   Config
-}, formatterFactory func(*Config) Formatter) {
+}, formatterFactory func(*Config) Formatter,
+) {
 	t.Helper()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -79,9 +79,19 @@ test-golden:
 build:
     go build ./...
 
+# Build the CLI
+build-cli:
+    mkdir -p bin
+    go build -o bin/sqlfmt ./cmd/sqlfmt
+
+# Install the CLI
+install-cli:
+    go install ./cmd/sqlfmt
+
 # Clean build artifacts
 clean:
     rm -f coverage.out coverage.html
+    rm -rf bin/
 
 # Setup development dependencies and tools (assumes just is already installed)
 setup-deps:

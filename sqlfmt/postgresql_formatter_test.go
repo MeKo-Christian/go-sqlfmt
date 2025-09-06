@@ -86,8 +86,9 @@ func TestPostgreSQLFormatter_Initialization(t *testing.T) {
 		cfg := NewDefaultConfig().WithLang(PostgreSQL)
 		formatter := NewPostgreSQLFormatter(cfg)
 		require.NotNil(t, formatter)
-		require.NotNil(t, formatter.cfg)
-		require.Equal(t, PostgreSQL, formatter.cfg.Language)
+		// Test that it can actually format something to verify it's working
+		result := formatter.Format("SELECT 1")
+		require.NotEmpty(t, result)
 	})
 
 	t.Run("creates tokenizer config", func(t *testing.T) {

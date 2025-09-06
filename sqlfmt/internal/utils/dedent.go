@@ -1,4 +1,4 @@
-package sqlfmt
+package utils
 
 import (
 	"strings"

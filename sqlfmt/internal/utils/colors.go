@@ -1,4 +1,4 @@
-package sqlfmt
+package utils
 
 import (
 	"fmt"
@@ -59,7 +59,7 @@ const (
 	BgColorBrightWhite  ANSIFormatOption = "\033[107m"
 )
 
-func addANSIFormats(options []ANSIFormatOption, s string) string {
+func AddANSIFormats(options []ANSIFormatOption, s string) string {
 	for _, o := range options {
 		s = addANSIFormat(o, s)
 	}

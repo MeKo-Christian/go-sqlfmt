@@ -1,4 +1,9 @@
-package sqlfmt
+package dialects
+
+import (
+	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/core"
+	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/types"
+)
 
 var (
 	n1qlReservedWords = []string{
@@ -244,14 +249,14 @@ func NewN1QLTokenizerConfig() *TokenizerConfig {
 }
 
 func (ssf *N1QLFormatter) Format(query string) string {
-	return newFormatter(
+	return core.FormatQuery(
 		ssf.cfg,
-		newTokenizer(ssf.cfg.TokenizerConfig),
-		func(tok token, previousReservedWord token) token {
-			if tok.typ == tokenTypeReservedTopLevel && tok.value == "SET" && previousReservedWord.value == "BY" {
-				tok.typ = tokenTypeReserved
+		func(tok types.Token, previousReservedWord types.Token) types.Token {
+			if tok.Type == types.TokenTypeReservedTopLevel && tok.Value == "SET" && previousReservedWord.Value == "BY" {
+				tok.Type = types.TokenTypeReserved
 			}
 			return tok
 		},
-	).format(query)
+		query,
+	)
 }

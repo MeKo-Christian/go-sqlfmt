@@ -1,4 +1,6 @@
-package sqlfmt
+package dialects
+
+import "github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/core"
 
 var (
 	standardSQLReservedWords = []string{
@@ -75,9 +77,9 @@ func NewStandardSQLTokenizerConfig() *TokenizerConfig {
 }
 
 func (ssf *StandardSQLFormatter) Format(query string) string {
-	return newFormatter(
+	return core.FormatQuery(
 		ssf.cfg,
-		newTokenizer(NewStandardSQLTokenizerConfig()),
 		nil,
-	).format(query)
+		query,
+	)
 }

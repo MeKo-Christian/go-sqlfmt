@@ -26,3 +26,6 @@ go.work.sum
 
 # Jetbrains
 .idea
+
+# Build output directory
+bin/

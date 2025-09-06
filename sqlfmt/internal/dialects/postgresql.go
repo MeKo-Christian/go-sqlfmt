@@ -1,4 +1,8 @@
-package sqlfmt
+package dialects
+
+import (
+	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/core"
+)
 
 var (
 	// PostgreSQL reuses standard SQL reserved words and adds PostgreSQL-specific ones.
@@ -34,9 +38,9 @@ func NewPostgreSQLTokenizerConfig() *TokenizerConfig {
 }
 
 func (psf *PostgreSQLFormatter) Format(query string) string {
-	return newFormatter(
+	return core.FormatQuery(
 		psf.cfg,
-		newTokenizer(NewPostgreSQLTokenizerConfig()),
 		nil,
-	).format(query)
+		query,
+	)
 }

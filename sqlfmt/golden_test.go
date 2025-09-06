@@ -34,7 +34,7 @@ func testGoldenFiles(t *testing.T, dialect string, formatter Formatter) {
 	t.Helper()
 	inputDir := filepath.Join("../testdata/input", dialect)
 	goldenDir := filepath.Join("../testdata/golden", dialect)
-	
+
 	// Walk through all .sql files in the input directory
 	err := filepath.WalkDir(inputDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -61,19 +61,19 @@ func testGoldenFiles(t *testing.T, dialect string, formatter Formatter) {
 			// Read the input file (unformatted SQL)
 			inputBytes, err := os.ReadFile(path)
 			require.NoError(t, err, "Failed to read input file %s", path)
-			
+
 			// Read the expected golden output
 			goldenPath := filepath.Join(goldenDir, relPath)
 			expectedBytes, err := os.ReadFile(goldenPath)
 			require.NoError(t, err, "Failed to read golden file %s", goldenPath)
-			
+
 			// Format the input SQL
 			actual := formatter.Format(string(inputBytes))
 			expected := strings.TrimSpace(string(expectedBytes))
-			
+
 			// Compare formatted result against golden file
-			require.Equal(t, expected, actual, 
-				"Formatted SQL doesn't match golden file.\nInput: %s\nGolden: %s\nActual:\n%s\nExpected:\n%s", 
+			require.Equal(t, expected, actual,
+				"Formatted SQL doesn't match golden file.\nInput: %s\nGolden: %s\nActual:\n%s\nExpected:\n%s",
 				path, goldenPath, actual, expected)
 		})
 

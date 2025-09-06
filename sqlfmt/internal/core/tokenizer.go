@@ -1,8 +1,10 @@
-package sqlfmt
+package core
 
 import (
 	"regexp"
 	"strings"
+
+	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/types"
 )
 
 type tokenizer struct {
@@ -120,20 +122,20 @@ func createPlaceholderRegex(types []string, pattern string) *regexp.Regexp {
 	return regexp.MustCompile(`^((?:` + typesRegex + `)(?:` + pattern + `))`)
 }
 
-func (t *tokenizer) tokenize(input string) []token {
+func (t *tokenizer) tokenize(input string) []types.Token {
 	var (
-		tok  token
-		toks []token
+		tok  types.Token
+		toks []types.Token
 	)
 	for len(input) > 0 {
 		tok = t.getNextToken(input, tok)
-		input = input[len(tok.value):]
+		input = input[len(tok.Value):]
 		toks = append(toks, tok)
 	}
 	return toks
 }
 
-func (t *tokenizer) getNextToken(input string, prevTok token) token {
+func (t *tokenizer) getNextToken(input string, prevTok types.Token) types.Token {
 	return firstNonEmptyToken(
 		t.getWhitespaceToken(input),
 		t.getCommentToken(input),
@@ -149,48 +151,48 @@ func (t *tokenizer) getNextToken(input string, prevTok token) token {
 	)
 }
 
-func (t *tokenizer) getWhitespaceToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeWhitespace, t.whitespaceRegex)
+func (t *tokenizer) getWhitespaceToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeWhitespace, t.whitespaceRegex)
 }
 
-func (t *tokenizer) getCommentToken(input string) token {
+func (t *tokenizer) getCommentToken(input string) types.Token {
 	tok := t.getLineCommentToken(input)
-	if !tok.empty() {
+	if !tok.Empty() {
 		return tok
 	}
 	return t.getBlockCommentToken(input)
 }
 
-func (t *tokenizer) getLineCommentToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeLineComment, t.lineCommentRegex)
+func (t *tokenizer) getLineCommentToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeLineComment, t.lineCommentRegex)
 }
 
-func (t *tokenizer) getBlockCommentToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeBlockComment, t.blockCommentRegex)
+func (t *tokenizer) getBlockCommentToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeBlockComment, t.blockCommentRegex)
 }
 
-func (t *tokenizer) getStringToken(input string) token {
+func (t *tokenizer) getStringToken(input string) types.Token {
 	// Check for dollar-quoted strings first as they require special handling
-	if dollarQuotedToken := t.getDollarQuotedToken(input); !dollarQuotedToken.empty() {
+	if dollarQuotedToken := t.getDollarQuotedToken(input); !dollarQuotedToken.Empty() {
 		return dollarQuotedToken
 	}
-	return t.getTokenOnFirstMatch(input, tokenTypeString, t.stringRegex)
+	return t.getTokenOnFirstMatch(input, types.TokenTypeString, t.stringRegex)
 }
 
 // getDollarQuotedToken scans for PostgreSQL-style dollar-quoted strings.
-func (t *tokenizer) getDollarQuotedToken(input string) token {
+func (t *tokenizer) getDollarQuotedToken(input string) types.Token {
 	return scanDollarQuotedString(input)
 }
 
-func (t *tokenizer) getOpenParenToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeOpenParen, t.openParenRegex)
+func (t *tokenizer) getOpenParenToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeOpenParen, t.openParenRegex)
 }
 
-func (t *tokenizer) getCloseParenToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeCloseParen, t.closeParenRegex)
+func (t *tokenizer) getCloseParenToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeCloseParen, t.closeParenRegex)
 }
 
-func (t *tokenizer) getPlaceholderToken(input string) token {
+func (t *tokenizer) getPlaceholderToken(input string) types.Token {
 	return firstNonEmptyToken(
 		t.getIdentNamedPlaceholderToken(input),
 		t.getStringNamedPlaceholderToken(input),
@@ -198,28 +200,28 @@ func (t *tokenizer) getPlaceholderToken(input string) token {
 	)
 }
 
-func (t *tokenizer) getIdentNamedPlaceholderToken(input string) token {
-	tok := t.getTokenOnFirstMatch(input, tokenTypePlaceholder, t.identNamedPlaceholderRegex)
-	if tok.value != "" {
-		tok.key = tok.value[1:] // Remove the first character
+func (t *tokenizer) getIdentNamedPlaceholderToken(input string) types.Token {
+	tok := t.getTokenOnFirstMatch(input, types.TokenTypePlaceholder, t.identNamedPlaceholderRegex)
+	if tok.Value != "" {
+		tok.Key = tok.Value[1:] // Remove the first character
 	}
 	return tok
 }
 
-func (t *tokenizer) getStringNamedPlaceholderToken(input string) token {
-	tok := t.getTokenOnFirstMatch(input, tokenTypePlaceholder, t.stringNamedPlaceholderRegex)
-	if tok.value != "" {
-		l := len(tok.value)
-		tok.key = t.getEscapedPlaceholderKey(tok.value[2:l-1], tok.value[l-1:])
+func (t *tokenizer) getStringNamedPlaceholderToken(input string) types.Token {
+	tok := t.getTokenOnFirstMatch(input, types.TokenTypePlaceholder, t.stringNamedPlaceholderRegex)
+	if tok.Value != "" {
+		l := len(tok.Value)
+		tok.Key = t.getEscapedPlaceholderKey(tok.Value[2:l-1], tok.Value[l-1:])
 	}
 	return tok
 }
 
-func (t *tokenizer) getIndexedPlaceholderToken(input string) token {
-	tok := t.getTokenOnFirstMatch(input, tokenTypePlaceholder, t.indexedPlaceholderRegex)
-	if tok.value != "" {
+func (t *tokenizer) getIndexedPlaceholderToken(input string) types.Token {
+	tok := t.getTokenOnFirstMatch(input, types.TokenTypePlaceholder, t.indexedPlaceholderRegex)
+	if tok.Value != "" {
 		// Remove the first character so ?2 becomes 2
-		tok.key = tok.value[1:]
+		tok.Key = tok.Value[1:]
 	}
 	return tok
 }
@@ -233,19 +235,19 @@ func (t *tokenizer) getEscapedPlaceholderKey(key string, quoteChar string) strin
 	return re.ReplaceAllString(key, quoteChar)
 }
 
-func (t *tokenizer) getNumberToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeNumber, t.numberRegex)
+func (t *tokenizer) getNumberToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeNumber, t.numberRegex)
 }
 
-func (t *tokenizer) getOperatorToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeOperator, t.operatorRegex)
+func (t *tokenizer) getOperatorToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeOperator, t.operatorRegex)
 }
 
-func (t *tokenizer) getReservedWordToken(input string, prevTok token) token {
+func (t *tokenizer) getReservedWordToken(input string, prevTok types.Token) types.Token {
 	// A reserved word cannot be preceded by a "."
 	// this makes it so in "my_table.from", "from" is not considered a reserved word
-	if !prevTok.empty() && prevTok.value == "." {
-		return token{}
+	if !prevTok.Empty() && prevTok.Value == "." {
+		return types.Token{}
 	}
 
 	return firstNonEmptyToken(
@@ -256,68 +258,68 @@ func (t *tokenizer) getReservedWordToken(input string, prevTok token) token {
 	)
 }
 
-func (t *tokenizer) getTopLevelReservedToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeReservedTopLevel, t.reservedTopLevelRegex)
+func (t *tokenizer) getTopLevelReservedToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeReservedTopLevel, t.reservedTopLevelRegex)
 }
 
-func (t *tokenizer) getNewlineReservedToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeReservedNewline, t.reservedNewlineRegex)
+func (t *tokenizer) getNewlineReservedToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeReservedNewline, t.reservedNewlineRegex)
 }
 
-func (t *tokenizer) getTopLevelReservedTokenNoIndent(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeReservedTopLevelNoIndent, t.reservedTopLevelNoIndentRegex)
+func (t *tokenizer) getTopLevelReservedTokenNoIndent(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeReservedTopLevelNoIndent, t.reservedTopLevelNoIndentRegex)
 }
 
-func (t *tokenizer) getPlainReservedToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeReserved, t.reservedPlainRegex)
+func (t *tokenizer) getPlainReservedToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeReserved, t.reservedPlainRegex)
 }
 
-func (t *tokenizer) getBooleanToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeBoolean, t.booleanRegex)
+func (t *tokenizer) getBooleanToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeBoolean, t.booleanRegex)
 }
 
-func (t *tokenizer) getWordToken(input string) token {
-	return t.getTokenOnFirstMatch(input, tokenTypeWord, t.wordRegex)
+func (t *tokenizer) getWordToken(input string) types.Token {
+	return t.getTokenOnFirstMatch(input, types.TokenTypeWord, t.wordRegex)
 }
 
 // getTokenOnFirstMatch uses the regex re to search for string submatches in input.
-// If one or more submatches are found, the first one is returned in a new token with
-// the token type typ as the tokenType.
-func (t *tokenizer) getTokenOnFirstMatch(input string, typ tokenType, re *regexp.Regexp) token {
+// If one or more submatches are found, the first one is returned in a new types.Token with
+// the types.Token type typ as the types.TokenType.
+func (t *tokenizer) getTokenOnFirstMatch(input string, typ types.TokenType, re *regexp.Regexp) types.Token {
 	if re == nil {
-		return token{}
+		return types.Token{}
 	}
 
 	matches := re.FindStringSubmatch(input)
 
 	if len(matches) > 0 {
-		return token{typ: typ, value: matches[0]}
+		return types.Token{Type: typ, Value: matches[0]}
 	}
 
-	return token{}
+	return types.Token{}
 }
 
-// firstNonEmptyToken returns the first token in the list of given tokens, toks,
+// firstNonEmptyToken returns the first types.Token in the list of given types.Tokens, toks,
 // that is not empty.
-func firstNonEmptyToken(toks ...token) token {
+func firstNonEmptyToken(toks ...types.Token) types.Token {
 	for _, tok := range toks {
-		if !tok.empty() {
+		if !tok.Empty() {
 			return tok
 		}
 	}
-	return token{}
+	return types.Token{}
 }
 
 // scanDollarQuotedString scans for PostgreSQL-style dollar-quoted strings.
 // Supports both simple $$ delimited strings and tagged $tag$ delimited strings.
-func scanDollarQuotedString(input string) token {
+func scanDollarQuotedString(input string) types.Token {
 	if len(input) == 0 || input[0] != '$' {
-		return token{}
+		return types.Token{}
 	}
 
 	openingTag := findDollarQuoteTag(input)
 	if openingTag == "" {
-		return token{}
+		return types.Token{}
 	}
 
 	return findClosingDollarQuote(input, openingTag)
@@ -337,21 +339,21 @@ func findDollarQuoteTag(input string) string {
 }
 
 // findClosingDollarQuote searches for the matching closing tag.
-func findClosingDollarQuote(input, openingTag string) token {
+func findClosingDollarQuote(input, openingTag string) types.Token {
 	searchStart := len(openingTag)
 	for i := searchStart; i <= len(input)-len(openingTag); i++ {
 		if hasMatchingTag(input, i, openingTag) {
-			return token{
-				typ:   tokenTypeString,
-				value: input[:i+len(openingTag)],
+			return types.Token{
+				Type:  types.TokenTypeString,
+				Value: input[:i+len(openingTag)],
 			}
 		}
 	}
 
 	// No matching closing tag found, return entire input as incomplete string
-	return token{
-		typ:   tokenTypeString,
-		value: input,
+	return types.Token{
+		Type:  types.TokenTypeString,
+		Value: input,
 	}
 }
 
