@@ -3,7 +3,7 @@ package core
 import (
 	"testing"
 
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/types"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/types"
 	"github.com/stretchr/testify/require"
 )
 

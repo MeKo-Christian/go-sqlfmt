@@ -1,7 +1,7 @@
 package dialects
 
 import (
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/core"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/core"
 )
 
 // Formatter interface is re-exported from core package.

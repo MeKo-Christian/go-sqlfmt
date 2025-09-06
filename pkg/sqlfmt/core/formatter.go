@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/types"
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/utils"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/types"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/utils"
 )
 
 var (

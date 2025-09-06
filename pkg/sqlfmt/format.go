@@ -3,9 +3,9 @@ package sqlfmt
 import (
 	"fmt"
 
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/core"
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/dialects"
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/utils"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/core"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/dialects"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/utils"
 )
 
 type Formatter = dialects.Formatter

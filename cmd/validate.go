@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt"
 	"github.com/spf13/cobra"
 )
 

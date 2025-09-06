@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/types"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/types"
 )
 
 type tokenizer struct {
@@ -208,7 +208,7 @@ func (t *tokenizer) getIdentNamedPlaceholderToken(input string) types.Token {
 	if len(input) >= 2 && input[0] == '<' && input[1] == '@' {
 		return types.Token{}
 	}
-	
+
 	tok := t.getTokenOnFirstMatch(input, types.TokenTypePlaceholder, t.identNamedPlaceholderRegex)
 	if tok.Value != "" {
 		tok.Key = tok.Value[1:] // Remove the first character
@@ -224,11 +224,11 @@ func (t *tokenizer) getStringNamedPlaceholderToken(input string) types.Token {
 	if len(input) >= 2 && input[0] == '<' && input[1] == '@' {
 		return types.Token{}
 	}
-	// Don't match ? if it's part of ?|, ?& JSON existence operators  
+	// Don't match ? if it's part of ?|, ?& JSON existence operators
 	if len(input) >= 2 && input[0] == '?' && (input[1] == '|' || input[1] == '&') {
 		return types.Token{}
 	}
-	
+
 	tok := t.getTokenOnFirstMatch(input, types.TokenTypePlaceholder, t.stringNamedPlaceholderRegex)
 	if tok.Value != "" {
 		l := len(tok.Value)
@@ -242,7 +242,7 @@ func (t *tokenizer) getIndexedPlaceholderToken(input string) types.Token {
 	if len(input) >= 2 && input[0] == '?' && (input[1] == '|' || input[1] == '&') {
 		return types.Token{}
 	}
-	
+
 	tok := t.getTokenOnFirstMatch(input, types.TokenTypePlaceholder, t.indexedPlaceholderRegex)
 	if tok.Value != "" {
 		// Remove the first character so ?2 becomes 2
@@ -312,9 +312,9 @@ func (t *tokenizer) getWordToken(input string) types.Token {
 	if len(input) >= 2 && input[0] == '?' && (input[1] == '|' || input[1] == '&') {
 		return types.Token{}
 	}
-	
+
 	tok := t.getTokenOnFirstMatch(input, types.TokenTypeWord, t.wordRegex)
-	
+
 	// Additional check: if we matched a single @ or ?, and it's followed by operator chars, skip
 	if tok.Value == "@" && len(input) >= 2 && input[1] == '>' {
 		return types.Token{}
@@ -322,7 +322,7 @@ func (t *tokenizer) getWordToken(input string) types.Token {
 	if tok.Value == "?" && len(input) >= 2 && (input[1] == '|' || input[1] == '&') {
 		return types.Token{}
 	}
-	
+
 	return tok
 }
 
