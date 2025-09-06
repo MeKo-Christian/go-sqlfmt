@@ -18,11 +18,12 @@ func newInlineBlock() *inlineBlock {
 // beginIfPossible begins an inline block when lookahead through upcoming tokens determines
 // that the block would be smaller than inlineMaxLength.
 func (ib *inlineBlock) beginIfPossible(toks []token, index int) {
-	if ib.level == 0 && ib.isInlineBlock(toks, index) {
+	switch {
+	case ib.level == 0 && ib.isInlineBlock(toks, index):
 		ib.level = 1
-	} else if ib.level > 0 {
+	case ib.level > 0:
 		ib.level++
-	} else {
+	default:
 		ib.level = 0
 	}
 }

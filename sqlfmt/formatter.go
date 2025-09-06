@@ -33,7 +33,8 @@ type formatter struct {
 }
 
 // newFormatter creates a new formatter instance.
-func newFormatter(cfg *Config, tokenizer *tokenizer, tokenOverride func(tok token, previousReservedWord token) token) *formatter {
+func newFormatter(cfg *Config, tokenizer *tokenizer,
+	tokenOverride func(tok token, previousReservedWord token) token) *formatter {
 	if cfg.ColorConfig == nil {
 		cfg.ColorConfig = &ColorConfig{}
 	}
@@ -68,59 +69,88 @@ func (f *formatter) getFormattedQueryFromTokens() string {
 			tok = f.tokenOverride(tok, f.previousReservedWord)
 		}
 
-		switch tok.typ {
-		case tokenTypeWhitespace:
-			// Ignore whitespace
-		case tokenTypeLineComment:
-			f.formatLineComment(tok, formattedQuery)
-		case tokenTypeBlockComment:
-			f.formatBlockComment(tok, formattedQuery)
-		case tokenTypeReservedTopLevel:
-			f.formatTopLevelReservedWord(tok, formattedQuery)
-			f.previousReservedWord = tok
-		case tokenTypeReservedTopLevelNoIndent:
-			f.formatTopLevelReservedWordNoIndent(tok, formattedQuery)
-			f.previousReservedWord = tok
-		case tokenTypeReservedNewline:
-			f.formatNewlineReservedWord(tok, formattedQuery)
-			f.previousReservedWord = tok
-		case tokenTypeReserved:
-			f.formatWithSpaces(tok, formattedQuery)
-			f.previousReservedWord = tok
-		case tokenTypeOpenParen:
-			f.formatOpeningParentheses(tok, formattedQuery)
-		case tokenTypeCloseParen:
-			f.formatClosingParentheses(tok, formattedQuery)
-		case tokenTypeWord, tokenTypePlaceholder:
-			if f.nextToken().typ == tokenTypePlaceholder {
-				formattedQuery.WriteString(tok.value)
-			} else if tok.typ == tokenTypePlaceholder {
-				f.formatPlaceholder(tok, formattedQuery)
-			} else {
-				f.formatWithSpaces(tok, formattedQuery)
-			}
-		case tokenTypeString:
-			f.formatString(tok, formattedQuery)
-		case tokenTypeNumber:
-			f.formatNumber(tok, formattedQuery)
-		case tokenTypeBoolean:
-			f.formatBoolean(tok, formattedQuery)
-		default:
-			switch tok.value {
-			case ",":
-				f.formatComma(tok, formattedQuery)
-			case ":":
-				f.formatWithSpaceAfter(tok, formattedQuery)
-			case ".":
-				f.formatWithoutSpaceAfter(tok, formattedQuery)
-			case ";":
-				f.formatQuerySeparator(tok, formattedQuery)
-			default:
-				f.formatWithSpaces(tok, formattedQuery)
-			}
-		}
+		f.formatToken(tok, formattedQuery)
 	}
 	return formattedQuery.String()
+}
+
+func (f *formatter) formatToken(tok token, formattedQuery *strings.Builder) {
+	switch tok.typ {
+	case tokenTypeWhitespace:
+		// Ignore whitespace
+	case tokenTypeLineComment:
+		f.formatLineComment(tok, formattedQuery)
+	case tokenTypeBlockComment:
+		f.formatBlockComment(tok, formattedQuery)
+	case tokenTypeReservedTopLevel:
+		f.formatReservedTopLevelToken(tok, formattedQuery)
+	case tokenTypeReservedTopLevelNoIndent:
+		f.formatReservedTopLevelNoIndentToken(tok, formattedQuery)
+	case tokenTypeReservedNewline:
+		f.formatReservedNewlineToken(tok, formattedQuery)
+	case tokenTypeReserved:
+		f.formatReservedToken(tok, formattedQuery)
+	case tokenTypeOpenParen:
+		f.formatOpeningParentheses(tok, formattedQuery)
+	case tokenTypeCloseParen:
+		f.formatClosingParentheses(tok, formattedQuery)
+	case tokenTypeWord, tokenTypePlaceholder:
+		f.formatWordOrPlaceholder(tok, formattedQuery)
+	case tokenTypeString:
+		f.formatString(tok, formattedQuery)
+	case tokenTypeNumber:
+		f.formatNumber(tok, formattedQuery)
+	case tokenTypeBoolean:
+		f.formatBoolean(tok, formattedQuery)
+	default:
+		f.formatDefaultToken(tok, formattedQuery)
+	}
+}
+
+func (f *formatter) formatReservedTopLevelToken(tok token, formattedQuery *strings.Builder) {
+	f.formatTopLevelReservedWord(tok, formattedQuery)
+	f.previousReservedWord = tok
+}
+
+func (f *formatter) formatReservedTopLevelNoIndentToken(tok token, formattedQuery *strings.Builder) {
+	f.formatTopLevelReservedWordNoIndent(tok, formattedQuery)
+	f.previousReservedWord = tok
+}
+
+func (f *formatter) formatReservedNewlineToken(tok token, formattedQuery *strings.Builder) {
+	f.formatNewlineReservedWord(tok, formattedQuery)
+	f.previousReservedWord = tok
+}
+
+func (f *formatter) formatReservedToken(tok token, formattedQuery *strings.Builder) {
+	f.formatWithSpaces(tok, formattedQuery)
+	f.previousReservedWord = tok
+}
+
+func (f *formatter) formatWordOrPlaceholder(tok token, formattedQuery *strings.Builder) {
+	switch {
+	case f.nextToken().typ == tokenTypePlaceholder:
+		formattedQuery.WriteString(tok.value)
+	case tok.typ == tokenTypePlaceholder:
+		f.formatPlaceholder(tok, formattedQuery)
+	default:
+		f.formatWithSpaces(tok, formattedQuery)
+	}
+}
+
+func (f *formatter) formatDefaultToken(tok token, formattedQuery *strings.Builder) {
+	switch tok.value {
+	case ",":
+		f.formatComma(tok, formattedQuery)
+	case ":":
+		f.formatWithSpaceAfter(tok, formattedQuery)
+	case ".":
+		f.formatWithoutSpaceAfter(tok, formattedQuery)
+	case ";":
+		f.formatQuerySeparator(tok, formattedQuery)
+	default:
+		f.formatWithSpaces(tok, formattedQuery)
+	}
 }
 
 func (f *formatter) formatLineComment(tok token, query *strings.Builder) {

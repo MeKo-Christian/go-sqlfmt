@@ -265,7 +265,8 @@ func ExamplePostgreSQLFormatter_Format() {
 	fmt.Println(result)
 	// Output:
 	// SELECT
-	//   id
+	//   id,
+	//   name
 	// FROM
 	//   users
 	// WHERE

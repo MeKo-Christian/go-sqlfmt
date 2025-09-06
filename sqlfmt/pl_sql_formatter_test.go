@@ -1,11 +1,7 @@
 package sqlfmt
 
 import (
-	"fmt"
-	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestPLSQLFormatter_Format(t *testing.T) {
@@ -298,36 +294,7 @@ func TestPLSQLFormatter_Format(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var result string
-			if !tt.cfg.Empty() {
-				if tt.cfg.Indent == "" {
-					tt.cfg.Indent = DefaultIndent
-				}
-				result = NewPLSQLFormatter(&tt.cfg).Format(tt.query)
-			} else {
-				result = NewPLSQLFormatter(NewDefaultConfig()).Format(tt.query)
-			}
-
-			exp := strings.TrimRight(tt.exp, "\n\t ")
-			exp = strings.TrimLeft(exp, "\n")
-			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
-
-			if result != exp {
-				fmt.Println("=== QUERY ===")
-				fmt.Println(tt.query)
-				fmt.Println()
-
-				fmt.Println("=== EXP ===")
-				fmt.Println(exp)
-				fmt.Println()
-
-				fmt.Println("=== RESULT ===")
-				fmt.Println(result)
-				fmt.Println()
-			}
-			require.Equal(t, exp, result)
-		})
-	}
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewPLSQLFormatter(cfg)
+	})
 }

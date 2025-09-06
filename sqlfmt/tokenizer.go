@@ -27,10 +27,12 @@ type tokenizer struct {
 }
 
 func newTokenizer(cfg *TokenizerConfig) *tokenizer {
+	regex := `^(!=|<>|==|<=|>=|=>|!<|!>|\|\||::|->>|->|` +
+		`~~\*|~~|!~~\*|!~~|~\*|!~\*|!~|.)`
 	return &tokenizer{
 		whitespaceRegex:               regexp.MustCompile(`^(\s+)`),
 		numberRegex:                   regexp.MustCompile(`^((-\s*)?[0-9]+(\.[0-9]+)?|0x[0-9a-fA-F]+|0b[01]+)\b`),
-		operatorRegex:                 regexp.MustCompile(`^(!=|<>|==|<=|>=|=>|!<|!>|\|\||::|->>|->|~~\*|~~|!~~\*|!~~|~\*|!~\*|!~|.)`),
+		operatorRegex:                 regexp.MustCompile(regex),
 		booleanRegex:                  regexp.MustCompile(`(?i)^(\b(true|false)\b)`),
 		functionCallRegex:             regexp.MustCompile(`(?i)^(\b(\w+)\s*\(([^)]*)\))`),
 		blockCommentRegex:             regexp.MustCompile(`^(/\*(?s:.)*?(?:\*/|$))`),
@@ -45,7 +47,8 @@ func newTokenizer(cfg *TokenizerConfig) *tokenizer {
 		closeParenRegex:               createParenRegex(cfg.CloseParens),
 		indexedPlaceholderRegex:       createPlaceholderRegex(cfg.IndexedPlaceholderTypes, `[0-9]*`),
 		identNamedPlaceholderRegex:    createPlaceholderRegex(cfg.NamedPlaceholderTypes, `[a-zA-Z0-9._$]+`),
-		stringNamedPlaceholderRegex:   createPlaceholderRegex(cfg.NamedPlaceholderTypes, createStringPattern(cfg.StringTypes)),
+		stringNamedPlaceholderRegex: createPlaceholderRegex(
+			cfg.NamedPlaceholderTypes, createStringPattern(cfg.StringTypes)),
 	}
 }
 
@@ -344,7 +347,7 @@ func findClosingDollarQuote(input, openingTag string) token {
 			}
 		}
 	}
-	
+
 	// No matching closing tag found, return entire input as incomplete string
 	return token{
 		typ:   tokenTypeString,

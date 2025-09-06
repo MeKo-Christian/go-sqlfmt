@@ -4,7 +4,7 @@ An SQL formatter written in Go.
 
 This project is https://github.com/Snowflake-Labs/snowsql-formatter ported from javascript into Go with some enhancements, like being able to colorize the output.
 
-There is support for [Standard SQL][], [Couchbase N1QL][], [IBM DB2][] and [Oracle PL/SQL][] dialects.
+There is support for [Standard SQL][], [Couchbase N1QL][], [IBM DB2][], [Oracle PL/SQL][], and [PostgreSQL][] dialects.
 
 ## Install
 
@@ -51,12 +51,39 @@ You can use the `Config` to specify some formatting options:
 sqlfmt.Format(query, sqlfmt.NewDefaultConfig().WithLang(sqlfmt.N1QL))
 ```
 
-Currently just four SQL dialects are supported:
+Currently five SQL dialects are supported:
 
 - **sql** - [Standard SQL][]
 - **n1ql** - [Couchbase N1QL][]
 - **db2** - [IBM DB2][]
 - **pl/sql** - [Oracle PL/SQL][]
+- **postgresql** - [PostgreSQL][]
+
+### PostgreSQL
+
+Use the PostgreSQL dialect by setting the language to `sqlfmt.PostgreSQL`:
+
+```go
+cfg := sqlfmt.NewDefaultConfig().WithLang(sqlfmt.PostgreSQL)
+fmt.Println(sqlfmt.Format("SELECT 'a'::text AS casted", cfg))
+```
+
+PostgreSQL support includes:
+
+- Dollar-quoted strings: `$$...$$`, `$tag$...$tag$`
+- Common operators: type cast `::`, JSON `->`, `->>`, regex `~`, `~*`, `!~`, `!~*`
+- PostgreSQL-style line comments: `-- comment`
+
+Notes and current limitations:
+
+- Placeholders: named (`@foo`, `:foo`) and `?` indexed placeholders work. `$1`-style placeholders are planned but not yet supported.
+- PL/pgSQL blocks are recognized via dollar-quoting; additional PL/pgSQL formatting improvements are planned.
+
+Run PostgreSQL-focused tests:
+
+```shell
+go test ./sqlfmt -run TestPostgreSQL
+```
 
 Config options available are:
 
@@ -152,3 +179,4 @@ Create a branch and open a pull request!
 [couchbase n1ql]: http://www.couchbase.com/n1ql
 [ibm db2]: https://www.ibm.com/analytics/us/en/technology/db2/
 [oracle pl/sql]: http://www.oracle.com/technetwork/database/features/plsql/index.html
+[postgresql]: https://www.postgresql.org/docs/

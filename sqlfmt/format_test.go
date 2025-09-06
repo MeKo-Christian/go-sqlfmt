@@ -80,9 +80,9 @@ func TestFormat(t *testing.T) {
 			`),
 		},
 		{
-			name:  "formats SELECT with top level reserved words",
-			query: "SELECT * FROM foo WHERE name = 'John' GROUP BY some_column " +
-				"HAVING column > 10 ORDER BY other_column LIMIT 5;",
+			name: "formats SELECT with top level reserved words",
+			query: `SELECT * FROM foo WHERE name = 'John' GROUP BY some_column
+HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 			exp: Dedent(`
 				SELECT
 					*
@@ -1210,5 +1210,47 @@ func BenchmarkFormat(b *testing.B) {
 func BenchmarkPrettyFormat(b *testing.B) {
 	for range b.N {
 		PrettyFormat(`SELECT foo AS a, boo AS b FROM table WHERE foo = bar LIMIT 10`)
+	}
+}
+
+// runFormatterTests runs the common test logic for all formatter test files.
+func runFormatterTests(t *testing.T, tests []struct {
+	name  string
+	query string
+	exp   string
+	cfg   Config
+}, formatterFactory func(*Config) Formatter) {
+	t.Helper()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result string
+			if !tt.cfg.Empty() {
+				if tt.cfg.Indent == "" {
+					tt.cfg.Indent = DefaultIndent
+				}
+				result = formatterFactory(&tt.cfg).Format(tt.query)
+			} else {
+				result = formatterFactory(NewDefaultConfig()).Format(tt.query)
+			}
+
+			exp := strings.TrimRight(tt.exp, "\n\t ")
+			exp = strings.TrimLeft(exp, "\n")
+			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
+
+			if result != exp {
+				fmt.Println("=== QUERY ===")
+				fmt.Println(tt.query)
+				fmt.Println()
+
+				fmt.Println("=== EXP ===")
+				fmt.Println(exp)
+				fmt.Println()
+
+				fmt.Println("=== RESULT ===")
+				fmt.Println(result)
+				fmt.Println()
+			}
+			require.Equal(t, exp, result)
+		})
 	}
 }

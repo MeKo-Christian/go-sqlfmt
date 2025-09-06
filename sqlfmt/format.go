@@ -24,18 +24,22 @@ func PrettyPrint(query string, cfg ...*Config) {
 func getFormatter(forceWithColor bool, cfg ...*Config) Formatter {
 	c := NewDefaultConfig()
 
-	if len(cfg) == 1 {
-		c = cfg[0]
-	}
-
 	if len(cfg) > 1 {
 		panic("cannot have more than one config")
+	}
+
+	if len(cfg) == 1 {
+		c = cfg[0]
 	}
 
 	if forceWithColor && (c.ColorConfig == nil || c.ColorConfig.Empty()) {
 		c.ColorConfig = NewDefaultColorConfig()
 	}
 
+	return createFormatterForLanguage(c)
+}
+
+func createFormatterForLanguage(c *Config) Formatter {
 	switch c.Language {
 	case DB2:
 		return NewDB2Formatter(c)
