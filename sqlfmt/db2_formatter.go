@@ -429,7 +429,7 @@ var (
 		"STARTING",
 		"STATEMENT",
 		"STATIC",
-		"STATMENT",
+		"STATEMENT",
 		"STAY",
 		"STDDEV_POP",
 		"STDDEV_SAMP",

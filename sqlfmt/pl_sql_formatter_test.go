@@ -2,9 +2,10 @@ package sqlfmt
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestPLSQLFormatter_Format(t *testing.T) {

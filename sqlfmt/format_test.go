@@ -2,9 +2,10 @@ package sqlfmt
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestFormat(t *testing.T) {
@@ -133,7 +134,8 @@ func TestFormat(t *testing.T) {
 				limit
 					5, 10;
 			`),
-		}, {
+		},
+		{
 			name:  "preserves case of keywords",
 			query: "select distinct * frOM foo left join bar WHERe a > 1 and b = 3",
 			exp: Dedent(`
@@ -1199,13 +1201,13 @@ func TestPrettyFormat(t *testing.T) {
 }
 
 func BenchmarkFormat(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		Format(`SELECT foo AS a, boo AS b FROM table WHERE foo = bar LIMIT 10`)
 	}
 }
 
 func BenchmarkPrettyFormat(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		PrettyFormat(`SELECT foo AS a, boo AS b FROM table WHERE foo = bar LIMIT 10`)
 	}
 }

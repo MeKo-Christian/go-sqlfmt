@@ -11,6 +11,7 @@ const (
 	PLSQL       Language = "pl/sql"
 	DB2         Language = "db2"
 	N1QL        Language = "n1ql"
+	PostgreSQL  Language = "postgresql"
 
 	DefaultIndent              = "  " // two spaces
 	DefaultLinesBetweenQueries = 2

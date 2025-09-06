@@ -1,0 +1,116 @@
+version = '2'
+
+[linters]
+default = 'none'
+enable = [
+  'asasalint',
+  'asciicheck',
+  'bidichk',
+  'bodyclose',
+  'canonicalheader',
+  'containedctx',
+  'contextcheck',
+  'copyloopvar',
+  'cyclop',
+  'decorder',
+  'dogsled',
+  'dupl',
+  'durationcheck',
+  'errcheck',
+  'errchkjson',
+  'errname',
+  'errorlint',
+  'fatcontext',
+  'forcetypeassert',
+  'funlen',
+  'ginkgolinter',
+  'gocheckcompilerdirectives',
+  'gochecksumtype',
+  'gocognit',
+  'goconst',
+  'gocritic',
+  'gocyclo',
+  'godot',
+  'goheader',
+  'gomoddirectives',
+  'gomodguard',
+  'goprintffuncname',
+  'gosec',
+  'gosmopolitan',
+  'govet',
+  'grouper',
+  'importas',
+  'inamedparam',
+  'ineffassign',
+  'interfacebloat',
+  'intrange',
+  'lll',
+  'loggercheck',
+  'maintidx',
+  'makezero',
+  'mirror',
+  'misspell',
+  'nakedret',
+  'nestif',
+  'nilerr',
+  'nilnil',
+  'noctx',
+  'nolintlint',
+  'nonamedreturns',
+  'nosprintfhostport',
+  'perfsprint',
+  'prealloc',
+  'predeclared',
+  'protogetter',
+  'reassign',
+  'rowserrcheck',
+  'sloglint',
+  'spancheck',
+  'staticcheck',
+  'testableexamples',
+  'testifylint',
+  'testpackage',
+  'thelper',
+  'tparallel',
+  'unconvert',
+  'unparam',
+  'unused',
+  'usestdlibvars',
+  'wastedassign',
+  'whitespace',
+  'zerologlint',
+]
+
+[linters.settings]
+[linters.settings.tagliatelle]
+[linters.settings.tagliatelle.case]
+[linters.settings.tagliatelle.case.rules]
+json = 'camel'
+
+[linters.settings.varnamelen]
+ignore-names = ['rx', 'tx', 'db', 'ok', 'mw', 'gw', 'rt', 'id']
+ignore-decls = ['w http.ResponseWriter', 'r *http.Request', 'g *Gateway']
+
+[linters.exclusions]
+generated = 'lax'
+paths = [
+  'third_party',
+  'builtin',
+  'examples',
+  'third_party$',
+  'builtin$',
+  'examples$',
+]
+
+[[linters.exclusions.rules]]
+linters = ['gosec']
+text = 'G601:'
+
+[[linters.exclusions.rules]]
+linters = ['err113', 'wrapcheck']
+path = 'cmd/.*\.go'
+
+[formatters]
+[formatters.exclusions]
+generated = 'lax'
+paths = ['third_party$', 'builtin$', 'examples$']

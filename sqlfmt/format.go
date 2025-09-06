@@ -43,6 +43,8 @@ func getFormatter(forceWithColor bool, cfg ...*Config) Formatter {
 		return NewN1QLFormatter(c)
 	case PLSQL:
 		return NewPLSQLFormatter(c)
+	case PostgreSQL:
+		return NewPostgreSQLFormatter(c)
 	default:
 		return NewStandardSQLFormatter(c)
 	}

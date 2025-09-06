@@ -2,13 +2,13 @@ package sqlfmt
 
 import "strconv"
 
-// params handles placeholder replacement with given parameters
+// params handles placeholder replacement with given parameters.
 type params struct {
 	params *Params
 	index  int
 }
 
-// newParams creates a new params object
+// newParams creates a new params object.
 func newParams(p *Params) *params {
 	if p == nil {
 		p = &Params{}

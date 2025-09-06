@@ -1,9 +1,10 @@
 package sqlfmt
 
 import (
-	"github.com/stretchr/testify/require"
 	"regexp"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestRegexes(t *testing.T) {
@@ -57,9 +58,9 @@ func TestRegexes(t *testing.T) {
 		t.Run(tt.input, func(t *testing.T) {
 			matches := tt.re.FindStringSubmatch(tt.input)
 			if tt.match == "" {
-				require.Len(t, matches, 0)
+				require.Empty(t, matches)
 			} else {
-				require.Truef(t, len(matches) > 0, "expected to find at least one match")
+				require.NotEmptyf(t, matches, "expected to find at least one match")
 				require.Equal(t, tt.match, matches[0])
 			}
 		})

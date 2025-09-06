@@ -238,7 +238,7 @@ func (f *formatter) formatComma(tok token, query *strings.Builder) {
 }
 
 // formatWithSpaceAfter returns the query with spaces trimmed off the end,
-// the token value, and a space (" ") at the end ("query value ")
+// the token value, and a space (" ") at the end ("query value ").
 func (f *formatter) formatWithSpaceAfter(tok token, query *strings.Builder) {
 	trimSpacesEnd(query)
 	query.WriteString(tok.value)
@@ -246,7 +246,7 @@ func (f *formatter) formatWithSpaceAfter(tok token, query *strings.Builder) {
 }
 
 // formatWithoutSpaceAfter returns the query with spaces trimmed off the end and
-// the token value ("query value")
+// the token value ("query value").
 func (f *formatter) formatWithoutSpaceAfter(tok token, query *strings.Builder) {
 	trimSpacesEnd(query)
 	query.WriteString(tok.value)

@@ -1,4 +1,5 @@
 # go-sqlfmt
+
 An SQL formatter written in Go.
 
 This project is https://github.com/Snowflake-Labs/snowsql-formatter ported from javascript into Go with some enhancements, like being able to colorize the output.
@@ -58,14 +59,14 @@ Currently just four SQL dialects are supported:
 - **pl/sql** - [Oracle PL/SQL][]
 
 Config options available are:
-* Language (SQL Dialect)
-* Indentation
-* Lines between queries
-* Make reserved words uppercase
-* Add parameters
-* Add coloring config
-* Add tokenizing config
 
+- Language (SQL Dialect)
+- Indentation
+- Lines between queries
+- Make reserved words uppercase
+- Add parameters
+- Add coloring config
+- Add tokenizing config
 
 ### Colored Output
 

@@ -1,6 +1,6 @@
 package sqlfmt
 
-// Define the maximum length for inline blocks
+// Define the maximum length for inline blocks.
 const inlineMaxLength = 50
 
 // InlineBlock is a bookkeeper for inline blocks.
@@ -51,9 +51,10 @@ func (ib *inlineBlock) isInlineBlock(toks []token, index int) bool {
 			return false
 		}
 
-		if t.typ == tokenTypeOpenParen {
+		switch t.typ {
+		case tokenTypeOpenParen:
 			level++
-		} else if t.typ == tokenTypeCloseParen {
+		case tokenTypeCloseParen:
 			level--
 			if level == 0 {
 				return true

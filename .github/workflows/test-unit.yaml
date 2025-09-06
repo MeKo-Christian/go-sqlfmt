@@ -1,0 +1,20 @@
+name: test-unit
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "*/*.sum"
+      - name: Install just
+        uses: extractions/setup-just@v2
+      - name: Run unit tests
+        run: just test
