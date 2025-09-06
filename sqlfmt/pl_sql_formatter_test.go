@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestPLSQLFormatter_Format(t *testing.T) {
+func TestPLSQLFormatter_FormatBasic(t *testing.T) {
 	tests := []struct {
 		name  string
 		query string
@@ -47,6 +47,20 @@ func TestPLSQLFormatter_Format(t *testing.T) {
                 tbl
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewPLSQLFormatter(cfg)
+	})
+}
+
+func TestPLSQLFormatter_FormatDDL(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats short CREATE TABLE",
 			query: "CREATE TABLE items (a INT PRIMARY KEY, b TEXT);",
@@ -94,6 +108,20 @@ func TestPLSQLFormatter_Format(t *testing.T) {
                 supplier_name VARCHAR(100) NOT NULL;
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewPLSQLFormatter(cfg)
+	})
+}
+
+func TestPLSQLFormatter_FormatPlaceholders(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "recognizes ?[0-9]* placeholders",
 			query: "SELECT ?1, ?25, ?;",
@@ -130,6 +158,20 @@ func TestPLSQLFormatter_Format(t *testing.T) {
 				Params: NewListParams([]string{"first", "second", "third"}),
 			},
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewPLSQLFormatter(cfg)
+	})
+}
+
+func TestPLSQLFormatter_FormatJoins(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats SELECT query with CROSS JOIN",
 			query: "SELECT a, b FROM t CROSS JOIN t2 on t.id = t2.id_t",
@@ -185,6 +227,20 @@ func TestPLSQLFormatter_Format(t *testing.T) {
                 OUTER APPLY fn(t.id)
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewPLSQLFormatter(cfg)
+	})
+}
+
+func TestPLSQLFormatter_FormatCase(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats CASE ... WHEN with a blank expression",
 			query: "CASE WHEN option = 'foo' THEN 1 WHEN option = 'bar' THEN 2 WHEN option = 'baz' THEN 3 ELSE 4 END;",
@@ -243,6 +299,20 @@ func TestPLSQLFormatter_Format(t *testing.T) {
 				Uppercase: true,
 			},
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewPLSQLFormatter(cfg)
+	})
+}
+
+func TestPLSQLFormatter_FormatComplex(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name: "formats Oracle recursive sub queries",
 			query: `
@@ -297,4 +367,13 @@ func TestPLSQLFormatter_Format(t *testing.T) {
 	runFormatterTests(t, tests, func(cfg *Config) Formatter {
 		return NewPLSQLFormatter(cfg)
 	})
+}
+
+func TestPLSQLFormatter_Format(t *testing.T) {
+	TestPLSQLFormatter_FormatBasic(t)
+	TestPLSQLFormatter_FormatDDL(t)
+	TestPLSQLFormatter_FormatPlaceholders(t)
+	TestPLSQLFormatter_FormatJoins(t)
+	TestPLSQLFormatter_FormatCase(t)
+	TestPLSQLFormatter_FormatComplex(t)
 }

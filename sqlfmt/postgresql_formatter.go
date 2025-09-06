@@ -27,7 +27,7 @@ func NewPostgreSQLTokenizerConfig() *TokenizerConfig {
 		StringTypes:                   []string{`""`, "N''", "''", "``", "[]", "$$"},
 		OpenParens:                    []string{"(", "CASE"},
 		CloseParens:                   []string{")", "END"},
-		IndexedPlaceholderTypes:       []string{"?"},
+		IndexedPlaceholderTypes:       []string{"$"},
 		NamedPlaceholderTypes:         []string{"@", ":"},
 		LineCommentTypes:              []string{"--"},
 	}

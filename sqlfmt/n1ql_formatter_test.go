@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestN1QLFormatter_Format(t *testing.T) {
+func TestN1QLFormatter_FormatBasic(t *testing.T) {
 	tests := []struct {
 		name  string
 		query string
@@ -44,6 +44,20 @@ func TestN1QLFormatter_Format(t *testing.T) {
                 ('123', {'id': 1, 'type': 'Tarzan'});
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewN1QLFormatter(cfg)
+	})
+}
+
+func TestN1QLFormatter_FormatComplex(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name: "formats INSERT with large object and array literals",
 			query: `
@@ -101,6 +115,20 @@ func TestN1QLFormatter_Format(t *testing.T) {
                 orders_with_users orders ON KEYS ARRAY s.order_id FOR s IN usr.shipped_order_history END;
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewN1QLFormatter(cfg)
+	})
+}
+
+func TestN1QLFormatter_FormatOperations(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats explained DELETE query with USE KEYS and RETURNING",
 			query: "EXPLAIN DELETE FROM tutorial t USE KEYS 'baldwin' RETURNING t",
@@ -123,6 +151,20 @@ func TestN1QLFormatter_Format(t *testing.T) {
                 type = 'actor' RETURNING tutorial.type
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewN1QLFormatter(cfg)
+	})
+}
+
+func TestN1QLFormatter_FormatVariables(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "recognizes $variables",
 			query: "SELECT $variable, $'var name', $\"var name\", $`var name`;",
@@ -173,4 +215,11 @@ func TestN1QLFormatter_Format(t *testing.T) {
 	runFormatterTests(t, tests, func(cfg *Config) Formatter {
 		return NewN1QLFormatter(cfg)
 	})
+}
+
+func TestN1QLFormatter_Format(t *testing.T) {
+	TestN1QLFormatter_FormatBasic(t)
+	TestN1QLFormatter_FormatComplex(t)
+	TestN1QLFormatter_FormatOperations(t)
+	TestN1QLFormatter_FormatVariables(t)
 }

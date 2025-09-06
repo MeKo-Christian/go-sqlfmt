@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestStandardSQLFormatter_Format(t *testing.T) {
+func TestStandardSQLFormatter_FormatDDL(t *testing.T) {
 	tests := []struct {
 		name  string
 		query string
@@ -58,6 +58,20 @@ func TestStandardSQLFormatter_Format(t *testing.T) {
                   supplier_name VARCHAR(100) NOT NULL;
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestStandardSQLFormatter_FormatVariables(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "recognizes [] strings",
 			query: "[foo JOIN bar]",
@@ -136,6 +150,20 @@ func TestStandardSQLFormatter_Format(t *testing.T) {
 				}),
 			},
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestStandardSQLFormatter_FormatPlaceholders(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "recognizes ?[0-9]* placeholders",
 			query: "SELECT ?1, ?25, ?;",
@@ -189,6 +217,20 @@ func TestStandardSQLFormatter_Format(t *testing.T) {
 				}),
 			},
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestStandardSQLFormatter_FormatJoins(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats query with GO batch separator",
 			query: "SELECT 1 GO SELECT 2",
@@ -265,6 +307,20 @@ func TestStandardSQLFormatter_Format(t *testing.T) {
                 2 ROWS ONLY;
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestStandardSQLFormatter_FormatCase(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats CASE ... WHEN with a blank expression",
 			query: "CASE WHEN option = 'foo' THEN 1 WHEN option = 'bar' THEN 2 WHEN option = 'baz' THEN 3 ELSE 4 END;",
@@ -328,6 +384,20 @@ func TestStandardSQLFormatter_Format(t *testing.T) {
                 table1;
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestStandardSQLFormatter_FormatComments(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats tricky line comments",
 			query: "SELECT a#comment, here\nFROM b--comment",
@@ -388,4 +458,13 @@ func TestStandardSQLFormatter_Format(t *testing.T) {
 	runFormatterTests(t, tests, func(cfg *Config) Formatter {
 		return NewStandardSQLFormatter(cfg)
 	})
+}
+
+func TestStandardSQLFormatter_Format(t *testing.T) {
+	TestStandardSQLFormatter_FormatDDL(t)
+	TestStandardSQLFormatter_FormatVariables(t)
+	TestStandardSQLFormatter_FormatPlaceholders(t)
+	TestStandardSQLFormatter_FormatJoins(t)
+	TestStandardSQLFormatter_FormatCase(t)
+	TestStandardSQLFormatter_FormatComments(t)
 }

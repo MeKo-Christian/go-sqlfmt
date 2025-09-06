@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestDB2Formatter_Format(t *testing.T) {
+func TestDB2Formatter_FormatBasic(t *testing.T) {
 	tests := []struct {
 		name  string
 		query string
@@ -40,6 +40,20 @@ func TestDB2Formatter_Format(t *testing.T) {
                 MyTable;
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewDB2Formatter(cfg)
+	})
+}
+
+func TestDB2Formatter_FormatIdentifiers(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "recognizes @ and # as part of identifiers",
 			query: "SELECT col#1, @col2 FROM tbl",
@@ -77,4 +91,9 @@ func TestDB2Formatter_Format(t *testing.T) {
 	runFormatterTests(t, tests, func(cfg *Config) Formatter {
 		return NewDB2Formatter(cfg)
 	})
+}
+
+func TestDB2Formatter_Format(t *testing.T) {
+	TestDB2Formatter_FormatBasic(t)
+	TestDB2Formatter_FormatIdentifiers(t)
 }

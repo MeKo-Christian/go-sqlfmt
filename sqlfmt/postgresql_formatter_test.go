@@ -256,6 +256,184 @@ func TestPostgreSQLFormatter_DollarQuotes(t *testing.T) {
 	})
 }
 
+func TestPostgreSQLFormatter_NumberedPlaceholders(t *testing.T) {
+	t.Run("formats basic numbered placeholders", func(t *testing.T) {
+		query := "SELECT id, name FROM users WHERE id = $1 AND active = $2;"
+		exp := Dedent(`
+            SELECT
+              id,
+              name
+            FROM
+              users
+            WHERE
+              id = $1
+              AND active = $2;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats multiple numbered placeholders", func(t *testing.T) {
+		query := "INSERT INTO users (name, email, age, active) VALUES ($1, $2, $3, $4);"
+		exp := Dedent(`
+            INSERT INTO
+              users (name, email, age, active)
+            VALUES
+              ($1, $2, $3, $4);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats high-numbered placeholders", func(t *testing.T) {
+		query := "SELECT * FROM users WHERE col1 = $10 AND col2 = $100;"
+		exp := Dedent(`
+            SELECT
+              *
+            FROM
+              users
+            WHERE
+              col1 = $10
+              AND col2 = $100;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles placeholders in complex expressions", func(t *testing.T) {
+		query := "SELECT CASE WHEN age > $1 THEN 'adult' ELSE 'minor' END FROM users WHERE status IN ($2, $3);"
+		exp := Dedent(`
+            SELECT
+              CASE
+                WHEN age > $1 THEN 'adult'
+                ELSE 'minor'
+              END
+            FROM
+              users
+            WHERE
+              status IN ($2, $3);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("distinguishes placeholders from dollar-quotes", func(t *testing.T) {
+		query := "SELECT $1, $$text with $25.99 price$$ FROM products WHERE price > $2;"
+		exp := Dedent(`
+            SELECT
+              $1,
+              $$text with $25.99 price$$
+            FROM
+              products
+            WHERE
+              price > $2;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+}
+
+func TestPostgreSQLFormatter_ParameterSubstitution(t *testing.T) {
+	t.Run("substitutes numbered placeholders with 0-based params", func(t *testing.T) {
+		query := "SELECT id, name FROM users WHERE id = $1 AND active = $2;"
+		exp := Dedent(`
+            SELECT
+              id,
+              name
+            FROM
+              users
+            WHERE
+              id = 'param1'
+              AND active = 'param2';
+        `)
+		cfg := NewDefaultConfig().WithLang(PostgreSQL)
+		cfg.Params = NewListParams([]string{"param0", "'param1'", "'param2'"})
+		result := NewPostgreSQLFormatter(cfg).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("substitutes out-of-order placeholders", func(t *testing.T) {
+		query := "SELECT $2, $1, $0;"
+		exp := Dedent(`
+            SELECT
+              'third',
+              'second',
+              'first';
+        `)
+		cfg := NewDefaultConfig().WithLang(PostgreSQL)
+		cfg.Params = NewListParams([]string{"'first'", "'second'", "'third'"})
+		result := NewPostgreSQLFormatter(cfg).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles repeated placeholders", func(t *testing.T) {
+		query := "SELECT $0, $1, $0, $1;"
+		exp := Dedent(`
+            SELECT
+              'value1',
+              'value2',
+              'value1',
+              'value2';
+        `)
+		cfg := NewDefaultConfig().WithLang(PostgreSQL)
+		cfg.Params = NewListParams([]string{"'value1'", "'value2'"})
+		result := NewPostgreSQLFormatter(cfg).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("leaves unreplaced placeholders when params missing", func(t *testing.T) {
+		query := "SELECT $0, $1, $2;"
+		exp := Dedent(`
+            SELECT
+              'first',
+              $1,
+              $2;
+        `)
+		cfg := NewDefaultConfig().WithLang(PostgreSQL)
+		cfg.Params = NewListParams([]string{"'first'"})
+		result := NewPostgreSQLFormatter(cfg).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("ignores dollar-quotes during substitution", func(t *testing.T) {
+		query := "SELECT $0, $$function body with $2$$ AS func;"
+		exp := Dedent(`
+            SELECT
+              'param1',
+              $$function body with $2$$ AS func;
+        `)
+		cfg := NewDefaultConfig().WithLang(PostgreSQL)
+		cfg.Params = NewListParams([]string{"'param1'", "'param2'"})
+		result := NewPostgreSQLFormatter(cfg).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles placeholders with sufficient params", func(t *testing.T) {
+		query := "SELECT $0, $1, $2;"
+		exp := Dedent(`
+            SELECT
+              'first',
+              'second',
+              'third';
+        `)
+		cfg := NewDefaultConfig().WithLang(PostgreSQL)
+		cfg.Params = NewListParams([]string{"'first'", "'second'", "'third'"})
+		result := NewPostgreSQLFormatter(cfg).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+}
+
 func ExamplePostgreSQLFormatter_Format() {
 	cfg := NewDefaultConfig().WithLang(PostgreSQL)
 	formatter := NewPostgreSQLFormatter(cfg)

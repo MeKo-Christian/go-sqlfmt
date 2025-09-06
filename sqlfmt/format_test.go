@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFormat(t *testing.T) {
+func TestFormatBasic(t *testing.T) {
 	tests := []struct {
 		name  string
 		query string
@@ -183,6 +183,49 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
                   INNER JOIN orders ON customers.customer_id = orders.customer_id;
             `),
 		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result string
+			if !tt.cfg.Empty() {
+				if tt.cfg.Indent == "" {
+					tt.cfg.Indent = DefaultIndent
+				}
+				result = Format(tt.query, &tt.cfg)
+			} else {
+				result = Format(tt.query)
+			}
+
+			exp := strings.TrimRight(tt.exp, "\n\t ")
+			exp = strings.TrimLeft(exp, "\n")
+			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
+
+			if result != exp {
+				fmt.Println("=== QUERY ===")
+				fmt.Println(tt.query)
+				fmt.Println()
+
+				fmt.Println("=== EXP ===")
+				fmt.Println(exp)
+				fmt.Println()
+
+				fmt.Println("=== RESULT ===")
+				fmt.Println(result)
+				fmt.Println()
+			}
+			require.Equal(t, exp, result)
+		})
+	}
+}
+
+func TestFormatComments(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name: "formats SELECT query with different comments",
 			query: Dedent(`
@@ -233,6 +276,49 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
                   1 = 2;
             `),
 		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result string
+			if !tt.cfg.Empty() {
+				if tt.cfg.Indent == "" {
+					tt.cfg.Indent = DefaultIndent
+				}
+				result = Format(tt.query, &tt.cfg)
+			} else {
+				result = Format(tt.query)
+			}
+
+			exp := strings.TrimRight(tt.exp, "\n\t ")
+			exp = strings.TrimLeft(exp, "\n")
+			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
+
+			if result != exp {
+				fmt.Println("=== QUERY ===")
+				fmt.Println(tt.query)
+				fmt.Println()
+
+				fmt.Println("=== EXP ===")
+				fmt.Println(exp)
+				fmt.Println()
+
+				fmt.Println("=== RESULT ===")
+				fmt.Println(result)
+				fmt.Println()
+			}
+			require.Equal(t, exp, result)
+		})
+	}
+}
+
+func TestFormatInsertUpdateDelete(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name: "formats simple INSERT query",
 			query: `INSERT INTO Customers (ID, MoneyBalance, Address, City)
@@ -350,6 +436,49 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
                   ) AS order_summary
             `),
 		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result string
+			if !tt.cfg.Empty() {
+				if tt.cfg.Indent == "" {
+					tt.cfg.Indent = DefaultIndent
+				}
+				result = Format(tt.query, &tt.cfg)
+			} else {
+				result = Format(tt.query)
+			}
+
+			exp := strings.TrimRight(tt.exp, "\n\t ")
+			exp = strings.TrimLeft(exp, "\n")
+			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
+
+			if result != exp {
+				fmt.Println("=== QUERY ===")
+				fmt.Println(tt.query)
+				fmt.Println()
+
+				fmt.Println("=== EXP ===")
+				fmt.Println(exp)
+				fmt.Println()
+
+				fmt.Println("=== RESULT ===")
+				fmt.Println(result)
+				fmt.Println()
+			}
+			require.Equal(t, exp, result)
+		})
+	}
+}
+
+func TestFormatOperatorsJoins(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats top-level and newline multi-word reserved words with inconsistent spacing",
 			query: "SELECT * FROM foo LEFT \t OUTER  \n JOIN bar ORDER \n BY blah",
@@ -363,6 +492,20 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
                   blah
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatOperatorsParentheses(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats long double parenthesized queries to multiple lines",
 			query: "((foo = '0123456789-0123456789-0123456789-0123456789'))",
@@ -379,6 +522,20 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 			query: "((foo = 'bar'))",
 			exp:   "((foo = 'bar'))",
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatOperatorsBasic(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats single-char operators",
 			query: "SELECT * FROM foo WHERE bar = 'a' AND baz = 'b';",
@@ -405,6 +562,20 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
                   AND baz = 'b';
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatOperatorsFunctions(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name: "formats simple CASE query",
 			query: Dedent(`
@@ -472,6 +643,20 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
                   foo;
             `),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatOperatorsClauses(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats simple GROUP BY query",
 			query: "SELECT COUNT(*) FROM foo GROUP BY bar;",
@@ -565,6 +750,20 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 				  bar;
 			`),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatOperatorsSymbols(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats short double parenthesized queries to one line",
 			query: "((foo = 'bar'))",
@@ -650,6 +849,20 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 			query: "foo !> bar",
 			exp:   "foo !> bar",
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatOperatorsLogical(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats logical operators (ALL)",
 			query: "foo ALL bar",
@@ -700,6 +913,30 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 			query: "foo OR bar",
 			exp:   "foo\nOR bar",
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatOperators(t *testing.T) {
+	TestFormatOperatorsJoins(t)
+	TestFormatOperatorsParentheses(t)
+	TestFormatOperatorsBasic(t)
+	TestFormatOperatorsFunctions(t)
+	TestFormatOperatorsClauses(t)
+	TestFormatOperatorsSymbols(t)
+	TestFormatOperatorsLogical(t)
+}
+
+func TestFormatStrings(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "recognizes strings (double quotes)",
 			query: "\"foo JOIN bar\"",
@@ -715,71 +952,49 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 			query: "`foo JOIN bar`",
 			exp:   "`foo JOIN bar`",
 		},
-		{
-			name:  "recognizes escaped strings (double quotes)",
-			query: "\"foo \\\" JOIN bar\"",
-			exp:   "\"foo \\\" JOIN bar\"",
-		},
-		{
-			name:  "recognizes escaped strings (single quotes)",
-			query: "'foo \\' JOIN bar'",
-			exp:   "'foo \\' JOIN bar'",
-		},
-		{
-			name:  "recognizes escaped strings (backticks)",
-			query: "`foo `` JOIN bar`",
-			exp:   "`foo `` JOIN bar`",
-		},
-		{
-			name:  "formats postgres specific operators (::)",
-			query: "column::int",
-			exp:   "column :: int",
-		},
-		{
-			name:  "formats postgres specific operators (->)",
-			query: "v->2",
-			exp:   "v -> 2",
-		},
-		{
-			name:  "formats postgres specific operators (->>)",
-			query: "v->>2",
-			exp:   "v ->> 2",
-		},
-		{
-			name:  "formats postgres specific operators (~~)",
-			query: "foo ~~ 'hello'",
-			exp:   "foo ~~ 'hello'",
-		},
-		{
-			name:  "formats postgres specific operators (!~)",
-			query: "foo !~ 'hello'",
-			exp:   "foo !~ 'hello'",
-		},
-		{
-			name:  "formats postgres specific operators (~*)",
-			query: "foo ~* 'hello'",
-			exp:   "foo ~* 'hello'",
-		},
-		{
-			name:  "formats postgres specific operators (~~*)",
-			query: "foo ~~* 'hello'",
-			exp:   "foo ~~* 'hello'",
-		},
-		{
-			name:  "formats postgres specific operators (!~~)",
-			query: "foo !~~ 'hello'",
-			exp:   "foo !~~ 'hello'",
-		},
-		{
-			name:  "formats postgres specific operators (!~*)",
-			query: "foo !~* 'hello'",
-			exp:   "foo !~* 'hello'",
-		},
-		{
-			name:  "formats postgres specific operators (!~~*)",
-			query: "foo !~~* 'hello'",
-			exp:   "foo !~~* 'hello'",
-		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result string
+			if !tt.cfg.Empty() {
+				if tt.cfg.Indent == "" {
+					tt.cfg.Indent = DefaultIndent
+				}
+				result = Format(tt.query, &tt.cfg)
+			} else {
+				result = Format(tt.query)
+			}
+
+			exp := strings.TrimRight(tt.exp, "\n\t ")
+			exp = strings.TrimLeft(exp, "\n")
+			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
+
+			if result != exp {
+				fmt.Println("=== QUERY ===")
+				fmt.Println(tt.query)
+				fmt.Println()
+
+				fmt.Println("=== EXP ===")
+				fmt.Println(exp)
+				fmt.Println()
+
+				fmt.Println("=== RESULT ===")
+				fmt.Println(result)
+				fmt.Println()
+			}
+			require.Equal(t, exp, result)
+		})
+	}
+}
+
+func TestFormatSpecialStatements(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "keeps separation between multiple statements (semicolon)",
 			query: "foo;bar;",
@@ -815,6 +1030,20 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 					Table2;
 			`),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatSpecialUnicode(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "formats unicode correctly",
 			query: "SELECT test, тест FROM table;",
@@ -841,6 +1070,20 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 			`),
 			cfg: Config{Uppercase: true},
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatSpecialConfig(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name:  "line breaks between queries change with config",
 			query: "SELECT * FROM foo; SELECT * FROM bar;",
@@ -876,6 +1119,20 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 				);
 			`),
 		},
+	}
+
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
+
+func TestFormatSpecialAdvanced(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
 		{
 			name: "formats $$ correctly",
 			query: Dedent(`
@@ -1029,38 +1286,26 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var result string
-			if !tt.cfg.Empty() {
-				if tt.cfg.Indent == "" {
-					tt.cfg.Indent = DefaultIndent
-				}
-				result = Format(tt.query, &tt.cfg)
-			} else {
-				result = Format(tt.query)
-			}
+	runFormatterTests(t, tests, func(cfg *Config) Formatter {
+		return NewStandardSQLFormatter(cfg)
+	})
+}
 
-			exp := strings.TrimRight(tt.exp, "\n\t ")
-			exp = strings.TrimLeft(exp, "\n")
-			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
+func TestFormatSpecial(t *testing.T) {
+	TestFormatSpecialStatements(t)
+	TestFormatSpecialUnicode(t)
+	TestFormatSpecialConfig(t)
+	TestFormatSpecialAdvanced(t)
+}
 
-			if result != exp {
-				fmt.Println("=== QUERY ===")
-				fmt.Println(tt.query)
-				fmt.Println()
-
-				fmt.Println("=== EXP ===")
-				fmt.Println(exp)
-				fmt.Println()
-
-				fmt.Println("=== RESULT ===")
-				fmt.Println(result)
-				fmt.Println()
-			}
-			require.Equal(t, exp, result)
-		})
-	}
+func TestFormat(t *testing.T) {
+	// This function now calls the individual test functions
+	TestFormatBasic(t)
+	TestFormatComments(t)
+	TestFormatInsertUpdateDelete(t)
+	TestFormatOperators(t)
+	TestFormatStrings(t)
+	TestFormatSpecial(t)
 }
 
 func TestPrettyPrint(t *testing.T) {

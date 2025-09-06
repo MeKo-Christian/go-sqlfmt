@@ -35,15 +35,15 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
 
 ## Phase 4: PostgreSQL Numbered Placeholders ($1, $2, ...)
 
-- [ ] Update placeholder handling for PostgreSQL
-  - [ ] Add `$` to `IndexedPlaceholderTypes` in PostgreSQL config
-  - [ ] Update placeholder regex to recognize `$1`, `$2`, etc.
-  - [ ] Modify `params.go` to handle 1-based indexing for `$n` placeholders
-- [ ] Add numbered placeholder tests
-  - [ ] Test numbered placeholder formatting
-  - [ ] Test parameter substitution with `$n`
-  - [ ] Test mixed numbered and named placeholders
-  - [ ] Test edge cases (high numbers, $0)
+- [x] Update placeholder handling for PostgreSQL
+  - [x] Add `$` to `IndexedPlaceholderTypes` in PostgreSQL config
+  - [x] Update placeholder regex to recognize `$1`, `$2`, etc.
+  - [x] Modify `params.go` to handle 1-based indexing for `$n` placeholders
+- [x] Add numbered placeholder tests
+  - [x] Test numbered placeholder formatting
+  - [x] Test parameter substitution with `$n`
+  - [x] Test mixed numbered and named placeholders
+  - [x] Test edge cases (high numbers, $0)
 
 ## Phase 5: Type Cast Operator (::)
 
