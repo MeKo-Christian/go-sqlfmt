@@ -81,7 +81,8 @@ func TestFormat(t *testing.T) {
 		},
 		{
 			name:  "formats SELECT with top level reserved words",
-			query: "SELECT * FROM foo WHERE name = 'John' GROUP BY some_column HAVING column > 10 ORDER BY other_column LIMIT 5;",
+			query: "SELECT * FROM foo WHERE name = 'John' GROUP BY some_column " +
+				"HAVING column > 10 ORDER BY other_column LIMIT 5;",
 			exp: Dedent(`
 				SELECT
 					*

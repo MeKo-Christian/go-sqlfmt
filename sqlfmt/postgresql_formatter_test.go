@@ -8,9 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testQuery = "SELECT id, name FROM users WHERE active = true;"
+
 func TestPostgreSQLFormatter_Format(t *testing.T) {
 	t.Run("formats simple SELECT", func(t *testing.T) {
-		query := "SELECT id, name FROM users WHERE active = true;"
+		query := testQuery
 		exp := Dedent(`
             SELECT
               id,
@@ -115,11 +117,150 @@ func TestPostgreSQLFormatter_WithColorConfig(t *testing.T) {
 	})
 }
 
+func TestPostgreSQLFormatter_DollarQuotes(t *testing.T) {
+	t.Run("formats basic dollar-quoted strings", func(t *testing.T) {
+		query := "SELECT $$hello world$$ AS message;"
+		exp := Dedent(`
+            SELECT
+              $$hello world$$ AS message;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats tagged dollar-quoted strings", func(t *testing.T) {
+		query := "SELECT $tag$hello world$tag$ AS message;"
+		exp := Dedent(`
+            SELECT
+              $tag$hello world$tag$ AS message;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats multi-line dollar-quoted strings", func(t *testing.T) {
+		query := Dedent(`
+            CREATE FUNCTION test() RETURNS TEXT AS $$
+            BEGIN
+                RETURN 'Hello, World!';
+            END;
+            $$ LANGUAGE plpgsql;
+        `)
+		exp := Dedent(`
+            CREATE FUNCTION test() RETURNS TEXT AS $$
+            BEGIN
+                RETURN 'Hello, World!';
+            END;
+            $$ LANGUAGE plpgsql;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats tagged dollar-quoted function bodies", func(t *testing.T) {
+		query := Dedent(`
+            CREATE FUNCTION add_numbers(a int, b int) RETURNS int AS $function$
+            BEGIN
+                RETURN a + b;
+            END;
+            $function$ LANGUAGE plpgsql;
+        `)
+		exp := Dedent(`
+            CREATE FUNCTION add_numbers(a int, b int) RETURNS int AS $function$
+            BEGIN
+                RETURN a + b;
+            END;
+            $function$ LANGUAGE plpgsql;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles nested quotes inside dollar-quotes", func(t *testing.T) {
+		query := `SELECT $body$He said "Hello" and 'Goodbye'$body$ AS message;`
+		exp := Dedent(`
+            SELECT
+              $body$He said "Hello" and 'Goodbye'$body$ AS message;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles dollar signs inside dollar-quotes", func(t *testing.T) {
+		query := `SELECT $$Price: $25.99$$ AS message;`
+		exp := Dedent(`
+            SELECT
+              $$Price: $25.99$$ AS message;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles complex JavaScript function body", func(t *testing.T) {
+		query := Dedent(`
+            CREATE OR REPLACE FUNCTION test_js(str VARCHAR) RETURNS VARCHAR LANGUAGE javascript AS $js$
+            return (str.length <= 1 
+                ? str : str.substring(0,1) + '_' + test_js(str.substring(1)));
+            $js$;
+        `)
+		exp := Dedent(`
+            CREATE
+            OR REPLACE FUNCTION test_js(str VARCHAR) RETURNS VARCHAR LANGUAGE javascript AS $js$
+            return (str.length <= 1 
+                ? str : str.substring(0,1) + '_' + test_js(str.substring(1)));
+            $js$;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles multiple dollar-quoted strings", func(t *testing.T) {
+		query := `SELECT $tag1$first$tag1$, $tag2$second$tag2$ AS messages;`
+		exp := Dedent(`
+            SELECT
+              $tag1$first$tag1$,
+              $tag2$second$tag2$ AS messages;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles empty dollar-quoted strings", func(t *testing.T) {
+		query := `SELECT $$$$ AS empty_string;`
+		exp := Dedent(`
+            SELECT
+              $$$$ AS empty_string;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles complex tag names", func(t *testing.T) {
+		query := `SELECT $my_tag_123$content$my_tag_123$ AS tagged;`
+		exp := Dedent(`
+            SELECT
+              $my_tag_123$content$my_tag_123$ AS tagged;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+}
+
 func ExamplePostgreSQLFormatter_Format() {
 	cfg := NewDefaultConfig().WithLang(PostgreSQL)
 	formatter := NewPostgreSQLFormatter(cfg)
 
-	query := "SELECT id FROM users WHERE active = true;"
+	query := testQuery
 	result := formatter.Format(query)
 	fmt.Println(result)
 	// Output:

@@ -1,0 +1,39 @@
+insert into
+  customers(
+    name,
+    email,
+    phone,
+    address,
+    city,
+    state,
+    zip_code,
+    created_at
+  )
+values
+(
+    'John Doe',
+    'john.doe@example.com',
+    '+1-555-123-4567',
+    '123 Main Street',
+    'Anytown',
+    'CA',
+    '12345',
+    current_timestamp
+  );
+
+update
+  customers
+set
+  last_login = current_timestamp,
+  login_count = login_count + 1,
+  updated_at = current_timestamp
+where
+  email in(
+    select
+      distinct email
+    from
+      login_logs
+    where
+      login_date >= current_date - interval '7 days'
+      and success = true
+  );

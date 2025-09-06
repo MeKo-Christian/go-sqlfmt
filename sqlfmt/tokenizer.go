@@ -82,7 +82,7 @@ func createStringPattern(stringTypes []string) string {
 		"N''":  "((N'[^N'\\\\]*(?:\\\\.[^N'\\\\]*)*('|$))+)",
 		"$$":   "((\\$\\$[^\\$]*($|\\$\\$))+)",
 	}
-	var result []string
+	result := make([]string, 0, len(stringTypes))
 	for _, t := range stringTypes {
 		result = append(result, patterns[t])
 	}
@@ -167,7 +167,16 @@ func (t *tokenizer) getBlockCommentToken(input string) token {
 }
 
 func (t *tokenizer) getStringToken(input string) token {
+	// Check for dollar-quoted strings first as they require special handling
+	if dollarQuotedToken := t.getDollarQuotedToken(input); !dollarQuotedToken.empty() {
+		return dollarQuotedToken
+	}
 	return t.getTokenOnFirstMatch(input, tokenTypeString, t.stringRegex)
+}
+
+// getDollarQuotedToken scans for PostgreSQL-style dollar-quoted strings.
+func (t *tokenizer) getDollarQuotedToken(input string) token {
+	return scanDollarQuotedString(input)
 }
 
 func (t *tokenizer) getOpenParenToken(input string) token {
@@ -294,4 +303,64 @@ func firstNonEmptyToken(toks ...token) token {
 		}
 	}
 	return token{}
+}
+
+// scanDollarQuotedString scans for PostgreSQL-style dollar-quoted strings.
+// Supports both simple $$ delimited strings and tagged $tag$ delimited strings.
+func scanDollarQuotedString(input string) token {
+	if len(input) == 0 || input[0] != '$' {
+		return token{}
+	}
+
+	openingTag := findDollarQuoteTag(input)
+	if openingTag == "" {
+		return token{}
+	}
+
+	return findClosingDollarQuote(input, openingTag)
+}
+
+// findDollarQuoteTag extracts the opening dollar-quote tag from input.
+func findDollarQuoteTag(input string) string {
+	for i := 1; i < len(input); i++ {
+		if input[i] == '$' {
+			return input[:i+1]
+		}
+		if !isValidTagChar(input[i]) {
+			return ""
+		}
+	}
+	return ""
+}
+
+// findClosingDollarQuote searches for the matching closing tag.
+func findClosingDollarQuote(input, openingTag string) token {
+	searchStart := len(openingTag)
+	for i := searchStart; i <= len(input)-len(openingTag); i++ {
+		if hasMatchingTag(input, i, openingTag) {
+			return token{
+				typ:   tokenTypeString,
+				value: input[:i+len(openingTag)],
+			}
+		}
+	}
+	
+	// No matching closing tag found, return entire input as incomplete string
+	return token{
+		typ:   tokenTypeString,
+		value: input,
+	}
+}
+
+// isValidTagChar checks if character is valid in dollar-quote tag.
+func isValidTagChar(ch byte) bool {
+	return (ch >= 'a' && ch <= 'z') ||
+		(ch >= 'A' && ch <= 'Z') ||
+		(ch >= '0' && ch <= '9') ||
+		ch == '_'
+}
+
+// hasMatchingTag checks if the input has the matching closing tag at position i.
+func hasMatchingTag(input string, i int, tag string) bool {
+	return i+len(tag) <= len(input) && input[i:i+len(tag)] == tag
 }

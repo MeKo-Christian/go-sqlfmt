@@ -61,3 +61,13 @@ The library uses a factory pattern in `getFormatter()` that selects the appropri
 Configuration uses a fluent builder pattern where methods like `WithLang()`, `WithIndent()` return `*Config` for method chaining.
 
 The tokenizer categorizes SQL elements into types defined in `token_types.go` and supports customization via `TokenizerConfig` for different SQL dialects.
+
+## PostgreSQL Support Implementation
+
+**Status**: PostgreSQL basic support (Phase 1 & 2) has been implemented. Currently supports all standard SQL formatting with PostgreSQL language recognition.
+
+**Implementation Plan**: See `PLAN.md` for the comprehensive 15-phase PostgreSQL implementation roadmap.
+
+**Usage**: Use `sqlfmt.PostgreSQL` as the language parameter to format PostgreSQL queries.
+
+**Testing**: All PostgreSQL formatter tests can be run with `go test ./sqlfmt -run TestPostgreSQL`.

@@ -23,15 +23,15 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
 
 ## Phase 3: Dollar-Quoted String Support
 
-- [ ] Add dollar-quote pattern support to tokenizer
-  - [ ] Add `$$` pattern to `createStringPattern()` in `tokenizer.go`
-  - [ ] Create helper function `scanDollarQuotedString()` in tokenizer
-  - [ ] Update `getStringToken()` to handle dollar-quoted strings
-- [ ] Add comprehensive dollar-quote tests
-  - [ ] Test basic dollar-quoted strings (`$$...$$`)
-  - [ ] Test tagged dollar-quoted strings (`$tag$...$tag$`)
-  - [ ] Test nested quotes inside dollar-quotes
-  - [ ] Test multi-line dollar-quoted strings
+- [x] Add dollar-quote pattern support to tokenizer
+  - [x] Add `$$` pattern to `createStringPattern()` in `tokenizer.go`
+  - [x] Create helper function `scanDollarQuotedString()` in tokenizer
+  - [x] Update `getStringToken()` to handle dollar-quoted strings
+- [x] Add comprehensive dollar-quote tests
+  - [x] Test basic dollar-quoted strings (`$$...$$`)
+  - [x] Test tagged dollar-quoted strings (`$tag$...$tag$`)
+  - [x] Test nested quotes inside dollar-quotes
+  - [x] Test multi-line dollar-quoted strings
 
 ## Phase 4: PostgreSQL Numbered Placeholders ($1, $2, ...)
 
@@ -175,6 +175,12 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
 
 ## Phase 13: Comprehensive Integration Testing
 
+- [x] **Set up snapshot testing infrastructure**
+  - [x] Add go-snaps dependency for Jest-like snapshot testing
+  - [x] Create comprehensive snapshot test suite for all SQL dialects
+  - [x] Add Justfile commands: `just test-snapshots`, `just update-snapshots`
+  - [x] Configure TestMain for obsolete snapshot detection
+  - [x] Test coverage for Standard SQL, PostgreSQL, N1QL, DB2, and PL/SQL
 - [ ] Create golden test file with complex PostgreSQL queries
   - [ ] Test multi-CTE queries with RECURSIVE
   - [ ] Test UPSERT queries (INSERT...ON CONFLICT)

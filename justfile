@@ -63,6 +63,18 @@ test-coverage:
 test-benchmarks:
     go test -bench=. ./...
 
+# Run snapshot tests
+test-snapshots:
+    go test -v ./... -run "TestSnapshot"
+
+# Update snapshots
+update-snapshots:
+    UPDATE_SNAPS=true go test ./... -run "TestSnapshot"
+
+# Run golden file tests (proper input->format->compare tests)
+test-golden:
+    go test -v ./... -run "TestGoldenFiles"
+
 # Build the binary
 build:
     go build ./...

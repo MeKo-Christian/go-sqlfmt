@@ -3,7 +3,7 @@ package sqlfmt
 import "fmt"
 
 type Formatter interface {
-	Format(string) string
+	Format(query string) string
 }
 
 // Format formats the SQL query according to an optional config.

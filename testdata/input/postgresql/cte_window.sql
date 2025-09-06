@@ -1,0 +1,3 @@
+with recursive employee_hierarchy as(select id,name,manager_id,0 as level from employees where manager_id is null union all select e.id,e.name,e.manager_id,eh.level+1 from employees e join employee_hierarchy eh on e.manager_id=eh.id)select*from employee_hierarchy order by level,name;
+
+select employee_id,salary,rank()over(partition by department order by salary desc)as salary_rank,lag(salary,1)over(partition by department order by salary desc)as prev_salary from employees where active=true order by department,salary desc;

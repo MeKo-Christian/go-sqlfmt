@@ -572,12 +572,14 @@ func NewDB2TokenizerConfig() *TokenizerConfig {
 	}
 }
 
+const setKeyword = "SET"
+
 func (ssf *DB2Formatter) Format(query string) string {
 	return newFormatter(
 		ssf.cfg,
 		newTokenizer(ssf.cfg.TokenizerConfig),
 		func(tok token, previousReservedWord token) token {
-			if tok.typ == tokenTypeReservedTopLevel && tok.value == "SET" && previousReservedWord.value == "BY" {
+			if tok.typ == tokenTypeReservedTopLevel && tok.value == setKeyword && previousReservedWord.value == "BY" {
 				tok.typ = tokenTypeReserved
 			}
 			return tok

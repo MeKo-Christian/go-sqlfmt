@@ -1,0 +1,73 @@
+
+[TestSnapshotFormatting_StandardSQL/basic_SELECT - 1]
+SELECT
+  id,
+  name
+FROM
+  users
+WHERE
+  active = true;
+---
+
+[TestSnapshotFormatting_StandardSQL/INSERT_statement - 1]
+INSERT INTO
+  users (name, email)
+VALUES
+  ('John', 'john@test.com');
+---
+
+[TestSnapshotFormatting_PostgreSQL/basic_SELECT - 1]
+SELECT
+  id,
+  name
+FROM
+  users
+WHERE
+  active = true;
+---
+
+[TestSnapshotFormatting_N1QL/basic_N1QL_SELECT - 1]
+SELECT
+  name
+FROM
+  `travel-sample`
+WHERE
+  type = 'airline';
+---
+
+[TestSnapshotFormatting_DB2/DB2_basic_query - 1]
+SELECT
+  empno,
+  lastname
+FROM
+  employee
+WHERE
+  workdept = 'A00';
+---
+
+[TestSnapshotFormatting_PLSQL/PL/SQL_basic_query - 1]
+SELECT
+  employee_id,
+  last_name
+FROM
+  employees
+WHERE
+  department_id = 10;
+---
+
+[TestSnapshotFormatting_WithCustomConfig/uppercase_keywords - 1]
+SELECT
+  id,
+  name
+FROM
+  users;
+---
+
+[TestSnapshotFormatting_PostgreSQL/JSON_operations - 1]
+SELECT
+  data ->> 'name' as name
+FROM
+  users
+WHERE
+  data ? 'active';
+---
