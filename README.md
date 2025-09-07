@@ -95,14 +95,14 @@ sqlfmt validate --help
 
 ### CLI Options
 
-| Flag              | Description                                      | Default           | Available In |
-| ----------------- | ------------------------------------------------ | ----------------- | ------------ |
-| `--lang`          | SQL dialect (sql, postgresql, pl/sql, db2, n1ql) | `sql`             | All commands |
-| `--indent`        | Indentation string                               | `"  "` (2 spaces) | All commands |
+| Flag              | Description                                      | Default           | Available In          |
+| ----------------- | ------------------------------------------------ | ----------------- | --------------------- |
+| `--lang`          | SQL dialect (sql, postgresql, pl/sql, db2, n1ql) | `sql`             | All commands          |
+| `--indent`        | Indentation string                               | `"  "` (2 spaces) | All commands          |
 | `--write`         | Write result to file instead of stdout           | `false`           | format, pretty-format |
-| `--color`         | Enable ANSI color formatting                     | `false`           | format only |
-| `--uppercase`     | Convert keywords to uppercase                    | `false`           | All commands |
-| `--lines-between` | Lines between queries                            | `2`               | All commands |
+| `--color`         | Enable ANSI color formatting                     | `false`           | format only           |
+| `--uppercase`     | Convert keywords to uppercase                    | `false`           | All commands          |
+| `--lines-between` | Lines between queries                            | `2`               | All commands          |
 
 **Note**: The `pretty-format` and `pretty-print` commands automatically enable color formatting. Use `pretty-print` when you only want stdout output, and `pretty-format` when you need the `--write` option.
 

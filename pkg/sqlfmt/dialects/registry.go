@@ -22,6 +22,7 @@ const (
 	DB2         = core.DB2
 	N1QL        = core.N1QL
 	PostgreSQL  = core.PostgreSQL
+	MySQL       = core.MySQL
 )
 
 // CreateFormatterForLanguage creates a formatter based on the language configuration.
@@ -35,6 +36,8 @@ func CreateFormatterForLanguage(c *Config) Formatter {
 		return NewPLSQLFormatter(c)
 	case PostgreSQL:
 		return NewPostgreSQLFormatter(c)
+	case MySQL:
+		return NewMySQLFormatter(c)
 	default:
 		return NewStandardSQLFormatter(c)
 	}

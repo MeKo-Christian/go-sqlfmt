@@ -43,14 +43,14 @@ func init() {
 	rootCmd.AddCommand(prettyPrintCmd)
 
 	// Add flags for pretty-format (same as format but color is always enabled)
-	prettyFormatCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, pl/sql, db2, n1ql)")
+	prettyFormatCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, mysql, pl/sql, db2, n1ql)")
 	prettyFormatCmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	prettyFormatCmd.Flags().BoolVarP(&write, "write", "w", false, "Write result to file instead of stdout")
 	prettyFormatCmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert keywords to uppercase")
 	prettyFormatCmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
 
 	// Add flags for pretty-print (same as pretty-format but no write option)
-	prettyPrintCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, pl/sql, db2, n1ql)")
+	prettyPrintCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, mysql, pl/sql, db2, n1ql)")
 	prettyPrintCmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	prettyPrintCmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert keywords to uppercase")
 	prettyPrintCmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")

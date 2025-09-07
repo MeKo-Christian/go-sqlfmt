@@ -37,7 +37,7 @@ Examples:
 func init() {
 	rootCmd.AddCommand(formatCmd)
 
-	formatCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, pl/sql, db2, n1ql)")
+	formatCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, mysql, pl/sql, db2, n1ql)")
 	formatCmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	formatCmd.Flags().BoolVarP(&write, "write", "w", false, "Write result to file instead of stdout")
 	formatCmd.Flags().BoolVar(&color, "color", false, "Enable ANSI color formatting")
@@ -72,6 +72,8 @@ func buildConfig() *sqlfmt.Config {
 		config.WithLang(sqlfmt.StandardSQL)
 	case "postgresql", "postgres":
 		config.WithLang(sqlfmt.PostgreSQL)
+	case "mysql", "mariadb":
+		config.WithLang(sqlfmt.MySQL)
 	case "pl/sql", "plsql", "oracle":
 		config.WithLang(sqlfmt.PLSQL)
 	case "db2":

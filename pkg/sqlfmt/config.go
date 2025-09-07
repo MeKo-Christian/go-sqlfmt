@@ -14,6 +14,8 @@ const (
 	DB2         Language = "db2"
 	N1QL        Language = "n1ql"
 	PostgreSQL  Language = "postgresql"
+	MySQL       Language = "mysql"
+	SQLite      Language = "sqlite"
 
 	DefaultIndent              = "  " // two spaces
 	DefaultLinesBetweenQueries = 2
