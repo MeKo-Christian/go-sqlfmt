@@ -31,6 +31,10 @@ func TestGoldenFiles_PLSQL(t *testing.T) {
 	testGoldenFiles(t, "plsql", NewPLSQLFormatter(NewDefaultConfig().WithLang(PLSQL)))
 }
 
+func TestGoldenFiles_MySQL(t *testing.T) {
+	testGoldenFiles(t, "mysql", NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)))
+}
+
 func testGoldenFiles(t *testing.T, dialect string, formatter Formatter) {
 	t.Helper()
 
