@@ -17,6 +17,7 @@ const (
 	N1QL        Language = "n1ql"
 	PostgreSQL  Language = "postgresql"
 	MySQL       Language = "mysql"
+	SQLite      Language = "sqlite"
 )
 
 // Config represents the configuration for formatting.
