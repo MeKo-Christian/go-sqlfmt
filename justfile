@@ -82,11 +82,11 @@ build:
 # Build the CLI
 build-cli:
     mkdir -p bin
-    go build -o bin/sqlfmt ./cmd/sqlfmt
+    go build -o bin/sqlfmt .
 
 # Install the CLI
 install-cli:
-    go install ./cmd/sqlfmt
+    go install .
 
 # Clean build artifacts
 clean:

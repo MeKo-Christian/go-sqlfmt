@@ -28,6 +28,14 @@ var (
 		"SETOF", "TABLE", "TRIGGER", "VOID",
 		// Function options
 		"COST", "ROWS", "SUPPORT", "PARALLEL SAFE", "PARALLEL UNSAFE", "PARALLEL RESTRICTED",
+		// DDL and Index keywords
+		"CONCURRENTLY", "IF NOT EXISTS", "IF EXISTS",
+		// Index methods
+		"BTREE", "HASH", "GIN", "GIST", "SPGIST", "BRIN",
+		// Index options
+		"INCLUDE", "TABLESPACE", "WITH", "FILLFACTOR", "FASTUPDATE",
+		// Additional DDL keywords
+		"REINDEX", "CLUSTER", "VACUUM", "ANALYZE",
 	}...)
 
 	// PostgreSQL adds CTE and RETURNING support to top-level words.
@@ -35,6 +43,8 @@ var (
 		"WITH", "WITH RECURSIVE", "RETURNING", "WINDOW",
 		// Procedural blocks and functions
 		"DO", "CREATE FUNCTION", "CREATE OR REPLACE FUNCTION",
+		// DDL operations
+		"CREATE INDEX", "CREATE UNIQUE INDEX", "DROP INDEX", "REINDEX",
 	}...)
 
 	postgreSQLReservedTopLevelWordsNoIndent = standardSQLReservedTopLevelWordsNoIndent
@@ -89,6 +99,5 @@ func (psf *PostgreSQLFormatter) tokenOverride(tok types.Token, previousReservedW
 		}
 	}
 
-	
 	return tok
 }
