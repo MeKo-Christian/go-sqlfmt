@@ -7,11 +7,42 @@ import (
 
 var (
 	// PostgreSQL reuses standard SQL reserved words and adds PostgreSQL-specific ones.
-	postgreSQLReservedWords = append(standardSQLReservedWords, []string{}...)
+	postgreSQLReservedWords = append(standardSQLReservedWords, []string{
+		"ILIKE", "SIMILAR TO", "ON CONFLICT", "DO UPDATE", "DO NOTHING",
+		// Window function keywords
+		"WINDOW", "OVER", "PARTITION BY", "FILTER", "RANGE", "ROWS", "GROUPS",
+		"UNBOUNDED", "PRECEDING", "FOLLOWING", "CURRENT ROW",
+		"EXCLUDE", "TIES", "NO OTHERS",
+		// NULLS ordering
+		"NULLS FIRST", "NULLS LAST",
+		// LATERAL joins
+		"LATERAL",
+		// Array functions
+		"ARRAY", "UNNEST",
+		// Procedural keywords
+		"LANGUAGE", "RETURNS", "AS", "DECLARE", "BEGIN",
+		// Function modifiers
+		"IMMUTABLE", "STABLE", "VOLATILE", "STRICT", "CALLED ON NULL INPUT",
+		"SECURITY DEFINER", "SECURITY INVOKER", "LEAKPROOF", "NOT LEAKPROOF",
+		// Return types
+		"SETOF", "TABLE", "TRIGGER", "VOID",
+		// Function options
+		"COST", "ROWS", "SUPPORT", "PARALLEL SAFE", "PARALLEL UNSAFE", "PARALLEL RESTRICTED",
+	}...)
 
-	postgreSQLReservedTopLevelWords         = standardSQLReservedTopLevelWords
+	// PostgreSQL adds CTE and RETURNING support to top-level words.
+	postgreSQLReservedTopLevelWords = append(standardSQLReservedTopLevelWords, []string{
+		"WITH", "WITH RECURSIVE", "RETURNING", "WINDOW",
+		// Procedural blocks and functions
+		"DO", "CREATE FUNCTION", "CREATE OR REPLACE FUNCTION",
+	}...)
+
 	postgreSQLReservedTopLevelWordsNoIndent = standardSQLReservedTopLevelWordsNoIndent
-	postgreSQLReservedNewlineWords          = standardSQLReservedNewlineWords
+
+	// Add LATERAL join support to newline words.
+	postgreSQLReservedNewlineWords = append(standardSQLReservedNewlineWords, []string{
+		"LATERAL JOIN", "LEFT LATERAL JOIN", "RIGHT LATERAL JOIN", "CROSS JOIN LATERAL",
+	}...)
 )
 
 type PostgreSQLFormatter struct {
@@ -29,7 +60,7 @@ func NewPostgreSQLTokenizerConfig() *TokenizerConfig {
 		ReservedTopLevelWords:         postgreSQLReservedTopLevelWords,
 		ReservedNewlineWords:          postgreSQLReservedNewlineWords,
 		ReservedTopLevelWordsNoIndent: postgreSQLReservedTopLevelWordsNoIndent,
-		StringTypes:                   []string{`""`, "N''", "''", "``", "[]", "$$"},
+		StringTypes:                   []string{`""`, "N''", "''", "``", "$$"},
 		OpenParens:                    []string{"(", "CASE"},
 		CloseParens:                   []string{")", "END"},
 		IndexedPlaceholderTypes:       []string{"$"},
