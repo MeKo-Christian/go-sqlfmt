@@ -182,11 +182,11 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
   - [x] Add Justfile commands: `just test-snapshots`, `just update-snapshots`
   - [x] Configure TestMain for obsolete snapshot detection
   - [x] Test coverage for Standard SQL, PostgreSQL, N1QL, DB2, and PL/SQL
-- [ ] Create golden test file with complex PostgreSQL queries
-  - [ ] Test multi-CTE queries with RECURSIVE
-  - [ ] Test UPSERT queries (INSERT...ON CONFLICT)
-  - [ ] Test complex JOIN queries with LATERAL
-  - [ ] Test aggregate functions with FILTER clauses
+- [x] Create golden test file with complex PostgreSQL queries
+  - [x] Test multi-CTE queries with RECURSIVE
+  - [x] Test UPSERT queries (INSERT...ON CONFLICT)
+  - [x] Test complex JOIN queries with LATERAL
+  - [x] Test aggregate functions with FILTER clauses
 - [ ] Test real-world scenarios
   - [ ] Test migration scripts
   - [ ] Test stored procedure definitions
