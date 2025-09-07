@@ -2,14 +2,14 @@
 
 ## Phase 1: Foundation (Language & Skeleton)
 
-- [ ] Add `SQLite` to `Language` in `config.go`.
-- [ ] Update `getFormatter()` in `format.go` to return a SQLite formatter.
-- [ ] Add `sqlite_formatter.go` with:
-  - [ ] `SQLiteFormatter` struct
-  - [ ] `NewSQLiteFormatter(cfg *Config)`
-  - [ ] `Format()` delegating to tokenizer + core formatter
+- [x] Add `SQLite` to `Language` in `config.go`.
+- [x] Update `getFormatter()` in `format.go` to return a SQLite formatter.
+- [x] Add `sqlite_formatter.go` with:
+  - [x] `SQLiteFormatter` struct
+  - [x] `NewSQLiteFormatter(cfg *Config)`
+  - [x] `Format()` delegating to tokenizer + core formatter
 
-- [ ] Add `sqlite_formatter_test.go` with smoke tests.
+- [x] Add `sqlite_formatter_test.go` with smoke tests.
 
 ## Phase 2: Tokenizer Config (baseline)
 

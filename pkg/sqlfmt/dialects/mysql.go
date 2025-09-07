@@ -19,13 +19,13 @@ var (
 		"STORAGE", "DYNAMIC", "FIXED", "COMPRESSED", "REDUNDANT", "COMPACT",
 	}...)
 
-	// MySQL uses the same top-level words as standard SQL for now
+	// MySQL uses the same top-level words as standard SQL for now.
 	mySQLReservedTopLevelWords = standardSQLReservedTopLevelWords
 
-	// MySQL uses the same top-level words without indent as standard SQL
+	// MySQL uses the same top-level words without indent as standard SQL.
 	mySQLReservedTopLevelWordsNoIndent = standardSQLReservedTopLevelWordsNoIndent
 
-	// MySQL uses the same newline words as standard SQL for now
+	// MySQL uses the same newline words as standard SQL for now.
 	mySQLReservedNewlineWords = standardSQLReservedNewlineWords
 )
 
