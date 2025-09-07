@@ -2,14 +2,14 @@
 
 ## Phase 1: Foundation (Language & Skeleton)
 
-- [ ] Add `MySQL` to the `Language` type in `config.go`
-- [ ] Update `getFormatter()` in `format.go` to return a MySQL formatter
-- [ ] Add `mysql_formatter.go` with:
-  - [ ] `MySQLFormatter` struct
-  - [ ] `NewMySQLFormatter(cfg *Config)` ctor
-  - [ ] `Format()` method piping through tokenizer + core formatter
+- [x] Add `MySQL` to the `Language` type in `config.go`
+- [x] Update `getFormatter()` in `format.go` to return a MySQL formatter
+- [x] Add `mysql_formatter.go` with:
+  - [x] `MySQLFormatter` struct
+  - [x] `NewMySQLFormatter(cfg *Config)` ctor
+  - [x] `Format()` method piping through tokenizer + core formatter
 
-- [ ] Add empty `mysql_formatter_test.go` (smoke tests scaffold)
+- [x] Add empty `mysql_formatter_test.go` (smoke tests scaffold)
 
 > Notes: mirror the shape you used for PostgreSQL to keep parity.
 
