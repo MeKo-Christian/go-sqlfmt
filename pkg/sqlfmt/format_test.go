@@ -1308,7 +1308,8 @@ func runFormatTests(t *testing.T, tests []struct {
 	query string
 	exp   string
 	cfg   Config
-}) {
+},
+) {
 	t.Helper()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1348,7 +1349,8 @@ func runPrettyFormatTests(t *testing.T, tests []struct {
 	name  string
 	query string
 	exp   string
-}) {
+},
+) {
 	t.Helper()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

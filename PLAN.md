@@ -60,87 +60,87 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
 
 ## Phase 6: JSON/JSONB Operators
 
-- [ ] Add JSON path operators
-  - [ ] Add JSON operators to operator regex: `->`, `->>`
-  - [ ] Add JSONB operators: `#>`, `#>>`
-  - [ ] Ensure proper spacing around JSON operators
-- [ ] Add containment and existence operators
-  - [ ] Add containment operators: `@>`, `<@`
-  - [ ] Add existence operators: `?`, `?|`, `?&`
-  - [ ] Handle operator precedence correctly
-- [ ] Add comprehensive JSON tests
-  - [ ] Test JSON path extraction
-  - [ ] Test JSONB containment queries
-  - [ ] Test existence operators
-  - [ ] Test complex nested JSON operations
+- [x] Add JSON path operators
+  - [x] Add JSON operators to operator regex: `->`, `->>`
+  - [x] Add JSONB operators: `#>`, `#>>`
+  - [x] Ensure proper spacing around JSON operators
+- [x] Add containment and existence operators
+  - [x] Add containment operators: `@>`, `<@`
+  - [x] Add existence operators: `?`, `?|`, `?&`
+  - [x] Handle operator precedence correctly
+- [x] Add comprehensive JSON tests
+  - [x] Test JSON path extraction
+  - [x] Test JSONB containment queries
+  - [x] Test existence operators
+  - [x] Test complex nested JSON operations
 
 ## Phase 7: Pattern Matching Operators
 
-- [ ] Add case-insensitive pattern matching
-  - [ ] Add `ILIKE` to reserved words
-  - [ ] Add `SIMILAR TO` to reserved words (multi-word)
-  - [ ] Test pattern matching formatting
-- [ ] Add regex operators
-  - [ ] Add regex operators: `~`, `!~`, `~*`, `!~*`
-  - [ ] Update operator regex to handle these multi-char operators
-  - [ ] Test regex operator formatting
-- [ ] Add pattern matching tests
-  - [ ] Test ILIKE queries
-  - [ ] Test SIMILAR TO queries
-  - [ ] Test regex matching queries
-  - [ ] Test negated pattern operators
+- [x] Add case-insensitive pattern matching
+  - [x] Add `ILIKE` to reserved words
+  - [x] Add `SIMILAR TO` to reserved words (multi-word)
+  - [x] Test pattern matching formatting
+- [x] Add regex operators
+  - [x] Add regex operators: `~`, `!~`, `~*`, `!~*`
+  - [x] Update operator regex to handle these multi-char operators
+  - [x] Test regex operator formatting
+- [x] Add pattern matching tests
+  - [x] Test ILIKE queries
+  - [x] Test SIMILAR TO queries
+  - [x] Test regex matching queries
+  - [x] Test negated pattern operators
 
 ## Phase 8: Core PostgreSQL Keywords - Part 1 (CTEs and RETURNING)
 
-- [ ] Add Common Table Expression support
-  - [ ] Add top-level words: `WITH`, `WITH RECURSIVE`
-  - [ ] Ensure proper indentation for CTEs
-  - [ ] Handle multiple CTEs correctly
-- [ ] Add RETURNING clause support
-  - [ ] Add `RETURNING` to top-level words
-  - [ ] Handle RETURNING with INSERT/UPDATE/DELETE
-- [ ] Add UPSERT support
-  - [ ] Add `ON CONFLICT` to reserved words
-  - [ ] Add `DO UPDATE`, `DO NOTHING` keywords
-  - [ ] Handle conflict resolution formatting
-- [ ] Add CTE and RETURNING tests
-  - [ ] Test simple WITH queries
-  - [ ] Test recursive CTE queries
-  - [ ] Test INSERT...RETURNING
-  - [ ] Test UPSERT queries with ON CONFLICT
+- [x] Add Common Table Expression support
+  - [x] Add top-level words: `WITH`, `WITH RECURSIVE`
+  - [x] Ensure proper indentation for CTEs
+  - [x] Handle multiple CTEs correctly
+- [x] Add RETURNING clause support
+  - [x] Add `RETURNING` to top-level words
+  - [x] Handle RETURNING with INSERT/UPDATE/DELETE
+- [x] Add UPSERT support
+  - [x] Add `ON CONFLICT` to reserved words
+  - [x] Add `DO UPDATE`, `DO NOTHING` keywords
+  - [x] Handle conflict resolution formatting
+- [x] Add CTE and RETURNING tests
+  - [x] Test simple WITH queries
+  - [x] Test recursive CTE queries
+  - [x] Test INSERT...RETURNING
+  - [x] Test UPSERT queries with ON CONFLICT
 
 ## Phase 9: Core PostgreSQL Keywords - Part 2 (Window Functions)
 
-- [ ] Add window function keywords
-  - [ ] Add window function keywords: `WINDOW`, `OVER`, `PARTITION BY`
-  - [ ] Add `FILTER (WHERE ...)` support
-  - [ ] Handle window frame specifications: `RANGE`, `ROWS`
-- [ ] Add lateral join support
-  - [ ] Add `LATERAL` join support
-  - [ ] Ensure proper JOIN formatting with LATERAL
-- [ ] Add ordering enhancements
-  - [ ] Add ordering modifiers: `NULLS FIRST`, `NULLS LAST`
-  - [ ] Handle these as single units
-- [ ] Add window function tests
-  - [ ] Test basic window functions
-  - [ ] Test aggregate functions with FILTER
-  - [ ] Test LATERAL join queries
-  - [ ] Test complex window specifications
+- [x] Add window function keywords
+  - [x] Add window function keywords: `WINDOW`, `OVER`, `PARTITION BY`
+  - [x] Add `FILTER (WHERE ...)` support
+  - [x] Handle window frame specifications: `RANGE`, `ROWS`
+- [x] Add lateral join support
+  - [x] Add `LATERAL` join support
+  - [x] Ensure proper JOIN formatting with LATERAL
+- [x] Add ordering enhancements
+  - [x] Add ordering modifiers: `NULLS FIRST`, `NULLS LAST`
+  - [x] Handle these as single units
+- [x] Add window function tests
+  - [x] Test basic window functions
+  - [x] Test aggregate functions with FILTER
+  - [x] Test LATERAL join queries
+  - [x] Test complex window specifications
 
 ## Phase 10: Array and Range Support
 
-- [ ] Handle array subscript operations
-  - [ ] Handle array subscripts: `[1]`, `[1:2]`
-  - [ ] Ensure brackets don't break formatting
-  - [ ] Handle multi-dimensional arrays
-- [ ] Add concatenation operators
-  - [ ] Add `||` operator for array/string concatenation
-  - [ ] Handle operator precedence with ||
-- [ ] Add array and range tests
-  - [ ] Test array subscript operations
-  - [ ] Test array concatenation
-  - [ ] Test range operations
-  - [ ] Test complex array expressions
+- [x] Handle array subscript operations
+  - [x] Handle array subscripts: `[1]`, `[1:2]`
+  - [x] Ensure brackets don't break formatting
+  - [x] Handle multi-dimensional arrays
+- [x] Add concatenation operators
+  - [x] Add `||` operator for array/string concatenation
+  - [x] Handle operator precedence with ||
+- [x] Add array and range tests
+  - [x] Test array subscript operations
+  - [x] Test array concatenation
+  - [x] Test range operations
+  - [x] Test complex array expressions
 
 ## Phase 11: DO Blocks and PL/pgSQL
 

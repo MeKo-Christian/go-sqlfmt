@@ -64,7 +64,6 @@ func (f *formatter) format(query string) string {
 
 // FormatQuery is a public wrapper function for creating a formatter and formatting a query.
 func FormatQuery(
-
 	cfg *Config,
 
 	tokenOverride func(tok types.Token,
@@ -72,7 +71,6 @@ func FormatQuery(
 		previousReservedWord types.Token) types.Token,
 
 	query string,
-
 ) string {
 	tokenizer := newTokenizer(cfg.TokenizerConfig)
 	formatter := newFormatter(cfg, tokenizer, tokenOverride)

@@ -41,24 +41,30 @@ func TestTokenizerRegexes(t *testing.T) {
 			input:    "SELECT * WHERE name = @'var name'",
 			expected: "SELECT\n  *\nWHERE\n  name = @'var name'",
 		},
-		{name: "double quoted placeholder",
+		{
+			name:  "double quoted placeholder",
 			input: "SELECT * WHERE name = @\"var name\"",
 			expected: "SELECT\n" +
 				"  *\n" +
 				"WHERE\n" +
-				"  name = @\"var name\""},
-		{name: "backtick quoted placeholder",
+				"  name = @\"var name\"",
+		},
+		{
+			name:  "backtick quoted placeholder",
 			input: "SELECT * WHERE name = @`var name`",
 			expected: "SELECT\n" +
 				"  *\n" +
 				"WHERE\n" +
-				"  name = @`var name`"},
-		{name: "bracket quoted placeholder",
+				"  name = @`var name`",
+		},
+		{
+			name:  "bracket quoted placeholder",
 			input: "SELECT * WHERE name = @[var name]",
 			expected: "SELECT\n" +
 				"  *\n" +
 				"WHERE\n" +
-				"  name = @[var name]"},
+				"  name = @[var name]",
+		},
 
 		// Reserved top level no-indent tests
 		{name: "union all", input: "SELECT 1 UNION ALL SELECT 2", expected: "SELECT\n  1\nUNION ALL\nSELECT\n  2"},
@@ -71,11 +77,13 @@ func TestTokenizerRegexes(t *testing.T) {
 
 		// Function call tests
 		{name: "simple function call", input: "SELECT call()", expected: "SELECT\n  call()"},
-		{name: "function with args",
+		{
+			name: "function with args",
 			input: "SELECT CALL_WITH_ARGS(" +
 				"arg1, 3+4, arg2)",
 			expected: "SELECT\n" +
-				"  CALL_WITH_ARGS(arg1, 3 + 4, arg2)"},
+				"  CALL_WITH_ARGS(arg1, 3 + 4, arg2)",
+		},
 	}
 
 	for _, tt := range tests {
