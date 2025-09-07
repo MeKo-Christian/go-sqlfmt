@@ -108,6 +108,7 @@ go-sqlfmt/
 **Dialect System (`pkg/sqlfmt/dialects/`)**
 
 Each dialect implements the `Formatter` interface with dialect-specific:
+
 - Reserved word lists
 - Tokenization rules
 - Formatting behavior
@@ -124,10 +125,14 @@ The tokenizer categorizes SQL elements into types defined in `types/token_types.
 ## Supported SQL Dialects
 
 - **Standard SQL** (`sql`, `standard`) - ANSI SQL with common formatting rules
-- **PostgreSQL** (`postgresql`, `postgres`) - PostgreSQL-specific formatting and keywords
+- **PostgreSQL** (`postgresql`, `postgres`) - PostgreSQL-specific formatting and keywords (see `PLAN-POSTGRESQL.md` for implementation roadmap)
 - **PL/SQL** (`pl/sql`, `plsql`, `oracle`) - Oracle PL/SQL with procedural extensions
 - **DB2** (`db2`) - IBM DB2 SQL dialect
 - **N1QL** (`n1ql`) - Couchbase N1QL (SQL for JSON)
+
+### Future Dialects
+
+- **MySQL** - MySQL dialect support is planned (see `PLAN-MYSQL.md` for implementation roadmap)
 
 ## Test Structure and Organization
 
@@ -238,7 +243,8 @@ just test-benchmarks         # Run performance benchmarks
 - Include integration tests in main test suite
 
 # important-instruction-reminders
+
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
-NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.

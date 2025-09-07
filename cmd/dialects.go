@@ -45,6 +45,12 @@ func runDialects(cmd *cobra.Command, args []string) {
 			aliases:     []string{"postgres"},
 		},
 		{
+			lang:        sqlfmt.MySQL,
+			name:        "mysql",
+			description: "MySQL with dialect-specific features",
+			aliases:     []string{"mariadb"},
+		},
+		{
 			lang:        sqlfmt.PLSQL,
 			name:        "pl/sql",
 			description: "Oracle PL/SQL with procedural extensions",

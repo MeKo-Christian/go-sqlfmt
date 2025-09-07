@@ -29,3 +29,7 @@ go.work.sum
 
 # Build output directory
 bin/
+
+# Cache files
+.codanna/
+.fastembed_cache/

@@ -172,6 +172,13 @@ func NewN1QLFormatter(cfg *Config) Formatter {
 	return dialects.NewN1QLFormatter(coreCfg)
 }
 
+// NewMySQLFormatter creates a new MySQL formatter.
+// This function is provided for test compatibility.
+func NewMySQLFormatter(cfg *Config) Formatter {
+	coreCfg := convertToInternalConfig(cfg)
+	return dialects.NewMySQLFormatter(coreCfg)
+}
+
 // Tokenizer configuration functions - provided for test compatibility.
 func NewStandardSQLTokenizerConfig() *TokenizerConfig {
 	internal := dialects.NewStandardSQLTokenizerConfig()
@@ -192,6 +199,23 @@ func NewStandardSQLTokenizerConfig() *TokenizerConfig {
 
 func NewPostgreSQLTokenizerConfig() *TokenizerConfig {
 	internal := dialects.NewPostgreSQLTokenizerConfig()
+	return &TokenizerConfig{
+		ReservedWords:                 internal.ReservedWords,
+		ReservedTopLevelWords:         internal.ReservedTopLevelWords,
+		ReservedNewlineWords:          internal.ReservedNewlineWords,
+		ReservedTopLevelWordsNoIndent: internal.ReservedTopLevelWordsNoIndent,
+		StringTypes:                   internal.StringTypes,
+		OpenParens:                    internal.OpenParens,
+		CloseParens:                   internal.CloseParens,
+		IndexedPlaceholderTypes:       internal.IndexedPlaceholderTypes,
+		NamedPlaceholderTypes:         internal.NamedPlaceholderTypes,
+		LineCommentTypes:              internal.LineCommentTypes,
+		SpecialWordChars:              internal.SpecialWordChars,
+	}
+}
+
+func NewMySQLTokenizerConfig() *TokenizerConfig {
+	internal := dialects.NewMySQLTokenizerConfig()
 	return &TokenizerConfig{
 		ReservedWords:                 internal.ReservedWords,
 		ReservedTopLevelWords:         internal.ReservedTopLevelWords,

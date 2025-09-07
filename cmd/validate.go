@@ -35,7 +35,7 @@ func init() {
 	rootCmd.AddCommand(validateCmd)
 
 	// Reuse format flags but exclude --write and --color as they don't make sense for validation
-	validateCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, pl/sql, db2, n1ql)")
+	validateCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, mysql, pl/sql, db2, n1ql)")
 	validateCmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	validateCmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert keywords to uppercase")
 	validateCmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
