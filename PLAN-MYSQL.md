@@ -15,24 +15,24 @@
 
 ## Phase 2: MySQL Tokenizer Config (baseline)
 
-- [ ] `NewMySQLTokenizerConfig()`:
-  - [ ] Start from Standard SQL config
-  - [ ] **Comments**: support `-- …`, `# …`, `/* … */`, and **versioned** comments `/*! … */` (treat as comments but keep intact) ([dev.mysql.com][2], [documentation.help][3])
-  - [ ] **Identifiers**: enable backtick-quoted identifiers (`` `name` ``)
-  - [ ] **Strings**: single-quoted strings; (optional) accept double quotes as strings unless you plan to honor `ANSI_QUOTES` later
-  - [ ] **Numbers/Literals**: allow `0xFF` hex, `0b1010` bit; `TRUE`/`FALSE`
+- [x] `NewMySQLTokenizerConfig()`:
+  - [x] Start from Standard SQL config
+  - [x] **Comments**: support `-- …`, `# …`, `/* … */`, and **versioned** comments `/*! … */` (treat as comments but keep intact) ([dev.mysql.com][2], [documentation.help][3])
+  - [x] **Identifiers**: enable backtick-quoted identifiers (`` `name` ``)
+  - [x] **Strings**: single-quoted strings; (optional) accept double quotes as strings unless you plan to honor `ANSI_QUOTES` later
+  - [x] **Numbers/Literals**: allow `0xFF` hex, `0b1010` bit; `TRUE`/`FALSE`
 
-- [ ] Tests:
-  - [ ] init + simple `SELECT` with backticks, `#` comment, and `/*! hint */`
+- [x] Tests:
+  - [x] init + simple `SELECT` with backticks, `#` comment, and `/*! hint */`
 
 ## Phase 3: Placeholders
 
-- [ ] Configure placeholders for Go MySQL drivers: `?` positional only (no `$1`)
-- [ ] Ensure placeholder regex does **not** misinterpret `?` in other contexts
-- [ ] Tests:
-  - [ ] `WHERE id = ?`
-  - [ ] Multiple `?` ordering
-  - [ ] Edge: `?` inside strings/comments ignored
+- [x] Configure placeholders for Go MySQL drivers: `?` positional only (no `$1`)
+- [x] Ensure placeholder regex does **not** misinterpret `?` in other contexts
+- [x] Tests:
+  - [x] `WHERE id = ?`
+  - [x] Multiple `?` ordering
+  - [x] Edge: `?` inside strings/comments ignored
 
 ## Phase 4: Operators & Special Tokens
 

@@ -2,6 +2,7 @@ package core
 
 import (
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/types"
@@ -60,6 +61,11 @@ func createLineCommentRegex(lineCommentTypes []string) *regexp.Regexp {
 }
 
 func createReservedWordRegex(reservedWords []string) *regexp.Regexp {
+	// Sort reserved words by length in descending order. This is crucial for the tokenizer
+	// to prioritize longer matches, like "DO UPDATE" over "DO".
+	sort.Slice(reservedWords, func(i, j int) bool {
+		return len(reservedWords[i]) > len(reservedWords[j])
+	})
 	pattern := strings.Join(reservedWords, `|`)
 	pattern = strings.ReplaceAll(pattern, " ", `\s+`)
 	return regexp.MustCompile(`(?i)^(` + pattern + `)\b`)

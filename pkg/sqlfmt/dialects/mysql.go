@@ -7,9 +7,9 @@ import (
 
 var (
 	// MySQL reuses standard SQL reserved words and adds MySQL-specific ones.
-	// This is a basic set for Phase 1 - will be expanded in later phases.
+	// This is a basic set - will be expanded later.
 	mySQLReservedWords = append(standardSQLReservedWords, []string{
-		// Basic MySQL keywords for Phase 1
+		// Basic MySQL keywords
 		"AUTO_INCREMENT", "BINARY", "BLOB", "BOOLEAN", "BTREE", "HASH",
 		"ENGINE", "INNODB", "MYISAM", "MEMORY", "CHARACTER SET", "CHARSET",
 		"COLLATION", "SIGNED", "UNSIGNED", "ZEROFILL",
@@ -49,7 +49,7 @@ func NewMySQLTokenizerConfig() *TokenizerConfig {
 		StringTypes:             []string{"''", "\"\"", "``"},
 		OpenParens:              []string{"(", "CASE"},
 		CloseParens:             []string{")", "END"},
-		IndexedPlaceholderTypes: []string{"?"},        // MySQL uses ? for parameters
+		IndexedPlaceholderTypes: []string{"?"},       // MySQL uses ? for parameters
 		NamedPlaceholderTypes:   []string{},          // Phase 2: Still no named parameters
 		LineCommentTypes:        []string{"--", "#"}, // MySQL supports both -- and #
 		SpecialWordChars:        []string{},          // Default special characters
@@ -65,9 +65,9 @@ func (msf *MySQLFormatter) Format(query string) string {
 }
 
 // tokenOverride handles MySQL-specific token formatting.
-// Phase 1: Basic implementation, will be expanded in later phases.
+// Basic implementation, will be expanded in later phases.
 func (msf *MySQLFormatter) tokenOverride(tok types.Token, previousReservedWord types.Token) types.Token {
-	// Phase 1: No special token handling yet - this will be expanded
+	// No special token handling yet - this will be expanded
 	// in later phases for JSON operators, NULL-safe equality, etc.
 	return tok
 }

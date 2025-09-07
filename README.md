@@ -1,6 +1,6 @@
 # go-sqlfmt
 
-An SQL formatter written in Go, available as both a **library** and **CLI tool**.
+An SQL formatter written in Go, primarily a **CLI tool** with the library available as **pkg/sqlfmt**.
 
 This project is https://github.com/Snowflake-Labs/snowsql-formatter ported from javascript into Go with some enhancements, like being able to colorize the output.
 
@@ -150,6 +150,8 @@ Currently five SQL dialects are supported:
 - **db2** - [IBM DB2][]
 - **pl/sql** - [Oracle PL/SQL][]
 - **postgresql** - [PostgreSQL][]
+- **mysql** - [MySQL][]
+- **sqlite** - [SQLite][]
 
 ### PostgreSQL
 
@@ -191,7 +193,18 @@ Config options available are:
 
 ### Colored Output
 
-You can also format with color:
+The CLI provides built-in color support through dedicated commands:
+
+```bash
+# Format with colors for terminal viewing
+sqlfmt pretty-format query.sql
+sqlfmt pretty-print query.sql
+
+# Or use the --color flag with format command
+sqlfmt format --color query.sql
+```
+
+For library usage, you can format with colors programmatically:
 
 ```go
 fmt.Println(sqlfmt.PrettyFormat(query))
