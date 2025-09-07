@@ -60,9 +60,7 @@ func TestStandardSQLFormatter_FormatDDL(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestStandardSQLFormatter_FormatVariables(t *testing.T) {
@@ -152,9 +150,7 @@ func TestStandardSQLFormatter_FormatVariables(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestStandardSQLFormatter_FormatPlaceholders(t *testing.T) {
@@ -219,9 +215,7 @@ func TestStandardSQLFormatter_FormatPlaceholders(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestStandardSQLFormatter_FormatJoins(t *testing.T) {
@@ -309,9 +303,7 @@ func TestStandardSQLFormatter_FormatJoins(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestStandardSQLFormatter_FormatCase(t *testing.T) {
@@ -386,9 +378,7 @@ func TestStandardSQLFormatter_FormatCase(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestStandardSQLFormatter_FormatComments(t *testing.T) {
@@ -455,9 +445,7 @@ func TestStandardSQLFormatter_FormatComments(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestStandardSQLFormatter_Format(t *testing.T) {

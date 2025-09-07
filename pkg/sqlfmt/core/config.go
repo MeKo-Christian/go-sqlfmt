@@ -1,6 +1,6 @@
 package core
 
-import "github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/utils"
+import "github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/utils"
 
 // Formatter interface for SQL formatting.
 type Formatter interface {

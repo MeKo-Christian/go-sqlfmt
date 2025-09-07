@@ -11,19 +11,19 @@ There is support for [Standard SQL][], [Couchbase N1QL][], [IBM DB2][], [Oracle 
 ### As a Go Library
 
 ```shell
-go get -u github.com/maxrichie5/go-sqlfmt
+go get -u github.com/MeKo-Christian/go-sqlfmt
 ```
 
 ### As a CLI Tool
 
 ```shell
-go install github.com/maxrichie5/go-sqlfmt/cmd/sqlfmt@latest
+go install github.com/MeKo-Christian/go-sqlfmt/cmd/sqlfmt@latest
 ```
 
 Or build from source:
 
 ```shell
-git clone https://github.com/maxrichie5/go-sqlfmt.git
+git clone https://github.com/MeKo-Christian/go-sqlfmt.git
 cd go-sqlfmt
 just build-cli
 # or: go build -o sqlfmt ./cmd/sqlfmt
@@ -98,7 +98,7 @@ package main
 
 import (
     "fmt"
-    "github.com/maxrichie5/go-sqlfmt/sqlfmt"
+    "github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt"
 )
 
 func main() {
@@ -347,7 +347,7 @@ just setup-deps        # Install development dependencies
 
 ## License
 
-[MIT](https://github.com/maxrichie5/go-sqlfmt/blob/master/LICENSE)
+[MIT](https://github.com/MeKo-Christian/go-sqlfmt/blob/master/LICENSE)
 
 [standard sql]: https://en.wikipedia.org/wiki/SQL:2011
 [couchbase n1ql]: http://www.couchbase.com/n1ql

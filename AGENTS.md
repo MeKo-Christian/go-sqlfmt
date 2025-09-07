@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-- Root module: `github.com/maxrichie5/go-sqlfmt` (Go 1.23.2).
+- Root module: `github.com/MeKo-Christian/go-sqlfmt` (Go 1.23.2).
 - Core package lives in `sqlfmt/`:
   - Formatting: `format.go`, `formatter.go`, dialects `standard_sql_formatter.go`, `n1ql_formatter.go`, `db2_formatter.go`, `pl_sql_formatter.go`.
   - Tokenization & helpers: `tokenizer.go`, `token_types.go`, `indentation.go`, `inline_block.go`, `dedent.go`.

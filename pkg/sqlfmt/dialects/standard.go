@@ -1,6 +1,6 @@
 package dialects
 
-import "github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/core"
+import "github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/core"
 
 var (
 	standardSQLReservedWords = []string{

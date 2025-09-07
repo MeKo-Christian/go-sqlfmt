@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/types"
+import "github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/types"
 
 // Define the maximum length for inline blocks.
 const inlineMaxLength = 50

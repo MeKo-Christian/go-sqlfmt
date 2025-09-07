@@ -1,9 +1,10 @@
+// main.go
 package main
 
 import (
 	"os"
 
-	"github.com/maxrichie5/go-sqlfmt/cmd/sqlfmt/cmd"
+	"github.com/MeKo-Christian/go-sqlfmt/cmd" // import your cmd package
 )
 
 func main() {

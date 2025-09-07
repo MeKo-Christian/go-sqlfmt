@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -32,8 +33,20 @@ func TestGoldenFiles_PLSQL(t *testing.T) {
 
 func testGoldenFiles(t *testing.T, dialect string, formatter Formatter) {
 	t.Helper()
-	inputDir := filepath.Join("../testdata/input", dialect)
-	goldenDir := filepath.Join("../testdata/golden", dialect)
+
+	// Get the directory of the current file
+	var pc uintptr
+	var line int
+	pc, filename, line, ok := runtime.Caller(0)
+	require.True(t, ok)
+	_ = pc
+	_ = line
+	testDir := filepath.Dir(filename)
+
+	// Navigate up to the project root and then to testdata
+	projectRoot := filepath.Dir(filepath.Dir(testDir))
+	inputDir := filepath.Join(projectRoot, "testdata", "input", dialect)
+	goldenDir := filepath.Join(projectRoot, "testdata", "golden", dialect)
 
 	// Walk through all .sql files in the input directory
 	err := filepath.WalkDir(inputDir, func(path string, d fs.DirEntry, err error) error {

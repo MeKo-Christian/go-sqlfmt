@@ -29,13 +29,36 @@ func TestTokenizerRegexes(t *testing.T) {
 
 		// Named placeholder tests
 		{name: "at variable", input: "SELECT * WHERE name = @variable", expected: "SELECT\n  *\nWHERE\n  name = @variable"},
-		{name: "complex variable name", input: "SELECT * WHERE name = @a1_2.3$", expected: "SELECT\n  *\nWHERE\n  name = @a1_2.3$"},
+		{
+			name:     "complex variable name",
+			input:    "SELECT * WHERE name = @a1_2.3$",
+			expected: "SELECT\n  *\nWHERE\n  name = @a1_2.3$",
+		},
 
 		// String named placeholder tests
-		{name: "single quoted placeholder", input: "SELECT * WHERE name = @'var name'", expected: "SELECT\n  *\nWHERE\n  name = @'var name'"},
-		{name: "double quoted placeholder", input: "SELECT * WHERE name = @\"var name\"", expected: "SELECT\n  *\nWHERE\n  name = @\"var name\""},
-		{name: "backtick quoted placeholder", input: "SELECT * WHERE name = @`var name`", expected: "SELECT\n  *\nWHERE\n  name = @`var name`"},
-		{name: "bracket quoted placeholder", input: "SELECT * WHERE name = @[var name]", expected: "SELECT\n  *\nWHERE\n  name = @[var name]"},
+		{
+			name:     "single quoted placeholder",
+			input:    "SELECT * WHERE name = @'var name'",
+			expected: "SELECT\n  *\nWHERE\n  name = @'var name'",
+		},
+		{name: "double quoted placeholder",
+			input: "SELECT * WHERE name = @\"var name\"",
+			expected: "SELECT\n" +
+				"  *\n" +
+				"WHERE\n" +
+				"  name = @\"var name\""},
+		{name: "backtick quoted placeholder",
+			input: "SELECT * WHERE name = @`var name`",
+			expected: "SELECT\n" +
+				"  *\n" +
+				"WHERE\n" +
+				"  name = @`var name`"},
+		{name: "bracket quoted placeholder",
+			input: "SELECT * WHERE name = @[var name]",
+			expected: "SELECT\n" +
+				"  *\n" +
+				"WHERE\n" +
+				"  name = @[var name]"},
 
 		// Reserved top level no-indent tests
 		{name: "union all", input: "SELECT 1 UNION ALL SELECT 2", expected: "SELECT\n  1\nUNION ALL\nSELECT\n  2"},
@@ -48,7 +71,11 @@ func TestTokenizerRegexes(t *testing.T) {
 
 		// Function call tests
 		{name: "simple function call", input: "SELECT call()", expected: "SELECT\n  call()"},
-		{name: "function with args", input: "SELECT CALL_WITH_ARGS(arg1, 3+4, arg2)", expected: "SELECT\n  CALL_WITH_ARGS(arg1, 3 + 4, arg2)"},
+		{name: "function with args",
+			input: "SELECT CALL_WITH_ARGS(" +
+				"arg1, 3+4, arg2)",
+			expected: "SELECT\n" +
+				"  CALL_WITH_ARGS(arg1, 3 + 4, arg2)"},
 	}
 
 	for _, tt := range tests {

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt"
 	"github.com/spf13/cobra"
 )
 
@@ -51,24 +51,9 @@ func runValidate(cmd *cobra.Command, args []string) error {
 
 	// If no args or args is "-", validate stdin
 	if shouldValidateStdin(args) {
-		valid, err := validateStdin(config)
-		if err != nil {
-			return err
-		}
-		if !valid {
-			hasErrors = true
-		}
+		hasErrors = validateStdinAndSetErrors(config)
 	} else {
-		// Process files
-		for _, filename := range args {
-			valid, err := validateFile(filename, config)
-			if err != nil {
-				return fmt.Errorf("failed to validate %s: %w", filename, err)
-			}
-			if !valid {
-				hasErrors = true
-			}
-		}
+		hasErrors = validateFilesAndSetErrors(args, config)
 	}
 
 	if hasErrors {
@@ -76,6 +61,31 @@ func runValidate(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func validateStdinAndSetErrors(config *sqlfmt.Config) bool {
+	valid, err := validateStdin(config)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return true
+	}
+	return !valid
+}
+
+func validateFilesAndSetErrors(filenames []string, config *sqlfmt.Config) bool {
+	var hasErrors bool
+	for _, filename := range filenames {
+		valid, err := validateFile(filename, config)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: failed to validate %s: %v\n", filename, err)
+			hasErrors = true
+			continue
+		}
+		if !valid {
+			hasErrors = true
+		}
+	}
+	return hasErrors
 }
 
 func validateStdin(config *sqlfmt.Config) (bool, error) {

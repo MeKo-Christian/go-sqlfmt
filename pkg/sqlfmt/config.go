@@ -3,7 +3,7 @@ package sqlfmt
 import (
 	"reflect"
 
-	"github.com/maxrichie5/go-sqlfmt/sqlfmt/internal/utils"
+	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/utils"
 )
 
 type Language string

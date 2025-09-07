@@ -106,6 +106,10 @@ linters = ['testpackage']
 path = '.*_test\.go'
 
 [[linters.exclusions.rules]]
+linters = ['funlen']
+path = '.*_test\.go'
+
+[[linters.exclusions.rules]]
 linters = ['err113', 'wrapcheck']
 path = 'cmd/.*\.go'
 

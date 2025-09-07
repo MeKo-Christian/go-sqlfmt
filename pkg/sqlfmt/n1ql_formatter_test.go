@@ -46,9 +46,7 @@ func TestN1QLFormatter_FormatBasic(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewN1QLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewN1QLFormatter)
 }
 
 func TestN1QLFormatter_FormatComplex(t *testing.T) {
@@ -117,9 +115,7 @@ func TestN1QLFormatter_FormatComplex(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewN1QLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewN1QLFormatter)
 }
 
 func TestN1QLFormatter_FormatOperations(t *testing.T) {
@@ -153,9 +149,7 @@ func TestN1QLFormatter_FormatOperations(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewN1QLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewN1QLFormatter)
 }
 
 func TestN1QLFormatter_FormatVariables(t *testing.T) {
@@ -212,9 +206,7 @@ func TestN1QLFormatter_FormatVariables(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewN1QLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewN1QLFormatter)
 }
 
 func TestN1QLFormatter_Format(t *testing.T) {
