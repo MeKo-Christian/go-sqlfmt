@@ -44,14 +44,15 @@ func NewMySQLTokenizerConfig() *TokenizerConfig {
 		ReservedTopLevelWords:         mySQLReservedTopLevelWords,
 		ReservedNewlineWords:          mySQLReservedNewlineWords,
 		ReservedTopLevelWordsNoIndent: mySQLReservedTopLevelWordsNoIndent,
-		// Phase 1: Basic string and identifier support
-		// Backticks for identifiers, single quotes for strings
-		StringTypes:             []string{"''", "``"},
+		// Phase 2: Enhanced string and identifier support
+		// Backticks for identifiers, single/double quotes for strings
+		StringTypes:             []string{"''", "\"\"", "``"},
 		OpenParens:              []string{"(", "CASE"},
 		CloseParens:             []string{")", "END"},
 		IndexedPlaceholderTypes: []string{"?"},        // MySQL uses ? for parameters
-		NamedPlaceholderTypes:   []string{},          // Phase 1: No named parameters yet
+		NamedPlaceholderTypes:   []string{},          // Phase 2: Still no named parameters
 		LineCommentTypes:        []string{"--", "#"}, // MySQL supports both -- and #
+		SpecialWordChars:        []string{},          // Default special characters
 	}
 }
 

@@ -23,6 +23,7 @@ const (
 	N1QL        = core.N1QL
 	PostgreSQL  = core.PostgreSQL
 	MySQL       = core.MySQL
+	SQLite      = core.SQLite
 )
 
 // CreateFormatterForLanguage creates a formatter based on the language configuration.
@@ -38,6 +39,8 @@ func CreateFormatterForLanguage(c *Config) Formatter {
 		return NewPostgreSQLFormatter(c)
 	case MySQL:
 		return NewMySQLFormatter(c)
+	case SQLite:
+		return NewSQLiteFormatter(c)
 	default:
 		return NewStandardSQLFormatter(c)
 	}

@@ -179,6 +179,13 @@ func NewMySQLFormatter(cfg *Config) Formatter {
 	return dialects.NewMySQLFormatter(coreCfg)
 }
 
+// NewSQLiteFormatter creates a new SQLite formatter.
+// This function is provided for test compatibility.
+func NewSQLiteFormatter(cfg *Config) Formatter {
+	coreCfg := convertToInternalConfig(cfg)
+	return dialects.NewSQLiteFormatter(coreCfg)
+}
+
 // Tokenizer configuration functions - provided for test compatibility.
 func NewStandardSQLTokenizerConfig() *TokenizerConfig {
 	internal := dialects.NewStandardSQLTokenizerConfig()
@@ -216,6 +223,23 @@ func NewPostgreSQLTokenizerConfig() *TokenizerConfig {
 
 func NewMySQLTokenizerConfig() *TokenizerConfig {
 	internal := dialects.NewMySQLTokenizerConfig()
+	return &TokenizerConfig{
+		ReservedWords:                 internal.ReservedWords,
+		ReservedTopLevelWords:         internal.ReservedTopLevelWords,
+		ReservedNewlineWords:          internal.ReservedNewlineWords,
+		ReservedTopLevelWordsNoIndent: internal.ReservedTopLevelWordsNoIndent,
+		StringTypes:                   internal.StringTypes,
+		OpenParens:                    internal.OpenParens,
+		CloseParens:                   internal.CloseParens,
+		IndexedPlaceholderTypes:       internal.IndexedPlaceholderTypes,
+		NamedPlaceholderTypes:         internal.NamedPlaceholderTypes,
+		LineCommentTypes:              internal.LineCommentTypes,
+		SpecialWordChars:              internal.SpecialWordChars,
+	}
+}
+
+func NewSQLiteTokenizerConfig() *TokenizerConfig {
+	internal := dialects.NewSQLiteTokenizerConfig()
 	return &TokenizerConfig{
 		ReservedWords:                 internal.ReservedWords,
 		ReservedTopLevelWords:         internal.ReservedTopLevelWords,
