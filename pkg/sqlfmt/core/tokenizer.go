@@ -30,7 +30,7 @@ type tokenizer struct {
 }
 
 func newTokenizer(cfg *TokenizerConfig) *tokenizer {
-	regex := `^(!=|<>|==|<=|>=|=>|!<|!>|\|\||::|->>|->|#>>|#>|` +
+	regex := `^(!=|<>|<=>|==|<=|>=|=>|!<|!>|\|\||::|->>|->|#>>|#>|<<|>>|` +
 		`\?\||\?&|\?|@>|<@|~~\*|~~|!~~\*|!~~|~\*|!~\*|!~|.)`
 	return &tokenizer{
 		whitespaceRegex:               regexp.MustCompile(`^(\s+)`),

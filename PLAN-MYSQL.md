@@ -36,73 +36,73 @@
 
 ## Phase 4: Operators & Special Tokens
 
-- [ ] **JSON operators**: `->` and `->>` (JSON extract and unquote) with normal spacing rules ([dev.mysql.com][4], [Oracle Docs][5])
-- [ ] **NULL-safe equality**: `<=>` (treat like a comparison operator) ([dev.mysql.com][6])
-- [ ] **Regex**: `REGEXP` / `RLIKE` and `NOT REGEXP` as reserved infix operators (tokenize as multi-word unit for `NOT REGEXP`) ([dev.mysql.com][7])
-- [ ] **Bitwise**: `|`, `&`, `^`, `~`, `<<`, `>>`
-- [ ] **Concatenation**: do **not** special-case `||` as concat (default MySQL treats `||` as logical OR unless `PIPES_AS_CONCAT` mode)
-- [ ] Tests:
-  - [ ] JSON extraction chains `doc->'$.a'->>'$.b'`
-  - [ ] `<=>` in joins/filters
-  - [ ] `col REGEXP '^foo|bar$'`
+- [x] **JSON operators**: `->` and `->>` (JSON extract and unquote) with normal spacing rules ([dev.mysql.com][4], [Oracle Docs][5])
+- [x] **NULL-safe equality**: `<=>` (treat like a comparison operator) ([dev.mysql.com][6])
+- [x] **Regex**: `REGEXP` / `RLIKE` and `NOT REGEXP` as reserved infix operators (tokenize as multi-word unit for `NOT REGEXP`) ([dev.mysql.com][7])
+- [x] **Bitwise**: `|`, `&`, `^`, `~`, `<<`, `>>`
+- [x] **Concatenation**: do **not** special-case `||` as concat (default MySQL treats `||` as logical OR unless `PIPES_AS_CONCAT` mode)
+- [x] Tests:
+  - [x] JSON extraction chains `doc->'$.a'->>'$.b'`
+  - [x] `<=>` in joins/filters
+  - [x] `col REGEXP '^foo|bar$'`
 
 ## Phase 5: Core Clauses (LIMIT, LOCKING, IGNORE)
 
-- [ ] **LIMIT**: normalize both forms: `LIMIT n OFFSET m` and `LIMIT m, n` (keep whichever style you choose; just format consistently) ([dev.mysql.com][8], [mysqltutorial.org][9], [DataCamp][10])
-- [ ] **Row locking**: `FOR UPDATE`, `FOR SHARE` (and legacy `LOCK IN SHARE MODE`—format but don’t warn)
-- [ ] **INSERT variations**: `INSERT IGNORE`, `REPLACE` (keywords list only here)
-- [ ] Tests:
-  - [ ] `ORDER BY … LIMIT 10 OFFSET 20`
-  - [ ] `ORDER BY … LIMIT 20, 10`
-  - [ ] `SELECT … FOR UPDATE`
+- [x] **LIMIT**: normalize both forms: `LIMIT n OFFSET m` and `LIMIT m, n` (keep whichever style you choose; just format consistently) ([dev.mysql.com][8], [mysqltutorial.org][9], [DataCamp][10])
+- [x] **Row locking**: `FOR UPDATE`, `FOR SHARE` (and legacy `LOCK IN SHARE MODE`—format but don't warn)
+- [x] **INSERT variations**: `INSERT IGNORE`, `REPLACE` (keywords list only here)
+- [x] Tests:
+  - [x] `ORDER BY … LIMIT 10 OFFSET 20`
+  - [x] `ORDER BY … LIMIT 20, 10`
+  - [x] `SELECT … FOR UPDATE`
 
-## Phase 6: MySQL “Upsert”
+## Phase 6: MySQL "Upsert"
 
-- [ ] Add reserved sequence for `ON DUPLICATE KEY UPDATE` and keep it on one line break boundary (similar to `RETURNING` in PG plan)
-- [ ] Indentation rule: break before the clause when lines exceed width; indent the assignments list
-- [ ] Tests:
-  - [ ] Basic `INSERT … ON DUPLICATE KEY UPDATE col = VALUES(col)`
-  - [ ] Multiple assignments over lines
+- [x] Add reserved sequence for `ON DUPLICATE KEY UPDATE` and keep it on one line break boundary (similar to `RETURNING` in PG plan)
+- [x] Indentation rule: break before the clause when lines exceed width; indent the assignments list
+- [x] Tests:
+  - [x] Basic `INSERT … ON DUPLICATE KEY UPDATE col = VALUES(col)`
+  - [x] Multiple assignments over lines
 
 ## Phase 7: CTEs & Window Functions (8.0+)
 
-- [ ] Add `WITH`, `WITH RECURSIVE` (top-level), same indentation you built for PG
-- [ ] Windowing: `OVER`, `PARTITION BY`, frame units (`RANGE`, `ROWS`)—mostly reusable
-- [ ] Tests:
-  - [ ] Non-recursive and recursive CTE
-  - [ ] Simple window function + frame
+- [x] Add `WITH`, `WITH RECURSIVE` (top-level), same indentation you built for PG
+- [x] Windowing: `OVER`, `PARTITION BY`, frame units (`RANGE`, `ROWS`)—mostly reusable
+- [x] Tests:
+  - [x] Non-recursive and recursive CTE
+  - [x] Simple window function + frame
 
 ## Phase 8: DDL Essentials
 
-- [ ] Indexes: `CREATE [UNIQUE|FULLTEXT|SPATIAL] INDEX … USING BTREE|HASH`
-- [ ] Table options on `CREATE/ALTER TABLE`: tolerate/keep `ALGORITHM=INSTANT|INPLACE`, `LOCK=NONE|SHARED|EXCLUSIVE` (don’t reflow inside `()` options too aggressively)
-- [ ] Generated columns: `col type GENERATED ALWAYS AS (expr) [VIRTUAL|STORED]`
-- [ ] Tests:
-  - [ ] `CREATE INDEX … USING BTREE`
-  - [ ] `ALTER TABLE … ALGORITHM=INSTANT, LOCK=NONE`
+- [x] Indexes: `CREATE [UNIQUE|FULLTEXT|SPATIAL] INDEX … USING BTREE|HASH`
+- [x] Table options on `CREATE/ALTER TABLE`: tolerate/keep `ALGORITHM=INSTANT|INPLACE`, `LOCK=NONE|SHARED|EXCLUSIVE` (don't reflow inside `()` options too aggressively)
+- [x] Generated columns: `col type GENERATED ALWAYS AS (expr) [VIRTUAL|STORED]`
+- [x] Tests:
+  - [x] `CREATE INDEX … USING BTREE`
+  - [x] `ALTER TABLE … ALGORITHM=INSTANT, LOCK=NONE`
 
 ## Phase 9: Stored Routines (Minimal)
 
-- [ ] Recognize `CREATE PROCEDURE/FUNCTION … BEGIN … END`
-- [ ] Keep **routine body indentation** lightweight: indent blocks on `BEGIN/END`, `IF/ELSE`, `LOOP`
-- [ ] **Do not** attempt to manage `DELIMITER` (treat lines starting with `DELIMITER` as pass-through; no formatting inside) — this avoids breaking copy/paste flows
-- [ ] Tests:
-  - [ ] Procedure with simple control flow
-  - [ ] Ensure body strings/comments aren’t retokenized oddly
+- [x] Recognize `CREATE PROCEDURE/FUNCTION … BEGIN … END`
+- [x] Keep **routine body indentation** lightweight: indent blocks on `BEGIN/END`, `IF/ELSE`, `LOOP`
+- [x] **Do not** attempt to manage `DELIMITER` (treat lines starting with `DELIMITER` as pass-through; no formatting inside) — this avoids breaking copy/paste flows
+- [x] Tests:
+  - [x] Procedure with simple control flow
+  - [x] Ensure body strings/comments aren't retokenized oddly
 
 > If your tokenizer tends to split on `;`, treat `DELIMITER` lines as turning off statement splitting until the next `DELIMITER`. If that’s non-trivial, mark deep routine formatting as **PARTIAL** and keep body mostly opaque, like your PL/pgSQL strategy.
 
 ## Phase 10: Snapshot & Integration Tests
 
-- [ ] Add MySQL to the snapshot suite you set up (go-snaps)
-- [ ] Golden file of “realish” MySQL 8.0 queries:
-  - [ ] JSON usage with `->`/`->>`
-  - [ ] Upserts
-  - [ ] `LIMIT` both styles
-  - [ ] CTEs + windows
-  - [ ] A couple of DDLs with options
+- [x] Add MySQL to the snapshot suite you set up (go-snaps)
+- [x] Golden file of "realish" MySQL 8.0 queries:
+  - [x] JSON usage with `->`/`->>`
+  - [x] Upserts
+  - [x] `LIMIT` both styles
+  - [x] CTEs + windows
+  - [x] A couple of DDLs with options
 
-- [ ] Justfile targets: `just test-snapshots mysql`, `just update-snapshots mysql`
+- [x] Justfile targets: `just test-snapshots mysql`, `just update-snapshots mysql`
 
 ## Phase 11: Documentation
 

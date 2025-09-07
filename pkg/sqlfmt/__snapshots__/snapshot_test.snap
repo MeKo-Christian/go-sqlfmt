@@ -71,3 +71,120 @@ FROM
 WHERE
   data ? 'active';
 ---
+
+[TestSnapshotFormatting_MySQL/basic_SELECT - 1]
+SELECT
+  id,
+  name
+FROM
+  users
+WHERE
+  active = true;
+---
+
+[TestSnapshotFormatting_MySQL/JSON_operations - 1]
+SELECT
+  profile->'$.name',
+  settings->>'$.theme'
+FROM
+  users
+WHERE
+  data->'$.active' = 'true';
+---
+
+[TestSnapshotFormatting_MySQL/NULL-safe_equality - 1]
+SELECT
+  *
+FROM
+  users u
+  LEFT JOIN profiles p ON u.id <=> p.user_id;
+---
+
+[TestSnapshotFormatting_MySQL/REGEXP_operations - 1]
+SELECT
+  name
+FROM
+  users
+WHERE
+  email REGEXP '^[a-z]+@'
+  AND status NOT REGEXP '^(banned|suspended)$';
+---
+
+[TestSnapshotFormatting_MySQL/LIMIT_variations - 1]
+SELECT
+  *
+FROM
+  products
+ORDER BY
+  price
+LIMIT
+  20, 10;
+---
+
+[TestSnapshotFormatting_MySQL/ON_DUPLICATE_KEY_UPDATE - 1]
+INSERT INTO
+  products (id, name, price)
+VALUES
+  (1, 'Product A', 19.99)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  price = VALUES(price),
+  updated_at = NOW();
+---
+
+[TestSnapshotFormatting_MySQL/CTE_with_window_function - 1]
+WITH
+  sales_data AS (
+    SELECT
+      product_id,
+      amount,
+      ROW_NUMBER() OVER (
+        PARTITION BY product_id
+        ORDER BY
+          amount DESC
+      ) as rank
+    FROM
+      sales
+  )
+SELECT
+  *
+FROM
+  sales_data
+WHERE
+  rank <= 3;
+---
+
+[TestSnapshotFormatting_MySQL/DDL_with_generated_columns - 1]
+CREATE TABLE orders (
+  id INT PRIMARY KEY,
+  subtotal DECIMAL(10, 2),
+  tax_rate DECIMAL(3, 4),
+  total DECIMAL(10, 2) GENERATED ALWAYS AS (subtotal + (subtotal * tax_rate)) STORED
+);
+---
+
+[TestSnapshotFormatting_MySQL/stored_procedure - 1]
+CREATE PROCEDURE
+  GetUserStats(IN user_id INT) BEGIN
+    SELECT
+      COUNT(*) as orders,
+      SUM(total) as revenue
+    FROM
+      orders
+    WHERE
+      customer_id = user_id;
+
+END;
+---
+
+[TestSnapshotFormatting_MySQL/MySQL_comments_and_backticks - 1]
+SELECT
+  /*! SQL_CALC_FOUND_ROWS */
+  `user_id`,
+  # hash comment
+  "full_name"
+FROM
+  `user_table` -- standard comment
+WHERE
+  `active` = TRUE;
+---
