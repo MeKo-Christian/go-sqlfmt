@@ -17,7 +17,7 @@ go get -u github.com/MeKo-Christian/go-sqlfmt
 ### As a CLI Tool
 
 ```shell
-go install github.com/MeKo-Christian/go-sqlfmt/cmd/sqlfmt@latest
+go install github.com/MeKo-Christian/go-sqlfmt@latest
 ```
 
 Or build from source:
@@ -26,16 +26,24 @@ Or build from source:
 git clone https://github.com/MeKo-Christian/go-sqlfmt.git
 cd go-sqlfmt
 just build-cli
-# or: go build -o sqlfmt ./cmd/sqlfmt
+# or: go build -o bin/sqlfmt .
 ```
 
-## Usage
+## CLI Usage
 
-### CLI Usage
+The CLI provides powerful formatting capabilities for SQL files and stdin with multiple specialized commands:
 
-The CLI provides powerful formatting capabilities for SQL files and stdin:
+### Available Commands
 
-#### Basic Examples
+- `sqlfmt format [files...]` - Format SQL files or stdin with configurable options
+- `sqlfmt pretty-format [files...]` - Format SQL with ANSI color formatting
+- `sqlfmt pretty-print [files...]` - Format and print SQL with colors (stdout only)
+- `sqlfmt validate [files...]` - Check if SQL files are properly formatted
+- `sqlfmt dialects` - List all supported SQL dialects
+- `sqlfmt --help` - Show help and available commands
+- `sqlfmt --version` - Show version information
+
+### Basic Examples
 
 ```bash
 # Format a single file
@@ -54,17 +62,23 @@ sqlfmt format --lang=pl/sql query.sql
 
 # Format with colors for terminal output
 sqlfmt format --color query.sql
+# or use the dedicated pretty commands:
+sqlfmt pretty-format query.sql
+sqlfmt pretty-print query.sql
 
 # Format with custom indentation
 sqlfmt format --indent="    " query.sql  # 4 spaces
 sqlfmt format --indent="\t" query.sql     # tabs
 ```
 
-#### Advanced CLI Usage
+### Advanced CLI Usage
 
 ```bash
 # Format multiple files
 sqlfmt format *.sql
+
+# Format with colors and write to file
+sqlfmt pretty-format --write query.sql
 
 # Validate formatting (useful for CI)
 sqlfmt validate query.sql
@@ -73,25 +87,28 @@ sqlfmt validate --lang=postgresql *.sql
 # List supported SQL dialects
 sqlfmt dialects
 
-# Get help
-sqlfmt --help
+# Get help for specific commands
 sqlfmt format --help
+sqlfmt pretty-format --help
+sqlfmt validate --help
 ```
 
-#### CLI Options
+### CLI Options
 
-| Flag              | Description                                      | Default           |
-| ----------------- | ------------------------------------------------ | ----------------- |
-| `--lang`          | SQL dialect (sql, postgresql, pl/sql, db2, n1ql) | `sql`             |
-| `--indent`        | Indentation string                               | `"  "` (2 spaces) |
-| `--write`         | Write result to file instead of stdout           | `false`           |
-| `--color`         | Enable ANSI color formatting                     | `false`           |
-| `--uppercase`     | Convert keywords to uppercase                    | `false`           |
-| `--lines-between` | Lines between queries                            | `2`               |
+| Flag              | Description                                      | Default           | Available In |
+| ----------------- | ------------------------------------------------ | ----------------- | ------------ |
+| `--lang`          | SQL dialect (sql, postgresql, pl/sql, db2, n1ql) | `sql`             | All commands |
+| `--indent`        | Indentation string                               | `"  "` (2 spaces) | All commands |
+| `--write`         | Write result to file instead of stdout           | `false`           | format, pretty-format |
+| `--color`         | Enable ANSI color formatting                     | `false`           | format only |
+| `--uppercase`     | Convert keywords to uppercase                    | `false`           | All commands |
+| `--lines-between` | Lines between queries                            | `2`               | All commands |
 
-### Library Usage
+**Note**: The `pretty-format` and `pretty-print` commands automatically enable color formatting. Use `pretty-print` when you only want stdout output, and `pretty-format` when you need the `--write` option.
 
-#### Basic Library Usage
+## Library Usage
+
+### Basic Library Usage
 
 ```go
 package main
@@ -154,10 +171,12 @@ Notes and current limitations:
 - Placeholders: named (`@foo`, `:foo`) and `?` indexed placeholders work. `$1`-style placeholders are planned but not yet supported.
 - PL/pgSQL blocks are recognized via dollar-quoting; additional PL/pgSQL formatting improvements are planned.
 
+For detailed PostgreSQL implementation progress and roadmap, see `PLAN-POSTGRESQL.md`.
+
 Run PostgreSQL-focused tests:
 
 ```shell
-go test ./sqlfmt -run TestPostgreSQL
+go test ./pkg/sqlfmt -run TestPostgreSQL
 ```
 
 Config options available are:
@@ -259,6 +278,7 @@ This project uses a comprehensive multi-level testing approach to ensure reliabi
 **CLI Integration Tests** - Command-line interface testing:
 
 - Format command testing with various options
+- Pretty format/print command testing
 - Validation command testing
 - Dialect selection testing
 
@@ -274,20 +294,20 @@ go test ./...       # Standard Go test execution
 **Run specific test categories:**
 
 ```bash
-go test ./sqlfmt                    # Public API tests
-go test ./sqlfmt/internal/core      # Internal core tests
-go test ./sqlfmt/internal/utils     # Utility tests
-go test ./cmd/sqlfmt/cmd            # CLI tests
+go test ./pkg/sqlfmt                 # Public API tests
+go test ./pkg/sqlfmt/core            # Internal core tests
+go test ./pkg/sqlfmt/utils           # Utility tests
+go test ./cmd                        # CLI tests
 ```
 
 **Run tests by pattern:**
 
 ```bash
-go test ./sqlfmt -run TestFormat        # Formatting tests
-go test ./sqlfmt -run TestPostgreSQL    # PostgreSQL tests
-go test ./sqlfmt -run TestTokenizer     # Tokenizer tests
-go test ./sqlfmt -run TestGolden        # Golden file tests
-go test ./sqlfmt -run TestSnapshot      # Snapshot tests
+go test ./pkg/sqlfmt -run TestFormat        # Formatting tests
+go test ./pkg/sqlfmt -run TestPostgreSQL    # PostgreSQL tests
+go test ./pkg/sqlfmt -run TestTokenizer     # Tokenizer tests
+just test-golden                            # Golden file tests
+just test-snapshots                         # Snapshot tests
 ```
 
 **Test coverage and performance:**
@@ -300,7 +320,8 @@ just test-benchmarks    # Run performance benchmarks
 **Update snapshot tests:**
 
 ```bash
-UPDATE_SNAPS=true go test ./sqlfmt -run TestSnapshot
+just update-snapshots   # Update all snapshots
+# or: UPDATE_SNAPS=true go test ./pkg/sqlfmt -run TestSnapshot
 ```
 
 ### Testing Approaches
@@ -325,25 +346,28 @@ Create a branch and open a pull request!
 When contributing new features:
 
 1. **Add integration tests** in `format_test.go` for end-to-end functionality
-2. **Add unit tests** in appropriate `internal/` packages for isolated components
+2. **Add unit tests** in appropriate packages for isolated components
 3. **Add golden files** for new dialects or significant formatting changes
-4. **Update snapshots** if output formatting changes: `UPDATE_SNAPS=true go test ./sqlfmt -run TestSnapshot`
+4. **Update snapshots** if output formatting changes: `just update-snapshots`
 
 ### Development Commands
 
 ```bash
 just                    # Build the project
-just lint              # Run linting checks
-just lint-fix          # Auto-fix linting issues
-just fmt               # Format code
-just check             # Run all checks (format, lint, test, tidy)
-just setup-deps        # Install development dependencies
+just build-cli          # Build CLI binary to bin/sqlfmt
+just install-cli        # Install CLI globally
+just lint               # Run linting checks
+just lint-fix           # Auto-fix linting issues
+just fmt                # Format code
+just check              # Run all checks (format, lint, test, tidy)
+just setup-deps         # Install development dependencies
 ```
 
 ## Next Steps
 
 - Add a `snowsql` dialect
 - Add support for SnowSQL specific keywords and constructs
+- Add MySQL dialect support (see `PLAN-MYSQL.md` for implementation roadmap)
 
 ## License
 

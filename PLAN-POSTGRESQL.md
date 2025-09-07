@@ -161,18 +161,18 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
 
 ## Phase 12: DDL and Index Keywords
 
-- [ ] Add concurrent operation support
-  - [ ] Add `CONCURRENTLY` keyword
-  - [ ] Handle concurrent index operations
-- [ ] Add index method support
-  - [ ] Add `USING` for index methods (GIN, GIST, BTREE, etc.)
-  - [ ] Add `INCLUDE` for covering indexes
-  - [ ] Handle index options properly
-- [ ] Add DDL tests
-  - [ ] Test CREATE INDEX statements
-  - [ ] Test concurrent operations
-  - [ ] Test ALTER TABLE statements
-  - [ ] Test covering indexes
+- [x] Add concurrent operation support
+  - [x] Add `CONCURRENTLY` keyword
+  - [x] Handle concurrent index operations
+- [x] Add index method support
+  - [x] Add `USING` for index methods (GIN, GIST, BTREE, etc.)
+  - [x] Add `INCLUDE` for covering indexes
+  - [x] Handle index options properly
+- [x] Add DDL tests
+  - [x] Test CREATE INDEX statements
+  - [x] Test concurrent operations
+  - [x] Test ALTER TABLE statements
+  - [x] Test covering indexes
 
 ## Phase 13: Comprehensive Integration Testing
 

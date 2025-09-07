@@ -2056,6 +2056,242 @@ func TestPostgreSQLFormatter_ComplexPLpgSQL(t *testing.T) {
 	})
 }
 
+func TestPostgreSQLFormatter_DDL_IndexOperations(t *testing.T) {
+	t.Run("formats basic CREATE INDEX", func(t *testing.T) {
+		query := "CREATE INDEX idx_users_email ON users (email);"
+		exp := Dedent(`
+            CREATE INDEX
+              idx_users_email ON users (email);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats CREATE UNIQUE INDEX", func(t *testing.T) {
+		query := "CREATE UNIQUE INDEX idx_users_username ON users (username);"
+		exp := Dedent(`
+            CREATE UNIQUE INDEX
+              idx_users_username ON users (username);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats CREATE INDEX with CONCURRENTLY", func(t *testing.T) {
+		query := "CREATE INDEX CONCURRENTLY idx_orders_created_at ON orders (created_at);"
+		exp := Dedent(`
+            CREATE INDEX
+              CONCURRENTLY idx_orders_created_at ON orders (created_at);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats CREATE INDEX with IF NOT EXISTS", func(t *testing.T) {
+		query := "CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);"
+		exp := Dedent(`
+            CREATE INDEX
+              IF NOT EXISTS idx_products_category ON products (category);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats CREATE INDEX with GIN method", func(t *testing.T) {
+		query := "CREATE INDEX idx_docs_content ON documents USING GIN (content);"
+		exp := Dedent(`
+            CREATE INDEX
+              idx_docs_content ON documents USING GIN (content);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats CREATE INDEX with GIST method", func(t *testing.T) {
+		query := "CREATE INDEX idx_locations_point ON locations USING GIST (location);"
+		exp := Dedent(`
+            CREATE INDEX
+              idx_locations_point ON locations USING GIST (location);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats CREATE INDEX with INCLUDE clause", func(t *testing.T) {
+		query := "CREATE INDEX idx_users_active_include ON users (active) INCLUDE (name, email);"
+		exp := Dedent(`
+            CREATE INDEX
+              idx_users_active_include ON users (active) INCLUDE (name, email);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats CREATE INDEX with WHERE clause (partial index)", func(t *testing.T) {
+		query := "CREATE INDEX idx_users_active ON users (id) WHERE active = true;"
+		exp := Dedent(`
+            CREATE INDEX
+              idx_users_active ON users (id)
+            WHERE
+              active = true;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats CREATE INDEX with multiple columns", func(t *testing.T) {
+		query := "CREATE INDEX idx_orders_user_date ON orders (user_id, created_at DESC, status);"
+		exp := Dedent(`
+            CREATE INDEX
+              idx_orders_user_date ON orders (user_id, created_at DESC, status);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats complex CREATE INDEX with all options", func(t *testing.T) {
+		query := "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idx_complex ON products " +
+			"USING BTREE (category, price DESC) INCLUDE (name) WHERE active = true;"
+		exp := Dedent(`
+            CREATE UNIQUE INDEX
+              CONCURRENTLY IF NOT EXISTS idx_complex ON products USING BTREE (category, price DESC) INCLUDE (name)
+            WHERE
+              active = true;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+}
+
+func TestPostgreSQLFormatter_DDL_AlterAndDrop(t *testing.T) {
+	t.Run("formats DROP INDEX", func(t *testing.T) {
+		query := "DROP INDEX idx_users_email;"
+		exp := Dedent(`
+            DROP INDEX
+              idx_users_email;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats DROP INDEX with IF EXISTS", func(t *testing.T) {
+		query := "DROP INDEX IF EXISTS idx_products_category;"
+		exp := Dedent(`
+            DROP INDEX
+              IF EXISTS idx_products_category;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats DROP INDEX with CONCURRENTLY", func(t *testing.T) {
+		query := "DROP INDEX CONCURRENTLY idx_orders_status;"
+		exp := Dedent(`
+            DROP INDEX
+              CONCURRENTLY idx_orders_status;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats REINDEX INDEX", func(t *testing.T) {
+		query := "REINDEX INDEX idx_users_email;"
+		exp := Dedent(`
+            REINDEX
+              INDEX idx_users_email;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats REINDEX TABLE", func(t *testing.T) {
+		query := "REINDEX TABLE users;"
+		exp := Dedent(`
+            REINDEX
+              TABLE users;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats ALTER TABLE ADD COLUMN", func(t *testing.T) {
+		query := "ALTER TABLE users ADD COLUMN phone VARCHAR(20);"
+		exp := Dedent(`
+            ALTER TABLE
+              users
+            ADD
+              COLUMN phone VARCHAR(20);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats ALTER TABLE DROP COLUMN", func(t *testing.T) {
+		query := "ALTER TABLE users DROP COLUMN phone;"
+		exp := Dedent(`
+            ALTER TABLE
+              users DROP COLUMN phone;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats ALTER TABLE ADD CONSTRAINT", func(t *testing.T) {
+		query := "ALTER TABLE orders ADD CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(id);"
+		exp := Dedent(`
+            ALTER TABLE
+              orders
+            ADD
+              CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(id);
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats ALTER TABLE RENAME COLUMN", func(t *testing.T) {
+		query := "ALTER TABLE users RENAME COLUMN name TO full_name;"
+		exp := Dedent(`
+            ALTER TABLE
+              users RENAME COLUMN name TO full_name;
+        `)
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats VACUUM", func(t *testing.T) {
+		query := "VACUUM ANALYZE users;"
+		exp := "VACUUM ANALYZE users;"
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats CLUSTER", func(t *testing.T) {
+		query := "CLUSTER users USING idx_users_email;"
+		exp := "CLUSTER users USING idx_users_email;"
+		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
+		require.Equal(t, exp, result)
+	})
+}
+
 func ExamplePostgreSQLFormatter_Format() {
 	cfg := NewDefaultConfig().WithLang(PostgreSQL)
 	formatter := NewPostgreSQLFormatter(cfg)
