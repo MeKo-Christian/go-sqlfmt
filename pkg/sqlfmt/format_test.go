@@ -185,38 +185,7 @@ HAVING column > 10 ORDER BY other_column LIMIT 5;`,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var result string
-			if !tt.cfg.Empty() {
-				if tt.cfg.Indent == "" {
-					tt.cfg.Indent = DefaultIndent
-				}
-				result = Format(tt.query, &tt.cfg)
-			} else {
-				result = Format(tt.query)
-			}
-
-			exp := strings.TrimRight(tt.exp, "\n\t ")
-			exp = strings.TrimLeft(exp, "\n")
-			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
-
-			if result != exp {
-				fmt.Println("=== QUERY ===")
-				fmt.Println(tt.query)
-				fmt.Println()
-
-				fmt.Println("=== EXP ===")
-				fmt.Println(exp)
-				fmt.Println()
-
-				fmt.Println("=== RESULT ===")
-				fmt.Println(result)
-				fmt.Println()
-			}
-			require.Equal(t, exp, result)
-		})
-	}
+	runFormatTests(t, tests)
 }
 
 func TestFormatComments(t *testing.T) {
@@ -278,38 +247,7 @@ func TestFormatComments(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var result string
-			if !tt.cfg.Empty() {
-				if tt.cfg.Indent == "" {
-					tt.cfg.Indent = DefaultIndent
-				}
-				result = Format(tt.query, &tt.cfg)
-			} else {
-				result = Format(tt.query)
-			}
-
-			exp := strings.TrimRight(tt.exp, "\n\t ")
-			exp = strings.TrimLeft(exp, "\n")
-			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
-
-			if result != exp {
-				fmt.Println("=== QUERY ===")
-				fmt.Println(tt.query)
-				fmt.Println()
-
-				fmt.Println("=== EXP ===")
-				fmt.Println(exp)
-				fmt.Println()
-
-				fmt.Println("=== RESULT ===")
-				fmt.Println(result)
-				fmt.Println()
-			}
-			require.Equal(t, exp, result)
-		})
-	}
+	runFormatTests(t, tests)
 }
 
 func TestFormatInsertUpdateDelete(t *testing.T) {
@@ -438,38 +376,7 @@ func TestFormatInsertUpdateDelete(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var result string
-			if !tt.cfg.Empty() {
-				if tt.cfg.Indent == "" {
-					tt.cfg.Indent = DefaultIndent
-				}
-				result = Format(tt.query, &tt.cfg)
-			} else {
-				result = Format(tt.query)
-			}
-
-			exp := strings.TrimRight(tt.exp, "\n\t ")
-			exp = strings.TrimLeft(exp, "\n")
-			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
-
-			if result != exp {
-				fmt.Println("=== QUERY ===")
-				fmt.Println(tt.query)
-				fmt.Println()
-
-				fmt.Println("=== EXP ===")
-				fmt.Println(exp)
-				fmt.Println()
-
-				fmt.Println("=== RESULT ===")
-				fmt.Println(result)
-				fmt.Println()
-			}
-			require.Equal(t, exp, result)
-		})
-	}
+	runFormatTests(t, tests)
 }
 
 func TestFormatOperatorsJoins(t *testing.T) {
@@ -494,9 +401,7 @@ func TestFormatOperatorsJoins(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatOperatorsParentheses(t *testing.T) {
@@ -524,9 +429,7 @@ func TestFormatOperatorsParentheses(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatOperatorsBasic(t *testing.T) {
@@ -564,9 +467,7 @@ func TestFormatOperatorsBasic(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatOperatorsFunctions(t *testing.T) {
@@ -645,9 +546,7 @@ func TestFormatOperatorsFunctions(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatOperatorsClauses(t *testing.T) {
@@ -752,9 +651,7 @@ func TestFormatOperatorsClauses(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatOperatorsSymbols(t *testing.T) {
@@ -851,9 +748,7 @@ func TestFormatOperatorsSymbols(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatOperatorsLogical(t *testing.T) {
@@ -915,9 +810,7 @@ func TestFormatOperatorsLogical(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatOperators(t *testing.T) {
@@ -954,38 +847,7 @@ func TestFormatStrings(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var result string
-			if !tt.cfg.Empty() {
-				if tt.cfg.Indent == "" {
-					tt.cfg.Indent = DefaultIndent
-				}
-				result = Format(tt.query, &tt.cfg)
-			} else {
-				result = Format(tt.query)
-			}
-
-			exp := strings.TrimRight(tt.exp, "\n\t ")
-			exp = strings.TrimLeft(exp, "\n")
-			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
-
-			if result != exp {
-				fmt.Println("=== QUERY ===")
-				fmt.Println(tt.query)
-				fmt.Println()
-
-				fmt.Println("=== EXP ===")
-				fmt.Println(exp)
-				fmt.Println()
-
-				fmt.Println("=== RESULT ===")
-				fmt.Println(result)
-				fmt.Println()
-			}
-			require.Equal(t, exp, result)
-		})
-	}
+	runFormatTests(t, tests)
 }
 
 func TestFormatSpecialStatements(t *testing.T) {
@@ -1032,9 +894,7 @@ func TestFormatSpecialStatements(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatSpecialUnicode(t *testing.T) {
@@ -1072,9 +932,7 @@ func TestFormatSpecialUnicode(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatSpecialConfig(t *testing.T) {
@@ -1121,9 +979,7 @@ func TestFormatSpecialConfig(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatSpecialAdvancedSimple(t *testing.T) {
@@ -1178,9 +1034,7 @@ func TestFormatSpecialAdvancedSimple(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatSpecialAdvancedComplex(t *testing.T) {
@@ -1300,9 +1154,7 @@ func TestFormatSpecialAdvancedComplex(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewStandardSQLFormatter(cfg)
-	})
+	runFormatterTests(t, tests, NewStandardSQLFormatter)
 }
 
 func TestFormatSpecial(t *testing.T) {
@@ -1436,6 +1288,68 @@ func TestPrettyFormat(t *testing.T) {
 		},
 	}
 
+	runPrettyFormatTests(t, tests)
+}
+
+func BenchmarkFormat(b *testing.B) {
+	for range b.N {
+		Format(`SELECT foo AS a, boo AS b FROM table WHERE foo = bar LIMIT 10`)
+	}
+}
+
+func BenchmarkPrettyFormat(b *testing.B) {
+	for range b.N {
+		PrettyFormat(`SELECT foo AS a, boo AS b FROM table WHERE foo = bar LIMIT 10`)
+	}
+}
+
+func runFormatTests(t *testing.T, tests []struct {
+	name  string
+	query string
+	exp   string
+	cfg   Config
+}) {
+	t.Helper()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result string
+			if !tt.cfg.Empty() {
+				if tt.cfg.Indent == "" {
+					tt.cfg.Indent = DefaultIndent
+				}
+				result = Format(tt.query, &tt.cfg)
+			} else {
+				result = Format(tt.query)
+			}
+
+			exp := strings.TrimRight(tt.exp, "\n\t ")
+			exp = strings.TrimLeft(exp, "\n")
+			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
+
+			if result != exp {
+				fmt.Println("=== QUERY ===")
+				fmt.Println(tt.query)
+				fmt.Println()
+
+				fmt.Println("=== EXP ===")
+				fmt.Println(exp)
+				fmt.Println()
+
+				fmt.Println("=== RESULT ===")
+				fmt.Println(result)
+				fmt.Println()
+			}
+			require.Equal(t, exp, result)
+		})
+	}
+}
+
+func runPrettyFormatTests(t *testing.T, tests []struct {
+	name  string
+	query string
+	exp   string
+}) {
+	t.Helper()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			exp := strings.TrimRight(tt.exp, "\n\t ")
@@ -1458,18 +1372,6 @@ func TestPrettyFormat(t *testing.T) {
 			}
 			require.Equal(t, exp, p)
 		})
-	}
-}
-
-func BenchmarkFormat(b *testing.B) {
-	for range b.N {
-		Format(`SELECT foo AS a, boo AS b FROM table WHERE foo = bar LIMIT 10`)
-	}
-}
-
-func BenchmarkPrettyFormat(b *testing.B) {
-	for range b.N {
-		PrettyFormat(`SELECT foo AS a, boo AS b FROM table WHERE foo = bar LIMIT 10`)
 	}
 }
 

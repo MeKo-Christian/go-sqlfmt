@@ -42,9 +42,7 @@ func TestDB2Formatter_FormatBasic(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewDB2Formatter(cfg)
-	})
+	runFormatterTests(t, tests, NewDB2Formatter)
 }
 
 func TestDB2Formatter_FormatIdentifiers(t *testing.T) {
@@ -88,9 +86,7 @@ func TestDB2Formatter_FormatIdentifiers(t *testing.T) {
 		},
 	}
 
-	runFormatterTests(t, tests, func(cfg *Config) Formatter {
-		return NewDB2Formatter(cfg)
-	})
+	runFormatterTests(t, tests, NewDB2Formatter)
 }
 
 func TestDB2Formatter_Format(t *testing.T) {

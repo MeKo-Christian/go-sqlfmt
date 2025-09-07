@@ -28,8 +28,8 @@ type formatter struct {
 	indentation          *utils.Indentation
 	inlineBlock          *utils.InlineBlock
 	params               *utils.Params
-	tokenizer            *tokenizer                                                          // Assume tokenizer is defined in your code
-	tokenOverride        func(tok types.Token, previousReservedWord types.Token) types.Token // Assume types.Token is defined in your code
+	tokenizer            *tokenizer
+	tokenOverride        func(tok types.Token, previousReservedWord types.Token) types.Token
 	previousReservedWord types.Token
 	tokens               []types.Token
 	index                int
@@ -63,7 +63,17 @@ func (f *formatter) format(query string) string {
 }
 
 // FormatQuery is a public wrapper function for creating a formatter and formatting a query.
-func FormatQuery(cfg *Config, tokenOverride func(tok types.Token, previousReservedWord types.Token) types.Token, query string) string {
+func FormatQuery(
+
+	cfg *Config,
+
+	tokenOverride func(tok types.Token,
+
+		previousReservedWord types.Token) types.Token,
+
+	query string,
+
+) string {
 	tokenizer := newTokenizer(cfg.TokenizerConfig)
 	formatter := newFormatter(cfg, tokenizer, tokenOverride)
 	return formatter.format(query)
@@ -86,36 +96,27 @@ func (f *formatter) getFormattedQueryFromTokens() string {
 }
 
 func (f *formatter) formatToken(tok types.Token, formattedQuery *strings.Builder) {
-	switch tok.Type {
-	case types.TokenTypeWhitespace:
-		// Ignore whitespace
-	case types.TokenTypeLineComment:
-		f.formatLineComment(tok, formattedQuery)
-	case types.TokenTypeBlockComment:
-		f.formatBlockComment(tok, formattedQuery)
-	case types.TokenTypeReservedTopLevel:
-		f.formatReservedTopLevelToken(tok, formattedQuery)
-	case types.TokenTypeReservedTopLevelNoIndent:
-		f.formatReservedTopLevelNoIndentToken(tok, formattedQuery)
-	case types.TokenTypeReservedNewline:
-		f.formatReservedNewlineToken(tok, formattedQuery)
-	case types.TokenTypeReserved:
-		f.formatReservedToken(tok, formattedQuery)
-	case types.TokenTypeOpenParen:
-		f.formatOpeningParentheses(tok, formattedQuery)
-	case types.TokenTypeCloseParen:
-		f.formatClosingParentheses(tok, formattedQuery)
-	case types.TokenTypeWord, types.TokenTypePlaceholder:
-		f.formatWordOrPlaceholder(tok, formattedQuery)
-	case types.TokenTypeString:
-		f.formatString(tok, formattedQuery)
-	case types.TokenTypeNumber:
-		f.formatNumber(tok, formattedQuery)
-	case types.TokenTypeBoolean:
-		f.formatBoolean(tok, formattedQuery)
-	case types.TokenTypeSpecialOperator:
-		f.formatSpecialOperator(tok, formattedQuery)
-	default:
+	formatters := map[types.TokenType]func(types.Token, *strings.Builder){
+		types.TokenTypeWhitespace:               func(t types.Token, q *strings.Builder) {},
+		types.TokenTypeLineComment:              f.formatLineComment,
+		types.TokenTypeBlockComment:             f.formatBlockComment,
+		types.TokenTypeReservedTopLevel:         f.formatReservedTopLevelToken,
+		types.TokenTypeReservedTopLevelNoIndent: f.formatReservedTopLevelNoIndentToken,
+		types.TokenTypeReservedNewline:          f.formatReservedNewlineToken,
+		types.TokenTypeReserved:                 f.formatReservedToken,
+		types.TokenTypeOpenParen:                f.formatOpeningParentheses,
+		types.TokenTypeCloseParen:               f.formatClosingParentheses,
+		types.TokenTypeWord:                     f.formatWordOrPlaceholder,
+		types.TokenTypePlaceholder:              f.formatWordOrPlaceholder,
+		types.TokenTypeString:                   f.formatString,
+		types.TokenTypeNumber:                   f.formatNumber,
+		types.TokenTypeBoolean:                  f.formatBoolean,
+		types.TokenTypeSpecialOperator:          f.formatSpecialOperator,
+	}
+
+	if formatter, ok := formatters[tok.Type]; ok {
+		formatter(tok, formattedQuery)
+	} else {
 		f.formatDefaultToken(tok, formattedQuery)
 	}
 }

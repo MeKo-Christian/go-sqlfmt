@@ -642,7 +642,13 @@ func TestPostgreSQLFormatter_JSONOperators(t *testing.T) {
 	})
 
 	t.Run("formats complex nested JSON operations", func(t *testing.T) {
-		query := "SELECT users.id, profile.data->'settings'->>'theme', metadata#>'{tags,0}' FROM users JOIN profiles profile ON users.id = profile.user_id WHERE profile.data @> '{\"active\": true}' AND metadata ? 'priority';"
+		query := "SELECT users.id, profile.data->'settings'->>'theme', " +
+
+			"metadata#>'{tags,0}' FROM users " +
+
+			"JOIN profiles profile ON users.id = profile.user_id WHERE profile.data @> " +
+
+			"'{\"active\": true}' AND metadata ? 'priority';"
 		exp := Dedent(`
             SELECT
               users.id,
@@ -675,7 +681,9 @@ func TestPostgreSQLFormatter_JSONOperators(t *testing.T) {
 	})
 
 	t.Run("formats JSON operations in WHERE clauses", func(t *testing.T) {
-		query := "UPDATE users SET data = data || '{\"updated\": true}' WHERE data->>'status' = 'active' AND settings @> '{\"notifications\": true}';"
+		query := "UPDATE users SET data = data || '{\"updated\": true}' " +
+
+			"WHERE data->>'status' = 'active' AND settings @> '{\"notifications\": true}';"
 		exp := Dedent(`
             UPDATE
               users
@@ -707,7 +715,13 @@ func TestPostgreSQLFormatter_JSONOperators(t *testing.T) {
 	})
 
 	t.Run("formats mixed JSON and SQL operations", func(t *testing.T) {
-		query := "SELECT CASE WHEN data ? 'premium' THEN data->>'premium_feature' ELSE 'standard' END, LENGTH(info#>>'{description}') FROM accounts WHERE created_at > '2023-01-01' AND (settings @> '{\"beta\": true}' OR data->>'tier' = 'pro');"
+		query := "SELECT CASE WHEN data ? 'premium' THEN data->>'premium_feature' ELSE 'standard' END, " +
+
+			"LENGTH(info#>>'{description}') FROM accounts WHERE created_at > '2023-01-01' AND " +
+
+			"(settings @> '{\"beta\": true}' " +
+
+			"OR data->>'tier' = 'pro');"
 		exp := Dedent(`
             SELECT
               CASE
