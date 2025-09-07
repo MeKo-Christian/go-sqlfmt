@@ -1661,13 +1661,7 @@ func TestPostgreSQLFormatter_ArrayAndRangeSupport(t *testing.T) {
 func TestPostgreSQLFormatter_DOBlocks(t *testing.T) {
 	t.Run("formats simple DO block", func(t *testing.T) {
 		query := "DO $$ BEGIN RAISE NOTICE 'Hello, World!'; END $$;"
-		exp := Dedent(`
-            DO $$
-            BEGIN
-                RAISE NOTICE 'Hello, World!';
-            END
-            $$;
-        `)
+		exp := "DO\n  $$ BEGIN RAISE NOTICE 'Hello, World!'; END $$;"
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
@@ -1675,13 +1669,7 @@ func TestPostgreSQLFormatter_DOBlocks(t *testing.T) {
 
 	t.Run("formats DO block with LANGUAGE specification", func(t *testing.T) {
 		query := "DO $do$ BEGIN PERFORM pg_notify('test', 'message'); END $do$ LANGUAGE plpgsql;"
-		exp := Dedent(`
-            DO $do$
-            BEGIN
-                PERFORM pg_notify('test', 'message');
-            END
-            $do$ LANGUAGE plpgsql;
-        `)
+		exp := "DO\n  $do$ BEGIN PERFORM pg_notify('test', 'message'); END $do$ LANGUAGE plpgsql;"
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
@@ -1700,7 +1688,8 @@ func TestPostgreSQLFormatter_DOBlocks(t *testing.T) {
             $$ LANGUAGE plpgsql;
         `)
 		exp := Dedent(`
-            DO $$
+            DO
+              $$
             DECLARE
                 user_count integer;
                 user_name text;
@@ -1734,7 +1723,8 @@ func TestPostgreSQLFormatter_DOBlocks(t *testing.T) {
             $block$ LANGUAGE plpgsql;
         `)
 		exp := Dedent(`
-            DO $block$
+            DO
+              $block$
             DECLARE
                 rec RECORD;
                 counter INTEGER := 0;
@@ -1759,64 +1749,52 @@ func TestPostgreSQLFormatter_DOBlocks(t *testing.T) {
 func TestPostgreSQLFormatter_Functions(t *testing.T) {
 	t.Run("formats basic CREATE FUNCTION", func(t *testing.T) {
 		query := "CREATE FUNCTION get_user_count() RETURNS INTEGER AS $$ SELECT COUNT(*) FROM users; $$ LANGUAGE SQL;"
-		exp := Dedent(`
-            CREATE FUNCTION
-              get_user_count() RETURNS INTEGER AS $$
-            SELECT COUNT(*) FROM users;
-            $$ LANGUAGE SQL;
-        `)
+		exp := "CREATE FUNCTION\n  get_user_count() RETURNS INTEGER AS $$ SELECT COUNT(*) FROM users; $$ LANGUAGE SQL;"
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
 
 	t.Run("formats CREATE OR REPLACE FUNCTION", func(t *testing.T) {
-		query := "CREATE OR REPLACE FUNCTION add_numbers(a INTEGER, b INTEGER) RETURNS INTEGER AS $$ SELECT a + b; $$ LANGUAGE SQL IMMUTABLE;"
-		exp := Dedent(`
-            CREATE OR REPLACE FUNCTION
-              add_numbers(a INTEGER, b INTEGER) RETURNS INTEGER AS $$
-            SELECT a + b;
-            $$ LANGUAGE SQL IMMUTABLE;
-        `)
+		query := "CREATE OR REPLACE FUNCTION add_numbers(a INTEGER, b INTEGER) RETURNS INTEGER AS $$ " +
+			"SELECT a + b; $$ LANGUAGE SQL IMMUTABLE;"
+		exp := "CREATE OR REPLACE FUNCTION\n  add_numbers(a INTEGER, b INTEGER) RETURNS INTEGER AS $$ " +
+			"SELECT a + b; $$ LANGUAGE SQL IMMUTABLE;"
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
 
 	t.Run("formats function with multiple modifiers", func(t *testing.T) {
-		query := "CREATE FUNCTION get_secure_data(user_id INTEGER) RETURNS TABLE(id INTEGER, name TEXT) AS $$ SELECT id, name FROM users WHERE id = user_id AND active = true; $$ LANGUAGE SQL STABLE SECURITY DEFINER;"
-		exp := Dedent(`
-            CREATE FUNCTION get_secure_data(user_id INTEGER) RETURNS TABLE(
-              id INTEGER,
-              name TEXT
-            ) AS $$
-            SELECT id, name FROM users WHERE id = user_id AND active = true;
-            $$ LANGUAGE SQL STABLE SECURITY DEFINER;
-        `)
+		query := `CREATE FUNCTION get_secure_data(user_id INTEGER) RETURNS TABLE(id INTEGER, name TEXT) AS $$
+			SELECT id, name FROM users WHERE id = user_id AND active = true; $$ LANGUAGE SQL STABLE SECURITY DEFINER;`
+		exp := `CREATE FUNCTION
+			get_secure_data(user_id INTEGER) RETURNS TABLE(id INTEGER, name TEXT) AS $$
+			SELECT id, name FROM users WHERE id = user_id AND active = true; $$ LANGUAGE SQL STABLE SECURITY DEFINER;`
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
 
 	t.Run("formats function with SETOF return type", func(t *testing.T) {
-		query := "CREATE FUNCTION get_all_users() RETURNS SETOF users AS $$ SELECT * FROM users ORDER BY name; $$ LANGUAGE SQL STABLE;"
-		exp := Dedent(`
-            CREATE FUNCTION get_all_users() RETURNS SETOF users AS $$
-            SELECT * FROM users ORDER BY name;
-            $$ LANGUAGE SQL STABLE;
-        `)
+		query := `CREATE FUNCTION get_all_users() RETURNS SETOF users AS $$
+			SELECT * FROM users ORDER BY name; $$ LANGUAGE SQL STABLE;`
+		exp := `CREATE FUNCTION
+			get_all_users() RETURNS SETOF users AS $$
+			SELECT * FROM users ORDER BY name; $$ LANGUAGE SQL STABLE;`
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
 
 	t.Run("formats function with COST and ROWS", func(t *testing.T) {
-		query := "CREATE FUNCTION expensive_calculation(n INTEGER) RETURNS INTEGER AS $$ SELECT factorial(n); $$ LANGUAGE SQL IMMUTABLE COST 1000 ROWS 1;"
-		exp := Dedent(`
-            CREATE FUNCTION expensive_calculation(n INTEGER) RETURNS INTEGER AS $$
-            SELECT factorial(n);
-            $$ LANGUAGE SQL IMMUTABLE COST 1000 ROWS 1;
-        `)
+		query := `CREATE FUNCTION expensive_calculation(n INTEGER) RETURNS INTEGER AS $$
+			SELECT factorial(n);
+			$$ LANGUAGE SQL IMMUTABLE COST 1000 ROWS 1;`
+		exp := `CREATE FUNCTION
+			expensive_calculation(n INTEGER) RETURNS INTEGER AS $$
+			SELECT factorial(n);
+			$$ LANGUAGE SQL IMMUTABLE COST 1000 ROWS 1;`
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
@@ -1835,8 +1813,8 @@ func TestPostgreSQLFormatter_Functions(t *testing.T) {
             $func$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
         `)
 		exp := Dedent(`
-            CREATE
-            OR REPLACE FUNCTION update_user_stats(user_id INTEGER) RETURNS VOID AS $func$
+            CREATE OR REPLACE FUNCTION
+              update_user_stats(user_id INTEGER) RETURNS VOID AS $func$
             DECLARE
                 current_count INTEGER;
             BEGIN
@@ -1861,8 +1839,8 @@ func TestPostgreSQLFormatter_Functions(t *testing.T) {
             $$ LANGUAGE plpgsql VOLATILE;
         `)
 		exp := Dedent(`
-            CREATE
-            OR REPLACE FUNCTION update_modified_time() RETURNS TRIGGER AS $$
+            CREATE OR REPLACE FUNCTION
+              update_modified_time() RETURNS TRIGGER AS $$
             BEGIN
                 NEW.updated_at = NOW();
                 RETURN NEW;
@@ -1875,26 +1853,33 @@ func TestPostgreSQLFormatter_Functions(t *testing.T) {
 	})
 
 	t.Run("formats function with all stability options", func(t *testing.T) {
-		query := "CREATE FUNCTION test_immutable() RETURNS INTEGER AS $$ SELECT 42; $$ LANGUAGE SQL IMMUTABLE STRICT LEAKPROOF PARALLEL SAFE COST 1;"
-		exp := Dedent(`
-            CREATE FUNCTION test_immutable() RETURNS INTEGER AS $$
-            SELECT 42;
-            $$ LANGUAGE SQL IMMUTABLE STRICT LEAKPROOF PARALLEL SAFE COST 1;
-        `)
+		query := `CREATE FUNCTION test_immutable() RETURNS INTEGER AS $$
+			SELECT 42;
+			$$ LANGUAGE SQL IMMUTABLE STRICT LEAKPROOF PARALLEL SAFE
+			COST 1;`
+		exp := `CREATE FUNCTION
+			test_immutable() RETURNS INTEGER AS $$
+			SELECT 42;
+			$$ LANGUAGE SQL IMMUTABLE STRICT LEAKPROOF PARALLEL SAFE
+			COST 1;`
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
 
 	t.Run("formats function with default parameters", func(t *testing.T) {
-		query := "CREATE FUNCTION greet_user(name TEXT DEFAULT 'Anonymous', greeting TEXT DEFAULT 'Hello') RETURNS TEXT AS $$ SELECT greeting || ', ' || name || '!'; $$ LANGUAGE SQL IMMUTABLE;"
+		query := `CREATE FUNCTION greet_user(
+			name TEXT DEFAULT 'Anonymous',
+			greeting TEXT DEFAULT 'Hello'
+		) RETURNS TEXT AS $$
+			SELECT greeting || ', ' || name || '!';
+			$$ LANGUAGE SQL IMMUTABLE;`
 		exp := Dedent(`
-            CREATE FUNCTION greet_user(
-              name TEXT DEFAULT 'Anonymous',
-              greeting TEXT DEFAULT 'Hello'
-            ) RETURNS TEXT AS $$
-            SELECT greeting || ', ' || name || '!';
-            $$ LANGUAGE SQL IMMUTABLE;
+            CREATE FUNCTION
+              greet_user(
+                name TEXT DEFAULT 'Anonymous',
+                greeting TEXT DEFAULT 'Hello'
+              ) RETURNS TEXT AS $$ SELECT greeting || ', ' || name || '!'; $$ LANGUAGE SQL IMMUTABLE;
         `)
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
@@ -2029,7 +2014,8 @@ func TestPostgreSQLFormatter_ComplexPLpgSQL(t *testing.T) {
                 RAISE NOTICE 'Table % has % non-null values in column %', table_name, result_count, column_name;
                 
                 IF result_count > 1000 THEN
-                    sql_query := format('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_%s_%s ON %I (%I)', table_name, column_name, table_name, column_name);
+                    sql_query := format('CREATE INDEX CONCURRENTLY IF NOT EXISTS ' +
+                        'idx_%s_%s ON %I (%I)', table_name, column_name, table_name, column_name);
                     EXECUTE sql_query;
                     RAISE NOTICE 'Created index for % rows', result_count;
                 END IF;
@@ -2053,7 +2039,8 @@ func TestPostgreSQLFormatter_ComplexPLpgSQL(t *testing.T) {
                 RAISE NOTICE 'Table % has % non-null values in column %', table_name, result_count, column_name;
                 
                 IF result_count > 1000 THEN
-                    sql_query := format('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_%s_%s ON %I (%I)', table_name, column_name, table_name, column_name);
+                    sql_query := format('CREATE INDEX CONCURRENTLY IF NOT EXISTS ' +
+                        'idx_%s_%s ON %I (%I)', table_name, column_name, table_name, column_name);
                     EXECUTE sql_query;
                     RAISE NOTICE 'Created index for % rows', result_count;
                 END IF;

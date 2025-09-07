@@ -88,5 +88,7 @@ func (psf *PostgreSQLFormatter) tokenOverride(tok types.Token, previousReservedW
 			Key:   tok.Key,
 		}
 	}
+
+	
 	return tok
 }

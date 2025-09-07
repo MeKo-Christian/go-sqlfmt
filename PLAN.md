@@ -99,15 +99,15 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
 - [x] Add RETURNING clause support
   - [x] Add `RETURNING` to top-level words
   - [x] Handle RETURNING with INSERT/UPDATE/DELETE
-- [x] Add UPSERT support
+- [-] Add UPSERT support (**BLOCKED** - see Known Issues section)
   - [x] Add `ON CONFLICT` to reserved words
   - [x] Add `DO UPDATE`, `DO NOTHING` keywords
-  - [x] Handle conflict resolution formatting
+  - [ ] Handle conflict resolution formatting (tokenizer limitations)
 - [x] Add CTE and RETURNING tests
   - [x] Test simple WITH queries
   - [x] Test recursive CTE queries
   - [x] Test INSERT...RETURNING
-  - [x] Test UPSERT queries with ON CONFLICT
+  - [ ] Test UPSERT queries with ON CONFLICT (failing due to formatting issues)
 
 ## Phase 9: Core PostgreSQL Keywords - Part 2 (Window Functions)
 
@@ -144,19 +144,20 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
 
 ## Phase 11: DO Blocks and PL/pgSQL
 
-- [ ] Handle procedural blocks
-  - [ ] Recognize `DO` as a keyword
-  - [ ] Treat dollar-quoted body as opaque string (no formatting)
-  - [ ] Handle `LANGUAGE` keyword properly
-- [ ] Add function definition support
-  - [ ] Handle `CREATE FUNCTION` statements
-  - [ ] Handle `RETURNS` keyword
-  - [ ] Handle function modifiers: `IMMUTABLE`, `STABLE`, `VOLATILE`
-- [ ] Add procedural tests
-  - [ ] Test DO blocks
-  - [ ] Test function definitions
-  - [ ] Test complex PL/pgSQL blocks
-  - [ ] Test function calls with parameters
+- [x] Handle procedural blocks
+  - [x] Recognize `DO` as a keyword (implemented but conflicts with UPSERT)
+  - [x] Treat dollar-quoted body as opaque string (no formatting)
+  - [x] Handle `LANGUAGE` keyword properly
+- [-] Add function definition support (**PARTIAL** - see Known Issues section)
+  - [x] Handle `CREATE FUNCTION` statements
+  - [x] Handle `RETURNS` keyword
+  - [x] Handle function modifiers: `IMMUTABLE`, `STABLE`, `VOLATILE`
+  - [ ] Function indentation formatting issues (some tests fail)
+- [-] Add procedural tests (**PARTIAL**)
+  - [x] Test DO blocks (basic tests pass)
+  - [ ] Test function definitions (some indentation failures)
+  - [x] Test complex PL/pgSQL blocks
+  - [x] Test function calls with parameters
 
 ## Phase 12: DDL and Index Keywords
 
@@ -227,6 +228,105 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
   - [ ] Add missing error handling
   - [ ] Final code review and cleanup
 
+## Known Issues and Implementation Challenges
+
+### UPSERT Formatting Problem (Phase 8)
+
+**Issue**: UPSERT statements with `ON CONFLICT` clauses are not formatting correctly.
+
+**Expected Behavior**:
+
+```sql
+INSERT INTO users (id, name, email)
+VALUES (1, 'John', 'john@example.com') ON CONFLICT (id) DO NOTHING;
+```
+
+**Current Behavior**:
+
+```sql
+INSERT INTO users (id, name, email)
+VALUES
+  (1, 'John', 'john@example.com') ON CONFLICT (id)
+DO
+  NOTHING;
+```
+
+**Root Cause Analysis**:
+
+1. **Conflicting Requirements**:
+   - Procedural `DO` blocks (`DO $$ ... $$`) need to be top-level (new line)
+   - UPSERT `DO` clauses (`DO UPDATE`, `DO NOTHING`) need to stay inline
+2. **Tokenizer Limitation**:
+   - Compound reserved words like "DO UPDATE" and "DO NOTHING" are not being tokenized as single units
+   - The tokenizer sees "DO" as a separate token, making context detection difficult
+3. **Context Detection Challenges**:
+   - By the time the formatter processes "DO", there can be intervening tokens (identifiers, parentheses) between "ON CONFLICT" and "DO"
+   - The `previousReservedWord` tracking doesn't reliably identify UPSERT context
+   - Simple heuristics fail because of the complex token stream
+
+**Attempted Solutions**:
+
+1. ✗ Removed "DO" from top-level words + tokenizer override based on `previousReservedWord`
+2. ✗ Context detection using previous reserved word patterns
+3. ✗ Heuristic-based approach checking for procedural vs UPSERT indicators
+4. ✗ Assumption that compound keywords would be tokenized as single units
+
+**Technical Obstacles**:
+
+- The tokenizer architecture doesn't support lookahead to determine if "DO" is part of "DO UPDATE"
+- Token override functions only have access to the current token and previous reserved word
+- Compound reserved word tokenization is not working as expected for multi-word UPSERT constructs
+- PostgreSQL UPSERT syntax is more complex than initially anticipated
+
+**Impact**:
+
+- UPSERT tests (`TestPostgreSQLFormatter_UPSERT`) currently fail
+- Procedural DO blocks work correctly
+- This affects Phase 8 completion status
+
+**Potential Future Solutions**:
+
+1. Modify the tokenizer core to properly handle compound keywords like "DO UPDATE" as single tokens
+2. Implement a two-pass formatter that can look ahead to determine context
+3. Add special handling in the core formatting logic (not just token override)
+4. Consider alternative test expectations that align with current formatting capabilities
+
+**Status**: ❌ **Unresolved** - Requires deeper architectural changes to the tokenizer or formatting core.
+
+### Function Indentation Problem (Phase 11)
+
+**Issue**: Some PostgreSQL function definitions are not formatting with the expected indentation.
+
+**Expected Behavior**:
+
+```sql
+CREATE FUNCTION
+      get_secure_data(user_id INTEGER) RETURNS TABLE(id INTEGER, name TEXT) AS $$
+      SELECT id, name FROM users WHERE id = user_id AND active = true;
+      $$ LANGUAGE SQL STABLE SECURITY DEFINER;
+```
+
+**Current Behavior**:
+
+```sql
+CREATE FUNCTION
+  get_secure_data(user_id INTEGER) RETURNS TABLE(id INTEGER, name TEXT) AS $$
+			SELECT id, name FROM users WHERE id = user_id AND active = true;
+			$$ LANGUAGE SQL STABLE SECURITY DEFINER;
+```
+
+**Root Cause**: Test expectations may not match the current indentation algorithm used by the formatter.
+
+**Impact**:
+
+- Some function tests in `TestPostgreSQLFormatter_Functions` fail
+- Basic function formatting works correctly
+- Only affects complex multi-line function definitions
+
+**Status**: ❌ **Test expectation mismatch** - May require test updates rather than code changes.
+
+---
+
 ## Success Criteria
 
 - [ ] All PostgreSQL-specific syntax is properly formatted
@@ -234,3 +334,5 @@ Based on colleague's gap analysis, this plan adds comprehensive PostgreSQL suppo
 - [ ] Comprehensive test coverage (>90%)
 - [ ] Performance comparable to existing formatters
 - [ ] Documentation complete and accurate
+
+**Current Status**: Most PostgreSQL features implemented successfully. UPSERT formatting remains unresolved due to tokenizer architecture limitations.
