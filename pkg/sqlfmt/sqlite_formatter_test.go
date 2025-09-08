@@ -1480,6 +1480,907 @@ func TestSQLite_Phase6_ComplexWindowExample(t *testing.T) {
 	}
 }
 
+// Phase 7: DDL Essentials Tests
+func TestSQLite_Phase7_CreateTableWithGeneratedColumns(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test basic generated VIRTUAL column
+	query1 := `CREATE TABLE products (
+		id INTEGER PRIMARY KEY,
+		name TEXT NOT NULL,
+		price DECIMAL(10, 2),
+		slug GENERATED ALWAYS AS (LOWER(REPLACE(name, ' ', '-'))) VIRTUAL
+	);`
+	result1 := Format(query1, cfg)
+	if !containsString(result1, "CREATE TABLE") || !containsString(result1, "GENERATED ALWAYS AS") || !containsString(result1, "VIRTUAL") {
+		t.Error("SQLite should format CREATE TABLE with VIRTUAL generated column")
+	}
+
+	// Test generated STORED column
+	query2 := `CREATE TABLE inventory (
+		product_id INTEGER NOT NULL,
+		quantity INTEGER NOT NULL,
+		reorder_level INTEGER DEFAULT 10,
+		needs_reorder GENERATED ALWAYS AS (quantity <= reorder_level) STORED
+	);`
+	result2 := Format(query2, cfg)
+	if !containsString(result2, "GENERATED ALWAYS AS") || !containsString(result2, "STORED") {
+		t.Error("SQLite should format CREATE TABLE with STORED generated column")
+	}
+
+	// Test complex generated column expression
+	query3 := `CREATE TABLE orders (
+		quantity INTEGER,
+		unit_price DECIMAL(10, 2),
+		discount_percent DECIMAL(5, 2) DEFAULT 0.0,
+		total_amount GENERATED ALWAYS AS (quantity * unit_price * (1 - discount_percent / 100.0)) STORED
+	);`
+	result3 := Format(query3, cfg)
+	if !containsString(result3, "GENERATED ALWAYS AS") || !containsString(result3, "quantity * unit_price") {
+		t.Error("SQLite should format complex generated column expressions")
+	}
+}
+
+func TestSQLite_Phase7_CreateTableStrict(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test STRICT mode table
+	query1 := `CREATE TABLE users STRICT (
+		id INTEGER PRIMARY KEY,
+		name TEXT NOT NULL,
+		email TEXT UNIQUE,
+		age INTEGER CHECK(age >= 0)
+	);`
+	result1 := Format(query1, cfg)
+	if !containsString(result1, "CREATE TABLE") || !containsString(result1, "users STRICT") {
+		t.Error("SQLite should format CREATE TABLE with STRICT mode")
+	}
+
+	// Test STRICT with generated columns
+	query2 := `CREATE TABLE products STRICT (
+		id INTEGER PRIMARY KEY,
+		name TEXT NOT NULL,
+		price DECIMAL(10, 2) NOT NULL,
+		slug GENERATED ALWAYS AS (LOWER(name)) VIRTUAL,
+		is_expensive GENERATED ALWAYS AS (price > 100.0) STORED
+	);`
+	result2 := Format(query2, cfg)
+	if !containsString(result2, "products STRICT") || !containsString(result2, "GENERATED ALWAYS AS") {
+		t.Error("SQLite should format STRICT table with generated columns")
+	}
+
+	// Test STRICT with WITHOUT ROWID
+	query3 := `CREATE TABLE sessions STRICT (
+		session_id TEXT PRIMARY KEY,
+		user_id INTEGER NOT NULL,
+		expires_at INTEGER NOT NULL,
+		is_expired GENERATED ALWAYS AS (expires_at < unixepoch()) VIRTUAL
+	) WITHOUT ROWID;`
+	result3 := Format(query3, cfg)
+	if !containsString(result3, "sessions STRICT") || !containsString(result3, "WITHOUT ROWID") {
+		t.Error("SQLite should format STRICT table with WITHOUT ROWID")
+	}
+}
+
+func TestSQLite_Phase7_CreateIndexWithIfNotExists(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test CREATE INDEX IF NOT EXISTS
+	query1 := "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);"
+	result1 := Format(query1, cfg)
+	if !containsString(result1, "CREATE INDEX") || !containsString(result1, "IF NOT EXISTS") {
+		t.Error("SQLite should format CREATE INDEX IF NOT EXISTS")
+	}
+
+	// Test CREATE UNIQUE INDEX IF NOT EXISTS
+	query2 := "CREATE UNIQUE INDEX IF NOT EXISTS idx_products_sku ON products(sku);"
+	result2 := Format(query2, cfg)
+	if !containsString(result2, "CREATE UNIQUE INDEX") || !containsString(result2, "IF NOT EXISTS") {
+		t.Error("SQLite should format CREATE UNIQUE INDEX IF NOT EXISTS")
+	}
+
+	// Test partial index with WHERE clause
+	query3 := "CREATE INDEX IF NOT EXISTS idx_active_users ON users(created_at) WHERE active = 1;"
+	result3 := Format(query3, cfg)
+	if !containsString(result3, "CREATE INDEX") || !containsString(result3, "IF NOT EXISTS") || !containsString(result3, "active = 1") {
+		t.Error("SQLite should format partial index with WHERE clause")
+	}
+
+	// Test multi-column index
+	query4 := "CREATE INDEX IF NOT EXISTS idx_orders_customer_date ON orders(customer_id, order_date DESC);"
+	result4 := Format(query4, cfg)
+	if !containsString(result4, "CREATE INDEX") || !containsString(result4, "(customer_id, order_date DESC)") {
+		t.Error("SQLite should format multi-column index")
+	}
+}
+
+func TestSQLite_Phase7_PragmaStatements(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test basic PRAGMA statements
+	query1 := "PRAGMA foreign_keys = ON;"
+	result1 := Format(query1, cfg)
+	if !containsString(result1, "PRAGMA") || !containsString(result1, "foreign_keys = ON") {
+		t.Error("SQLite should format basic PRAGMA statements")
+	}
+
+	// Test PRAGMA with string values
+	query2 := "PRAGMA journal_mode = WAL;"
+	result2 := Format(query2, cfg)
+	if !containsString(result2, "PRAGMA") || !containsString(result2, "journal_mode = WAL") {
+		t.Error("SQLite should format PRAGMA with string values")
+	}
+
+	// Test PRAGMA with function call
+	query3 := "PRAGMA table_info(users);"
+	result3 := Format(query3, cfg)
+	if !containsString(result3, "PRAGMA") || !containsString(result3, "table_info(users)") {
+		t.Error("SQLite should format PRAGMA with function call")
+	}
+
+	// Test PRAGMA with quoted table name
+	query4 := "PRAGMA index_list('my_table');"
+	result4 := Format(query4, cfg)
+	if !containsString(result4, "PRAGMA") || !containsString(result4, "index_list('my_table')") {
+		t.Error("SQLite should format PRAGMA with quoted parameters")
+	}
+
+	// Test multiple PRAGMA statements
+	queries := []string{
+		"PRAGMA cache_size = -64000;",
+		"PRAGMA temp_store = MEMORY;",
+		"PRAGMA synchronous = NORMAL;",
+		"PRAGMA mmap_size = 268435456;",
+	}
+	
+	for _, query := range queries {
+		result := Format(query, cfg)
+		if !containsString(result, "PRAGMA") {
+			t.Errorf("SQLite should format PRAGMA statement: %s", query)
+		}
+	}
+}
+
+func TestSQLite_Phase7_DDLIntegratedExample(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test comprehensive DDL example combining all Phase 7 features
+	query := `-- Phase 7: DDL Essentials comprehensive test
+	
+-- PRAGMA setup
+PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
+
+-- CREATE TABLE with generated columns and STRICT mode
+CREATE TABLE user_profiles STRICT (
+    user_id INTEGER PRIMARY KEY,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    
+    -- Generated columns
+    full_name GENERATED ALWAYS AS (first_name || ' ' || last_name) VIRTUAL,
+    email_domain GENERATED ALWAYS AS (substr(email, instr(email, '@') + 1)) STORED,
+    is_recent_user GENERATED ALWAYS AS (
+        julianday('now') - julianday(created_at) < 30
+    ) VIRTUAL
+);
+
+-- CREATE TABLE WITHOUT ROWID with generated columns
+CREATE TABLE user_sessions STRICT (
+    session_token TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    last_activity INTEGER DEFAULT (unixepoch()),
+    
+    -- Generated columns for session management
+    is_expired GENERATED ALWAYS AS (expires_at < unixepoch()) VIRTUAL,
+    session_duration GENERATED ALWAYS AS (expires_at - created_at) STORED,
+    is_active GENERATED ALWAYS AS (
+        last_activity > unixepoch() - 3600 AND NOT is_expired
+    ) VIRTUAL,
+    
+    -- Foreign key
+    FOREIGN KEY (user_id) REFERENCES user_profiles(user_id)
+) WITHOUT ROWID;
+
+-- CREATE INDEX statements with IF NOT EXISTS
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_email 
+ON user_profiles(email);
+
+CREATE INDEX IF NOT EXISTS idx_profiles_domain 
+ON user_profiles(email_domain);
+
+CREATE INDEX IF NOT EXISTS idx_profiles_recent 
+ON user_profiles(is_recent_user) 
+WHERE is_recent_user = 1;
+
+CREATE INDEX IF NOT EXISTS idx_sessions_user_active 
+ON user_sessions(user_id, last_activity) 
+WHERE is_active = 1;
+
+-- More PRAGMA statements
+PRAGMA table_info(user_profiles);
+PRAGMA index_list('user_sessions');`
+
+	result := Format(query, cfg)
+
+	// Test that all Phase 7 features are preserved and formatted correctly
+	expectedElements := []string{
+		"-- Phase 7: DDL Essentials comprehensive test",
+		"foreign_keys = ON",
+		"journal_mode = WAL",
+		"CREATE TABLE",
+		"user_profiles STRICT",
+		"GENERATED ALWAYS AS",
+		"(first_name || ' ' || last_name)",
+		"VIRTUAL",
+		"STORED",
+		"julianday('now') - julianday(created_at) < 30",
+		"user_sessions STRICT", 
+		"WITHOUT ROWID",
+		"is_expired GENERATED ALWAYS AS",
+		"expires_at < unixepoch()",
+		"CREATE UNIQUE INDEX",
+		"IF NOT EXISTS",
+		"idx_profiles_email",
+		"CREATE INDEX",
+		"idx_sessions_user_active",
+		"is_active = 1",
+		"table_info(user_profiles)",
+		"index_list('user_sessions')",
+	}
+
+	for _, element := range expectedElements {
+		if !containsString(result, element) {
+			t.Errorf("Phase 7 integrated example should contain: %s\nFull result:\n%s", element, result)
+		}
+	}
+}
+
+func TestSQLite_Phase7_DDLWithPreviousPhaseFeatures(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test DDL combined with features from previous phases (placeholders, JSON, etc.)
+	query := `-- DDL with all SQLite features combined
+
+-- PRAGMA with placeholder-like syntax (should be preserved as-is)
+PRAGMA user_version = 1;
+PRAGMA application_id = 12345;
+
+-- CREATE TABLE with JSON column and generated JSON accessors
+CREATE TABLE user_data STRICT (
+    id INTEGER PRIMARY KEY,
+    profile JSON NOT NULL DEFAULT '{}',
+    settings JSON NOT NULL DEFAULT '{}',
+    created_at TEXT DEFAULT (datetime('now')),
+    
+    -- Generated columns using JSON operators and concatenation
+    display_name GENERATED ALWAYS AS (
+        COALESCE(
+            json_extract(profile, '$.display_name'),
+            json_extract(profile, '$.first_name') || ' ' || json_extract(profile, '$.last_name'),
+            'Anonymous User'
+        )
+    ) VIRTUAL,
+    
+    theme GENERATED ALWAYS AS (
+        COALESCE(json_extract(settings, '$.theme'), 'default')
+    ) STORED,
+    
+    is_premium GENERATED ALWAYS AS (
+        json_extract(profile, '$.subscription.type') = 'premium'
+    ) VIRTUAL,
+    
+    -- Complex generated column with CASE and JSON
+    user_tier GENERATED ALWAYS AS (
+        CASE 
+            WHEN json_extract(profile, '$.subscription.type') = 'premium' THEN 'PREMIUM'
+            WHEN json_extract(profile, '$.verified') = 1 THEN 'VERIFIED' 
+            ELSE 'BASIC'
+        END
+    ) STORED
+);
+
+-- INSERT with UPSERT and placeholders (testing interaction with DDL)  
+INSERT INTO user_data (id, profile, settings) 
+VALUES (?1, :profile_json, @settings_json)
+ON CONFLICT (id) DO UPDATE SET 
+    profile = json_patch(profile, EXCLUDED.profile),
+    settings = EXCLUDED.settings;
+
+-- CREATE INDEX on generated columns with JSON expressions
+CREATE INDEX IF NOT EXISTS idx_user_theme 
+ON user_data(theme);
+
+CREATE INDEX IF NOT EXISTS idx_user_tier_premium 
+ON user_data(user_tier, is_premium) 
+WHERE user_tier IN ('PREMIUM', 'VERIFIED');
+
+-- Final PRAGMA to check the schema
+PRAGMA table_xinfo(user_data);`
+
+	result := Format(query, cfg)
+
+	// Verify integration of all features
+	expectedElements := []string{
+		"-- DDL with all SQLite features combined",
+		"user_version = 1",
+		"application_id = 12345", 
+		"CREATE TABLE",
+		"user_data STRICT",
+		"profile JSON NOT NULL DEFAULT '{}'",
+		"GENERATED ALWAYS AS",
+		"json_extract(profile, '$.display_name')",
+		"|| ' ' ||",                                   // Concatenation
+		"COALESCE(",                                   // SQL function
+		"VIRTUAL",
+		"STORED",
+		"json_extract(profile, '$.subscription.type')", // JSON operators
+		"= 'premium'",
+		"CASE",
+		"(?1, :profile_json, @settings_json)",  // All placeholder types
+		"ON CONFLICT",                                 // UPSERT
+		"DO UPDATE",
+		"json_patch(profile, EXCLUDED.profile)",      // JSON function
+		"CREATE INDEX",
+		"IF NOT EXISTS",
+		"idx_user_theme",
+		"user_tier IN ('PREMIUM', 'VERIFIED')", // Complex WHERE
+		"table_xinfo(user_data)",                     // Schema inspection
+	}
+
+	for _, element := range expectedElements {
+		if !containsString(result, element) {
+			t.Errorf("Phase 7 with previous features should contain: %s\nFull result:\n%s", element, result)
+		}
+	}
+}
+
+func TestSQLite_Phase7_EdgeCases(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test edge cases and complex scenarios
+	
+	// Generated column with complex expression and parentheses
+	query1 := `CREATE TABLE calculations (
+		a REAL,
+		b REAL,
+		c REAL,
+		result GENERATED ALWAYS AS (
+			CASE 
+				WHEN b * b - 4 * a * c >= 0 
+				THEN (-b + sqrt(b * b - 4 * a * c)) / (2 * a)
+				ELSE NULL 
+			END
+		) STORED
+	);`
+	result1 := Format(query1, cfg)
+	if !containsString(result1, "GENERATED ALWAYS AS") || !containsString(result1, "sqrt(b * b - 4 * a * c)") {
+		t.Error("SQLite should handle complex mathematical expressions in generated columns")
+	}
+
+	// Generated column referencing other generated columns (should be formatted but may have runtime limitations)
+	query2 := `CREATE TABLE derived (
+		base_value INTEGER,
+		doubled GENERATED ALWAYS AS (base_value * 2) STORED,
+		quadrupled GENERATED ALWAYS AS (doubled * 2) VIRTUAL
+	);`
+	result2 := Format(query2, cfg)
+	if !containsString(result2, "doubled GENERATED ALWAYS AS") || !containsString(result2, "quadrupled GENERATED ALWAYS AS") {
+		t.Error("SQLite should format generated columns that reference other columns")
+	}
+
+	// Multiple CREATE INDEX statements with various options
+	query3 := `CREATE INDEX IF NOT EXISTS idx_complex 
+		ON my_table(col1 COLLATE NOCASE, col2 DESC, col3 ASC) 
+		WHERE col1 IS NOT NULL AND col2 > 0;`
+	result3 := Format(query3, cfg)
+	if !containsString(result3, "COLLATE NOCASE") || !containsString(result3, "col2 DESC") || !containsString(result3, "col1 IS NOT NULL") {
+		t.Error("SQLite should handle complex CREATE INDEX with collation, ordering, and WHERE clause")
+	}
+
+	// PRAGMA statements with complex values
+	query4 := `PRAGMA secure_delete = FAST;
+		PRAGMA journal_size_limit = 67108864;
+		PRAGMA compile_options;`
+	result4 := Format(query4, cfg)
+	if !containsString(result4, "secure_delete = FAST") || !containsString(result4, "journal_size_limit = 67108864") || !containsString(result4, "compile_options") {
+		t.Error("SQLite should handle various PRAGMA statement formats")
+	}
+}
+
+// Phase 8: Triggers & Views Tests
+func TestSQLite_Phase8_CreateTriggerBasic(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test basic BEFORE INSERT trigger
+	query1 := `CREATE TRIGGER before_user_insert 
+		BEFORE INSERT ON users 
+		BEGIN 
+			UPDATE stats SET insert_count = insert_count + 1;
+		END;`
+	result1 := Format(query1, cfg)
+	if !containsString(result1, "CREATE TRIGGER") {
+		t.Error("SQLite should format CREATE TRIGGER statement")
+	}
+	if !containsString(result1, "BEFORE") || !containsString(result1, "INSERT") {
+		t.Error("SQLite should format BEFORE INSERT trigger type")
+	}
+	if !containsString(result1, "BEGIN") || !containsString(result1, "END") {
+		t.Error("SQLite should format BEGIN/END trigger body blocks")
+	}
+
+	// Test AFTER UPDATE trigger
+	query2 := `CREATE TRIGGER after_user_update 
+		AFTER UPDATE ON users FOR EACH ROW
+		BEGIN
+			INSERT INTO audit_log (table_name, operation, old_id, new_id) 
+			VALUES ('users', 'UPDATE', OLD.id, NEW.id);
+		END;`
+	result2 := Format(query2, cfg)
+	if !containsString(result2, "AFTER") || !containsString(result2, "UPDATE") {
+		t.Error("SQLite should format AFTER UPDATE trigger type")
+	}
+	if !containsString(result2, "FOR EACH ROW") {
+		t.Error("SQLite should format FOR EACH ROW trigger scope")
+	}
+	if !containsString(result2, "OLD.id") || !containsString(result2, "NEW.id") {
+		t.Error("SQLite should preserve OLD/NEW references in trigger body")
+	}
+
+	// Test BEFORE DELETE trigger
+	query3 := `CREATE TRIGGER before_user_delete 
+		BEFORE DELETE ON users FOR EACH ROW
+		BEGIN
+			INSERT INTO deleted_users SELECT * FROM users WHERE id = OLD.id;
+		END;`
+	result3 := Format(query3, cfg)
+	if !containsString(result3, "BEFORE") || !containsString(result3, "DELETE") {
+		t.Error("SQLite should format BEFORE DELETE trigger type")
+	}
+}
+
+func TestSQLite_Phase8_CreateTriggerWithWhen(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test trigger with WHEN condition
+	query1 := `CREATE TRIGGER update_modified_time 
+		BEFORE UPDATE ON products FOR EACH ROW
+		WHEN NEW.name != OLD.name OR NEW.price != OLD.price
+		BEGIN
+			UPDATE products SET modified_at = datetime('now') WHERE id = NEW.id;
+		END;`
+	result1 := Format(query1, cfg)
+	if !containsString(result1, "WHEN") {
+		t.Error("SQLite should format WHEN condition in triggers")
+	}
+	if !containsString(result1, "NEW.name != OLD.name") {
+		t.Error("SQLite should format NEW/OLD comparisons in WHEN clause")
+	}
+
+	// Test trigger with complex WHEN condition
+	query2 := `CREATE TRIGGER validate_user_email 
+		BEFORE INSERT ON users FOR EACH ROW
+		WHEN NEW.email IS NOT NULL AND NEW.email NOT LIKE '%@%'
+		BEGIN
+			SELECT RAISE(ABORT, 'Invalid email format');
+		END;`
+	result2 := Format(query2, cfg)
+	if !containsString(result2, "NEW.email IS NOT NULL") {
+		t.Error("SQLite should format NULL checks in WHEN clause")
+	}
+	if !containsString(result2, "RAISE(ABORT") {
+		t.Error("SQLite should format RAISE function in trigger body")
+	}
+}
+
+func TestSQLite_Phase8_CreateTriggerWithPlaceholders(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test trigger body with placeholders (though unusual, should be preserved)
+	query := `CREATE TRIGGER log_changes 
+		AFTER UPDATE ON sensitive_data FOR EACH ROW
+		WHEN NEW.status = ?1
+		BEGIN
+			INSERT INTO change_log (table_name, record_id, changed_by, timestamp)
+			VALUES ('sensitive_data', NEW.id, :user_id, @timestamp);
+		END;`
+	result := Format(query, cfg)
+	
+	// Placeholders should be preserved
+	if !containsString(result, "= ?1") {
+		t.Error("SQLite should preserve numbered placeholders in trigger WHEN clause")
+	}
+	if !containsString(result, ":user_id") {
+		t.Error("SQLite should preserve :name placeholders in trigger body")
+	}
+	if !containsString(result, "@timestamp") {
+		t.Error("SQLite should preserve @name placeholders in trigger body")
+	}
+}
+
+func TestSQLite_Phase8_CreateTriggerComplexBody(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test trigger with complex body including multiple statements
+	query := `CREATE TRIGGER complex_user_trigger 
+		AFTER INSERT ON users FOR EACH ROW
+		BEGIN
+			-- Update statistics
+			UPDATE user_stats SET total_users = total_users + 1;
+			
+			-- Create default user preferences
+			INSERT INTO user_preferences (user_id, theme, notifications)
+			VALUES (NEW.id, 'default', 1);
+			
+			-- Log the creation with JSON data
+			INSERT INTO activity_log (
+				user_id, 
+				action, 
+				details,
+				metadata
+			) VALUES (
+				NEW.id,
+				'user_created',
+				'New user: ' || NEW.name || ' <' || NEW.email || '>',
+				json_object('user_id', NEW.id, 'email_domain', substr(NEW.email, instr(NEW.email, '@') + 1))
+			);
+			
+			-- Conditional logic
+			UPDATE users SET welcome_sent = 1 
+			WHERE id = NEW.id AND NEW.email IS NOT NULL;
+		END;`
+	result := Format(query, cfg)
+
+	// Check that complex formatting is preserved
+	expectedElements := []string{
+		"CREATE TRIGGER",
+		"complex_user_trigger",
+		"AFTER",
+		"INSERT", 
+		"FOR EACH ROW",
+		"BEGIN",
+		"-- Update statistics",
+		"user_stats",
+		"total_users = total_users + 1",
+		"user_preferences",
+		"NEW.id",
+		"activity_log",
+		"'New user: '", // Concatenation components
+		"NEW.name",
+		"NEW.email",
+		"json_object", // JSON function
+		"'user_id'", 
+		"substr(NEW.email", // String functions
+		"instr(NEW.email, '@')",
+		"NEW.email IS NOT NULL", // NULL check
+		"END",
+	}
+
+	for _, element := range expectedElements {
+		if !containsString(result, element) {
+			t.Errorf("Complex trigger should contain: %s\nFull result:\n%s", element, result)
+		}
+	}
+}
+
+func TestSQLite_Phase8_CreateTriggerIfNotExists(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test CREATE TRIGGER IF NOT EXISTS
+	query := `CREATE TRIGGER IF NOT EXISTS audit_trigger
+		AFTER UPDATE ON important_table FOR EACH ROW
+		BEGIN
+			INSERT INTO audit_log (table_name, record_id, change_time)
+			VALUES ('important_table', NEW.id, datetime('now'));
+		END;`
+	result := Format(query, cfg)
+	
+	if !containsString(result, "CREATE TRIGGER") {
+		t.Error("SQLite should format CREATE TRIGGER IF NOT EXISTS")
+	}
+	if !containsString(result, "IF NOT EXISTS") {
+		t.Error("SQLite should format IF NOT EXISTS clause")
+	}
+}
+
+func TestSQLite_Phase8_CreateViewBasic(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test basic CREATE VIEW
+	query1 := "CREATE VIEW active_users AS SELECT id, name, email FROM users WHERE active = 1;"
+	result1 := Format(query1, cfg)
+	if !containsString(result1, "CREATE VIEW") {
+		t.Error("SQLite should format CREATE VIEW statement")
+	}
+	if !containsString(result1, "active_users AS") {
+		t.Error("SQLite should format view name with AS clause")
+	}
+
+	// Test CREATE VIEW with complex SELECT
+	query2 := `CREATE VIEW user_summary AS
+		SELECT 
+			u.id,
+			u.name,
+			u.email,
+			COUNT(o.id) as order_count,
+			SUM(o.total) as total_spent
+		FROM users u
+		LEFT JOIN orders o ON u.id = o.user_id
+		WHERE u.active = 1
+		GROUP BY u.id, u.name, u.email
+		ORDER BY total_spent DESC;`
+	result2 := Format(query2, cfg)
+	if !containsString(result2, "CREATE VIEW") || !containsString(result2, "user_summary AS") {
+		t.Error("SQLite should format CREATE VIEW with complex SELECT")
+	}
+	if !containsString(result2, "LEFT JOIN") || !containsString(result2, "GROUP BY") {
+		t.Error("SQLite should format JOIN and GROUP BY in view definition")
+	}
+}
+
+func TestSQLite_Phase8_CreateViewIfNotExists(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test CREATE VIEW IF NOT EXISTS
+	query := `CREATE VIEW IF NOT EXISTS recent_orders AS
+		SELECT 
+			o.id,
+			o.user_id,
+			u.name as user_name,
+			o.total,
+			o.created_at
+		FROM orders o
+		JOIN users u ON o.user_id = u.id
+		WHERE o.created_at > datetime('now', '-30 days');`
+	result := Format(query, cfg)
+	
+	if !containsString(result, "CREATE VIEW") {
+		t.Error("SQLite should format CREATE VIEW IF NOT EXISTS")
+	}
+	if !containsString(result, "IF NOT EXISTS") {
+		t.Error("SQLite should format IF NOT EXISTS clause for views")
+	}
+	if !containsString(result, "recent_orders AS") {
+		t.Error("SQLite should format view name correctly")
+	}
+}
+
+func TestSQLite_Phase8_CreateViewWithCTE(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test CREATE VIEW containing CTE
+	query := `CREATE VIEW department_stats AS
+		WITH employee_counts AS (
+			SELECT 
+				department_id,
+				COUNT(*) as employee_count,
+				AVG(salary) as avg_salary
+			FROM employees
+			WHERE active = 1
+			GROUP BY department_id
+		),
+		department_budgets AS (
+			SELECT 
+				id as department_id,
+				name,
+				budget
+			FROM departments
+			WHERE budget > 0
+		)
+		SELECT 
+			d.name as department_name,
+			ec.employee_count,
+			ec.avg_salary,
+			d.budget,
+			d.budget / ec.employee_count as budget_per_employee
+		FROM department_budgets d
+		JOIN employee_counts ec ON d.department_id = ec.department_id;`
+	result := Format(query, cfg)
+
+	// Check that CTE and view work together
+	expectedElements := []string{
+		"CREATE VIEW",
+		"department_stats AS",
+		"WITH",
+		"employee_counts AS",
+		"department_budgets AS",
+		"AVG(salary)",
+		"GROUP BY",
+		"department_id",
+		"d.budget / ec.employee_count",
+		"JOIN employee_counts ec",
+	}
+
+	for _, element := range expectedElements {
+		if !containsString(result, element) {
+			t.Errorf("CREATE VIEW with CTE should contain: %s\nFull result:\n%s", element, result)
+		}
+	}
+}
+
+func TestSQLite_Phase8_CreateViewWithWindowFunctions(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test CREATE VIEW with window functions
+	query := `CREATE VIEW user_rankings AS
+		SELECT 
+			id,
+			name,
+			score,
+			ROW_NUMBER() OVER (ORDER BY score DESC) as rank,
+			RANK() OVER (PARTITION BY category ORDER BY score DESC) as category_rank,
+			LAG(score, 1) OVER (ORDER BY score DESC) as prev_score
+		FROM user_scores
+		WHERE active = 1;`
+	result := Format(query, cfg)
+
+	if !containsString(result, "CREATE VIEW") || !containsString(result, "user_rankings AS") {
+		t.Error("SQLite should format CREATE VIEW with window functions")
+	}
+	if !containsString(result, "ROW_NUMBER() OVER") || !containsString(result, "PARTITION BY category") {
+		t.Error("SQLite should format window functions in view definition")
+	}
+	if !containsString(result, "LAG(score, 1) OVER") {
+		t.Error("SQLite should format LAG window function in view")
+	}
+}
+
+func TestSQLite_Phase8_IntegratedExample(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test comprehensive example combining triggers and views with all SQLite features
+	query := `-- Phase 8: Triggers & Views comprehensive test
+
+-- Create a view with CTE, JSON operators, and window functions
+CREATE VIEW IF NOT EXISTS user_activity_summary AS
+	WITH recent_activities AS (
+		SELECT 
+			user_id,
+			action_type,
+			json_extract(metadata, '$.source') as source,
+			json_extract(metadata, '$.ip_address') as ip_address,
+			created_at
+		FROM activity_log
+		WHERE created_at > datetime('now', '-7 days')
+	),
+	activity_stats AS (
+		SELECT 
+			user_id,
+			COUNT(*) as total_actions,
+			COUNT(DISTINCT source) as unique_sources,
+			MAX(created_at) as last_activity,
+			ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) as activity_rank
+		FROM recent_activities
+		GROUP BY user_id
+	)
+	SELECT 
+		u.id,
+		u.name,
+		u.email,
+		as_stats.total_actions,
+		as_stats.unique_sources,
+		as_stats.last_activity,
+		as_stats.activity_rank,
+		CASE 
+			WHEN as_stats.total_actions > 100 THEN 'Very Active'
+			WHEN as_stats.total_actions > 50 THEN 'Active'
+			ELSE 'Low Activity'
+		END as activity_level
+	FROM users u
+	LEFT JOIN activity_stats as_stats ON u.id = as_stats.user_id;
+
+-- Create a trigger that logs changes with JSON metadata and uses placeholders  
+CREATE TRIGGER IF NOT EXISTS user_change_logger
+	AFTER UPDATE ON users FOR EACH ROW
+	WHEN NEW.email != OLD.email OR NEW.name != OLD.name
+	BEGIN
+		-- Log the change with detailed JSON metadata
+		INSERT INTO change_audit (
+			table_name,
+			record_id,
+			change_type,
+			old_values,
+			new_values,
+			metadata,
+			changed_at
+		) VALUES (
+			'users',
+			NEW.id,
+			'UPDATE',
+			json_object(
+				'email', OLD.email,
+				'name', OLD.name,
+				'updated_at', OLD.updated_at
+			),
+			json_object(
+				'email', NEW.email,
+				'name', NEW.name,  
+				'updated_at', NEW.updated_at
+			),
+			json_object(
+				'email_changed', NEW.email != OLD.email,
+				'name_changed', NEW.name != OLD.name,
+				'change_summary', 
+				CASE 
+					WHEN NEW.email != OLD.email AND NEW.name != OLD.name 
+					THEN 'Both email and name changed'
+					WHEN NEW.email != OLD.email 
+					THEN 'Email changed from ' || OLD.email || ' to ' || NEW.email
+					ELSE 'Name changed from ' || OLD.name || ' to ' || NEW.name
+				END
+			),
+			datetime('now')
+		);
+		
+		-- Update activity summary
+		INSERT OR REPLACE INTO user_activity_summary_cache (
+			user_id, 
+			last_change_type, 
+			change_count
+		) VALUES (
+			NEW.id,
+			'profile_update',
+			COALESCE((SELECT change_count FROM user_activity_summary_cache WHERE user_id = NEW.id), 0) + 1
+		);
+	END;`
+
+	result := Format(query, cfg)
+
+	// Test comprehensive integration of all features
+	expectedElements := []string{
+		"-- Phase 8: Triggers & Views comprehensive test",
+		"CREATE VIEW",
+		"IF NOT EXISTS",
+		"user_activity_summary",
+		"WITH",
+		"recent_activities",
+		"activity_stats",
+		"json_extract", // JSON operators
+		"'$.source'",
+		"datetime", // Date functions
+		"'-7 days'",
+		"ROW_NUMBER", // Window functions
+		"OVER", 
+		"COUNT(*)", // Window ordering
+		"DESC",
+		"GROUP BY", // Aggregation
+		"user_id",
+		"LEFT JOIN", // JOINs
+		"CREATE TRIGGER",
+		"user_change_logger",
+		"AFTER",
+		"UPDATE",
+		"FOR EACH ROW",
+		"WHEN",
+		"NEW.email", // NEW/OLD references
+		"OLD.email",
+		"BEGIN",
+		"change_audit", 
+		"json_object", // JSON functions
+		"'email'", // JSON construction  
+		"OLD.email", 
+		"NEW.email", // Boolean expressions
+		"'Both email and name changed'", // String literals
+		"OLD.email", // Concatenation components
+		"NEW.email",
+		"datetime('now')", // Date functions
+		"INSERT OR REPLACE", // UPSERT
+		"COALESCE", // NULL handling
+		"END",
+	}
+
+	for _, element := range expectedElements {
+		if !containsString(result, element) {
+			t.Errorf("Phase 8 integrated example should contain: %s\nFull result:\n%s", element, result)
+		}
+	}
+}
+
 // Helper function for tests.
 func containsString(haystack, needle string) bool {
 	for i := 0; i <= len(haystack)-len(needle); i++ {

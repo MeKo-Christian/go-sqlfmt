@@ -181,6 +181,80 @@ Run PostgreSQL-focused tests:
 go test ./pkg/sqlfmt -run TestPostgreSQL
 ```
 
+### SQLite
+
+Use the SQLite dialect by setting the language to `sqlfmt.SQLite`:
+
+```go
+cfg := sqlfmt.NewDefaultConfig().WithLang(sqlfmt.SQLite)
+fmt.Println(sqlfmt.Format("SELECT data->>'name' FROM users WHERE id = ?", cfg))
+```
+
+SQLite support includes:
+
+**Comments**: Standard SQL comments `-- comment` and `/* block comment */` are supported.
+
+**Identifier Quoting**: SQLite supports multiple identifier quoting styles for compatibility:
+- `"double-quoted"` identifiers (standard SQL)
+- `` `backtick-quoted` `` identifiers (MySQL-style)
+- `[bracket-quoted]` identifiers (SQL Server-style)
+
+**Placeholders**: All SQLite parameter binding styles are supported with 1-based indexing:
+- `?` - Anonymous positional parameter
+- `?NNN` - Numbered parameter (e.g., `?1`, `?2`)
+- `:name` - Named parameter with colon prefix
+- `@name` - Named parameter with at-sign prefix  
+- `$name` - Named parameter with dollar prefix
+
+**JSON Operations** (SQLite 3.38+):
+- `->` - JSON path extraction
+- `->>` - JSON value extraction as text
+- Example: `SELECT profile->>'name', settings->'theme' FROM users`
+
+**LIMIT Clauses**: Both SQLite LIMIT syntax styles are supported:
+- `LIMIT n OFFSET m` (standard)
+- `LIMIT m, n` (MySQL-compatible)
+
+**UPSERT Operations** (SQLite 3.24+):
+- `INSERT ... ON CONFLICT(...) DO UPDATE SET ...`
+- `INSERT ... ON CONFLICT(...) DO NOTHING`
+- `INSERT OR REPLACE INTO ...`
+
+**Advanced Features**:
+- Common Table Expressions (CTE) with `WITH` and `WITH RECURSIVE`
+- Window functions with `OVER`, `PARTITION BY`, frame specifications
+- Generated columns: `GENERATED ALWAYS AS (expr) [VIRTUAL|STORED]`
+- Table constraints: `WITHOUT ROWID`, `STRICT` tables
+- Triggers: `CREATE TRIGGER ... BEGIN ... END` with proper indentation
+- Views: `CREATE VIEW ... AS ...`
+- `PRAGMA` statements with minimal formatting
+
+**Pattern Matching**:
+- `LIKE` for SQL-standard pattern matching
+- `GLOB` for Unix shell-style pattern matching
+
+**NULL Handling**:
+- `IS NULL`, `IS NOT NULL` (standard)
+- `IS DISTINCT FROM`, `IS NOT DISTINCT FROM` (SQLite 3.39+)
+
+**Concatenation**: String concatenation using `||` operator.
+
+**Blob Literals**: Binary data literals using `X'hexstring'` format.
+
+Notes and current limitations:
+
+- `REGEXP` operator support depends on user-defined functions and is treated as a standard operator
+- `PRAGMA` values are preserved as-is without validation or reformatting
+- Unicode identifiers are preserved without case coercion inside quotes
+- Requires SQLite 3.24+ for UPSERT, 3.25+ for window functions, 3.38+ for JSON operators
+
+Run SQLite-focused tests:
+
+```shell
+go test ./pkg/sqlfmt -run TestSQLite
+just test-sqlite
+```
+
 Config options available are:
 
 - Language (SQL Dialect)
@@ -391,3 +465,5 @@ just setup-deps         # Install development dependencies
 [ibm db2]: https://www.ibm.com/analytics/us/en/technology/db2/
 [oracle pl/sql]: http://www.oracle.com/technetwork/database/features/plsql/index.html
 [postgresql]: https://www.postgresql.org/docs/
+[mysql]: https://dev.mysql.com/doc/
+[sqlite]: https://www.sqlite.org/docs.html

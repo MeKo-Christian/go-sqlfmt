@@ -75,6 +75,18 @@ update-snapshots:
 test-golden:
     go test -v ./... -run "TestGoldenFiles"
 
+# Run SQLite-specific tests
+test-sqlite:
+    go test -v ./pkg/sqlfmt -run "SQLite"
+
+# Run SQLite snapshot tests only
+test-snapshots-sqlite:
+    go test -v ./pkg/sqlfmt -run "TestSnapshotFormatting_SQLite"
+
+# Update SQLite snapshots only
+update-snapshots-sqlite:
+    UPDATE_SNAPS=true go test ./pkg/sqlfmt -run "TestSnapshotFormatting_SQLite"
+
 # Build the binary
 build:
     go build ./...

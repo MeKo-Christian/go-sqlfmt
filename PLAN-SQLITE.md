@@ -44,45 +44,45 @@
 
 ## Phase 6: CTEs & Window Functions
 
-- [ ] `WITH`, `WITH RECURSIVE` as top-level words; indentation mirrors PG. ([sqlite.org][12])
-- [ ] Windowing (`OVER`, `PARTITION BY`, frames) supported (3.25+ / 3.28+ features); format like PG. ([sqlite.org][13])
-- [ ] Tests: recursive CTE; simple window with `ROWS/RANGE` frame.
+- [x] `WITH`, `WITH RECURSIVE` as top-level words; indentation mirrors PG. ([sqlite.org][12])
+- [x] Windowing (`OVER`, `PARTITION BY`, frames) supported (3.25+ / 3.28+ features); format like PG. ([sqlite.org][13])
+- [x] Tests: recursive CTE; simple window with `ROWS/RANGE` frame.
 
 ## Phase 7: DDL Essentials
 
-- [ ] Accept SQLite-flavored DDL:
-  - [ ] `CREATE TABLE` with **generated columns** (`GENERATED ALWAYS AS (expr) [VIRTUAL|STORED]`) and `STRICT`.
-  - [ ] `CREATE INDEX` (no engine/methods), `IF NOT EXISTS`.
-  - [ ] `PRAGMA` as a **top-level** statement (format minimal; don’t reflow RHS).
+- [x] Accept SQLite-flavored DDL:
+  - [x] `CREATE TABLE` with **generated columns** (`GENERATED ALWAYS AS (expr) [VIRTUAL|STORED]`) and `STRICT`.
+  - [x] `CREATE INDEX` (no engine/methods), `IF NOT EXISTS`.
+- [x] `PRAGMA` as a **top-level** statement (format minimal; don’t reflow RHS).
 
-- [ ] Tests: table with generated cols; `CREATE INDEX IF NOT EXISTS`; simple `PRAGMA` lines.
-- [ ] Keep column/type lists conservative—SQLite’s type system is permissive; don’t attempt normalization. ([sqlite.org][14])
+- [x] Tests: table with generated cols; `CREATE INDEX IF NOT EXISTS`; simple `PRAGMA` lines.
+- [x] Keep column/type lists conservative—SQLite’s type system is permissive; don’t attempt normalization. ([sqlite.org][14])
 
 ## Phase 8: Triggers & Views (lightweight)
 
-- [ ] `CREATE TRIGGER … BEGIN … END` and `CREATE VIEW … AS …`:
-  - [ ] Indent trigger bodies with `BEGIN/END`; avoid deep re-tokenizing inside body.
+- [x] `CREATE TRIGGER … BEGIN … END` and `CREATE VIEW … AS …`:
+  - [x] Indent trigger bodies with `BEGIN/END`; avoid deep re-tokenizing inside body.
 
-- [ ] Tests: BEFORE/AFTER trigger skeleton; `CREATE VIEW` with CTE.
+- [x] Tests: BEFORE/AFTER trigger skeleton; `CREATE VIEW` with CTE.
 
 ## Phase 9: Snapshot & Integration Tests
 
-- [ ] Add SQLite to snapshot suite (go-snaps). Golden file should include:
-  - [ ] JSON ops (`->`, `->>`), placeholders in multiple styles,
-  - [ ] LIMIT both styles,
-  - [ ] UPSERT variants,
-  - [ ] CTE + window example,
-  - [ ] DDL with generated columns/STRICT, and a `PRAGMA`.
+- [x] Add SQLite to snapshot suite (go-snaps). Golden file should include:
+  - [x] JSON ops (`->`, `->>`), placeholders in multiple styles,
+  - [x] LIMIT both styles,
+  - [x] UPSERT variants,
+  - [x] CTE + window example,
+  - [x] DDL with generated columns/STRICT, and a `PRAGMA`.
 
-- [ ] Just targets: `just test-snapshots sqlite`, `just update-snapshots sqlite`.
+- [x] Just targets: `just test-snapshots sqlite`, `just update-snapshots sqlite`.
 
 ## Phase 10: Docs
 
-- [ ] README: add SQLite to supported dialects with examples and note required SQLite versions for JSON/UPSERT/windows. ([sqlite.org][8])
-- [ ] Dialect notes:
-  - [ ] Comments supported; identifier quoting (`"…"`, `` `…` ``, `[ … ]`).
-  - [ ] Placeholders (`?`, `?NNN`, `:name`, `@name`, `$name`).
-  - [ ] Known limits: treat `REGEXP` like a bare identifier/operator; no pragma/value validation.
+- [x] README: add SQLite to supported dialects with examples and note required SQLite versions for JSON/UPSERT/windows. ([sqlite.org][8])
+- [x] Dialect notes:
+  - [x] Comments supported; identifier quoting (`"…"`, `` `…` ``, `[ … ]`).
+  - [x] Placeholders (`?`, `?NNN`, `:name`, `@name`, `$name`).
+  - [x] Known limits: treat `REGEXP` like a bare identifier/operator; no pragma/value validation.
 
 ## Phase 11: Final Polish & Edge Cases
 
