@@ -68,6 +68,12 @@ func runDialects(cmd *cobra.Command, args []string) {
 			description: "Couchbase N1QL (SQL for JSON)",
 			aliases:     []string{},
 		},
+		{
+			lang:        sqlfmt.SQLite,
+			name:        "sqlite",
+			description: "SQLite with dialect-specific features",
+			aliases:     []string{},
+		},
 	}
 
 	for _, dialect := range dialects {

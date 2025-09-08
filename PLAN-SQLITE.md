@@ -37,10 +37,10 @@
 
 ## Phase 5: Core Clauses
 
-- [ ] **LIMIT**: support both `LIMIT n OFFSET m` and `LIMIT m, n` (both valid in SQLite). Keep one house style in output. ([sqlite.org][11])
-- [ ] **UPSERT** (SQLite ≥ 3.24): `INSERT … ON CONFLICT(col[, …]) DO UPDATE SET …` and `DO NOTHING`; also `INSERT OR REPLACE`. Tokenize/indent like PG’s `ON CONFLICT` but with SQLite grammar. ([sqlite.org][11])
-- [ ] **Rowid knobs**: recognize `WITHOUT ROWID` as table option.
-- [ ] Tests: both LIMIT styles; `INSERT OR REPLACE`; `INSERT … ON CONFLICT … DO UPDATE`.
+- [x] **LIMIT**: support both `LIMIT n OFFSET m` and `LIMIT m, n` (both valid in SQLite). Keep one house style in output. ([sqlite.org][11])
+- [x] **UPSERT** (SQLite ≥ 3.24): `INSERT … ON CONFLICT(col[, …]) DO UPDATE SET …` and `DO NOTHING`; also `INSERT OR REPLACE`. Tokenize/indent like PG's `ON CONFLICT` but with SQLite grammar. ([sqlite.org][11])
+- [x] **Rowid knobs**: recognize `WITHOUT ROWID` as table option.
+- [x] Tests: both LIMIT styles; `INSERT OR REPLACE`; `INSERT … ON CONFLICT … DO UPDATE`.
 
 ## Phase 6: CTEs & Window Functions
 
