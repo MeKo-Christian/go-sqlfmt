@@ -35,6 +35,10 @@ func TestGoldenFiles_MySQL(t *testing.T) {
 	testGoldenFiles(t, "mysql", NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)))
 }
 
+func TestGoldenFiles_SQLite(t *testing.T) {
+	testGoldenFiles(t, "sqlite", NewSQLiteFormatter(NewDefaultConfig().WithLang(SQLite)))
+}
+
 func testGoldenFiles(t *testing.T, dialect string, formatter Formatter) {
 	t.Helper()
 
