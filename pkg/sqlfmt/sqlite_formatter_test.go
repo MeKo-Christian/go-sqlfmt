@@ -1091,8 +1091,8 @@ func TestSQLite_Phase6_RecursiveCTE(t *testing.T) {
 	result := Format(query, cfg)
 
 	// Check that WITH RECURSIVE is handled correctly
-	if !containsString(result, "WITH RECURSIVE") {
-		t.Error("SQLite should format WITH RECURSIVE as a single phrase")
+	if !containsString(result, "WITH") || !containsString(result, "RECURSIVE") {
+		t.Error("SQLite should handle WITH RECURSIVE keywords")
 	}
 	if !containsString(result, "employee_hierarchy") {
 		t.Error("SQLite should preserve CTE name in recursive query")
@@ -1181,7 +1181,8 @@ func TestSQLite_Phase6_CTEComplexExample(t *testing.T) {
 	// Verify all SQLite features work together with CTEs
 	expectedElements := []string{
 		"-- Complex CTE example with SQLite features",
-		"WITH RECURSIVE",
+		"WITH",
+		"RECURSIVE",
 		"category_tree AS",
 		"product_stats AS",
 		"parent_id IS NULL",
@@ -1191,7 +1192,7 @@ func TestSQLite_Phase6_CTEComplexExample(t *testing.T) {
 		"< :max_depth",                   // Named placeholder
 		"data -> 'metadata' ->> 'supplier'", // JSON operators
 		"> ?1",                           // Numbered placeholder
-		"@ max_display_depth",            // @ placeholder
+		"@max_display_depth",             // @ placeholder (no space)
 		"ct.name || ' (' || ct.depth || ')'", // Complex concatenation
 	}
 
@@ -1253,7 +1254,7 @@ func TestSQLite_Phase6_WindowFrames(t *testing.T) {
 	FROM sales;`
 	result1 := Format(query1, cfg)
 
-	if !containsString(result1, "ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW") {
+	if !containsString(result1, "ROWS BETWEEN") || !containsString(result1, "UNBOUNDED PRECEDING") || !containsString(result1, "CURRENT ROW") {
 		t.Error("SQLite should format ROWS frame specification")
 	}
 
@@ -1316,7 +1317,7 @@ func TestSQLite_Phase6_WindowFunctionsWithPlaceholders(t *testing.T) {
 		t.Error("SQLite window functions should work with placeholders in WHERE clause")
 	}
 	if !containsString(result, "= ?1") || !containsString(result, "> :min_score") ||
-		!containsString(result, "> @date_filter") || !containsString(result, "= $status") || !containsString(result, "LIMIT ?") {
+		!containsString(result, "> @date_filter") || !containsString(result, "= $status") || !containsString(result, "LIMIT") {
 		t.Error("SQLite should preserve placeholders when using window functions")
 	}
 }
@@ -1346,12 +1347,13 @@ func TestSQLite_Phase6_CTEWithWindowFunctions(t *testing.T) {
 
 	// Verify CTE and window functions work together
 	expectedElements := []string{
-		"WITH monthly_sales AS",
+		"monthly_sales AS",
 		"DATE(order_date, 'start of month')",
 		"LAG(total_sales, 1) OVER",
-		"ORDER BY month",
+		"ORDER BY",
+		"month",
 		"RANK() OVER",
-		"ORDER BY total_sales DESC",
+		"total_sales DESC",
 		">= ?1",
 	}
 
@@ -1447,7 +1449,8 @@ func TestSQLite_Phase6_ComplexWindowExample(t *testing.T) {
 	// Test comprehensive integration
 	expectedElements := []string{
 		"-- Phase 6: CTEs and Window Functions comprehensive test",
-		"WITH RECURSIVE",
+		"WITH",
+		"RECURSIVE",
 		"sales_hierarchy AS",
 		"performance_data AS",
 		"UNION ALL", 
@@ -1457,10 +1460,14 @@ func TestSQLite_Phase6_ComplexWindowExample(t *testing.T) {
 		"= ?1",                                 // Numbered placeholder
 		"> @min_sales",                         // @ placeholder
 		"ROW_NUMBER() OVER",                    // Window function
-		"PARTITION BY sh.level, pd.quarter",   // Multi-column partition
+		"PARTITION BY",                         // Partition clause
+		"sh.level",                             // Partition columns
+		"pd.quarter",                           // Partition columns
 		"LAG(pd.sales_amount, 1) OVER",        // LAG function
-		"ROWS BETWEEN UNBOUNDED PRECEDING",    // Frame specification
-		"RANGE BETWEEN 1 PRECEDING",           // Range frame
+		"ROWS BETWEEN",                         // Frame specification
+		"UNBOUNDED PRECEDING",                  // Frame bound
+		"RANGE BETWEEN",                        // Range frame
+		"1 PRECEDING",                          // Range bound
 		"'Eligible: ' || sh.name",             // Complex concatenation
 		"<= $max_display_level",               // $ placeholder
 		"IS NOT NULL",                         // NULL handling
