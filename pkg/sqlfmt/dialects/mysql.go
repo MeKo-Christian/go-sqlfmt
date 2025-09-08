@@ -73,7 +73,7 @@ var (
 		"BEGIN",
 	}...)
 
-	// MySQL extends newline words to include stored routine keywords
+	// MySQL extends newline words to include stored routine keywords.
 	mySQLReservedNewlineWords = append(standardSQLReservedNewlineWords, []string{
 		// Phase 9: Stored routine control flow
 		"BEGIN", "END", "END IF", "END WHILE", "END LOOP", "END REPEAT",
@@ -120,7 +120,10 @@ func (msf *MySQLFormatter) Format(query string) string {
 }
 
 // tokenOverride handles MySQL-specific token formatting.
-func (msf *MySQLFormatter) tokenOverride(tok types.Token, previousReservedWord types.Token) types.Token {
+func (msf *MySQLFormatter) tokenOverride(
+	tok types.Token,
+	previousReservedWord types.Token,
+) types.Token {
 	// Phase 9: Handle DELIMITER statements as pass-through
 	if tok.Type == types.TokenTypeReserved && tok.Value == "DELIMITER" {
 		// Treat DELIMITER as a special pass-through token that shouldn't be formatted
@@ -130,8 +133,7 @@ func (msf *MySQLFormatter) tokenOverride(tok types.Token, previousReservedWord t
 			Key:   tok.Key,
 		}
 	}
-	
-	
+
 	// Phase 9: Handle stored routine specific keywords
 	if tok.Type == types.TokenTypeReserved {
 		switch tok.Value {
@@ -156,7 +158,7 @@ func (msf *MySQLFormatter) tokenOverride(tok types.Token, previousReservedWord t
 			return tok
 		}
 	}
-	
+
 	// Phase 6: Handle VALUES as function in ON DUPLICATE KEY UPDATE context
 	if tok.Type == types.TokenTypeReservedTopLevel && tok.Value == "VALUES" {
 		// If the previous reserved word is "ON DUPLICATE KEY UPDATE", treat VALUES as a word/function
@@ -168,7 +170,7 @@ func (msf *MySQLFormatter) tokenOverride(tok types.Token, previousReservedWord t
 			}
 		}
 	}
-	
+
 	// Phase 8: Handle GENERATED ALWAYS AS sequence formatting
 	if tok.Type == types.TokenTypeReserved && tok.Value == "AS" {
 		// If previous reserved word is "GENERATED ALWAYS", keep AS as a normal reserved word
@@ -176,7 +178,7 @@ func (msf *MySQLFormatter) tokenOverride(tok types.Token, previousReservedWord t
 			return tok
 		}
 	}
-	
+
 	// Phase 8: Handle table options in DDL statements
 	if tok.Type == types.TokenTypeReserved {
 		switch tok.Value {
@@ -205,7 +207,7 @@ func (msf *MySQLFormatter) tokenOverride(tok types.Token, previousReservedWord t
 			return tok
 		}
 	}
-	
+
 	// Phase 4: Handle MySQL-specific operators
 	if tok.Type == types.TokenTypeOperator {
 		switch tok.Value {
@@ -224,6 +226,6 @@ func (msf *MySQLFormatter) tokenOverride(tok types.Token, previousReservedWord t
 			return tok
 		}
 	}
-	
+
 	return tok
 }

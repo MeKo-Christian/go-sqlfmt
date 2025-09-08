@@ -23,17 +23,17 @@
 
 ## Phase 3: Placeholders (rich)
 
-- [ ] Support **all** SQLite bind parameter forms: `?`, `?NNN`, `:name`, `@name`, `$name` (1-based). Ensure tokenizer doesn’t confuse them with `$` variables from other dialects. ([sqlite.org][6])
-- [ ] Update `params.go` for name/number resolution and 1-based indexing (leftmost is index 1). ([sqlite.org][7])
-- [ ] Tests: each style; mixtures; ensure placeholders inside strings/comments are ignored.
+- [x] Support **all** SQLite bind parameter forms: `?`, `?NNN`, `:name`, `@name`, `$name` (1-based). Ensure tokenizer doesn't confuse them with `$` variables from other dialects. ([sqlite.org][6])
+- [x] Update `params.go` for name/number resolution and 1-based indexing (leftmost is index 1). ([sqlite.org][7])
+- [x] Tests: each style; mixtures; ensure placeholders inside strings/comments are ignored.
 
 ## Phase 4: Operators & Specials
 
-- [ ] **Concatenation**: `||` (treat as operator with normal spacing).
-- [ ] **JSON1** convenience ops: `->`, `->>` (SQLite ≥ 3.38); format like MySQL/PG analogs. ([sqlite.org][8], [SQLite Tutorial][9])
-- [ ] **NULL handling**: prefer `IS`, `IS NOT`; optionally recognize `IS [NOT] DISTINCT FROM` (SQLite ≥ 3.39). ([Stack Overflow][10])
-- [ ] **Pattern matching**: `LIKE`, `GLOB`; keep as reserved words (no special regex operator—`REGEXP` exists only via user function; treat as identifier/operator token without extra rules).
-- [ ] Tests: JSON chains, `a || b`, `x IS y`, `x IS NOT DISTINCT FROM y`.
+- [x] **Concatenation**: `||` (treat as operator with normal spacing).
+- [x] **JSON1** convenience ops: `->`, `->>` (SQLite ≥ 3.38); format like MySQL/PG analogs. ([sqlite.org][8], [SQLite Tutorial][9])
+- [x] **NULL handling**: prefer `IS`, `IS NOT`; optionally recognize `IS [NOT] DISTINCT FROM` (SQLite ≥ 3.39). ([Stack Overflow][10])
+- [x] **Pattern matching**: `LIKE`, `GLOB`; keep as reserved words (no special regex operator—`REGEXP` exists only via user function; treat as identifier/operator token without extra rules).
+- [x] Tests: JSON chains, `a || b`, `x IS y`, `x IS NOT DISTINCT FROM y`.
 
 ## Phase 5: Core Clauses
 

@@ -50,7 +50,7 @@ func createFormatterForLanguage(c *Config) Formatter {
 		Indent:              c.Indent,
 		Uppercase:           c.Uppercase,
 		LinesBetweenQueries: c.LinesBetweenQueries,
-		Params:              convertParams(c.Params),
+		Params:              convertParams(c.Params, c.Language),
 		ColorConfig:         convertColorConfig(c.ColorConfig),
 		TokenizerConfig:     convertTokenizerConfig(c.TokenizerConfig),
 	}
@@ -58,13 +58,14 @@ func createFormatterForLanguage(c *Config) Formatter {
 	return dialects.CreateFormatterForLanguage(coreCfg)
 }
 
-func convertParams(p *Params) *utils.ParamsConfig {
+func convertParams(p *Params, language Language) *utils.ParamsConfig {
 	if p == nil {
 		return nil
 	}
 	return &utils.ParamsConfig{
-		MapParams:  p.MapParams,
-		ListParams: p.ListParams,
+		MapParams:         p.MapParams,
+		ListParams:        p.ListParams,
+		UseSQLiteIndexing: language == SQLite, // Enable 1-based indexing for SQLite
 	}
 }
 
@@ -131,7 +132,7 @@ func convertToInternalConfig(c *Config) *core.Config {
 		Indent:              c.Indent,
 		Uppercase:           c.Uppercase,
 		LinesBetweenQueries: c.LinesBetweenQueries,
-		Params:              convertParams(c.Params),
+		Params:              convertParams(c.Params, c.Language),
 		ColorConfig:         convertColorConfig(c.ColorConfig),
 		TokenizerConfig:     convertTokenizerConfig(c.TokenizerConfig),
 	}
