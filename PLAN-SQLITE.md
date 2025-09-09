@@ -86,10 +86,10 @@
 
 ## Phase 11: Final Polish & Edge Cases
 
-- [ ] Keep `PRAGMA` values as-is (don’t uppercase within string/identifier contexts).
-- [ ] Ensure semicolons inside strings/comments don’t split statements (already in tokenizer, double-check). ([sqlite.org][15])
-- [ ] Unicode identifiers preserved; do not coerce case inside quotes.
-- [ ] Very large queries & malformed input fuzz tests.
+- [x] Keep `PRAGMA` values as-is (don't uppercase within string/identifier contexts).
+- [x] Ensure semicolons inside strings/comments don't split statements (already in tokenizer, double-check). ([sqlite.org][15])
+- [x] Unicode identifiers preserved; do not coerce case inside quotes.
+- [x] Very large queries & malformed input fuzz tests.
 
 ---
 

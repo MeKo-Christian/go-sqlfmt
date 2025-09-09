@@ -2381,6 +2381,373 @@ CREATE TRIGGER IF NOT EXISTS user_change_logger
 	}
 }
 
+// Phase 11: Final Polish & Edge Cases Tests
+func TestSQLite_Phase11_PragmaValuePreservation(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test PRAGMA values are preserved as-is, not uppercased
+	queries := []struct {
+		input    string
+		expected string
+	}{
+		{
+			"PRAGMA journal_mode = WAL;",
+			"WAL", // Should preserve case, not become "wal"
+		},
+		{
+			"PRAGMA encoding = 'UTF-8';",
+			"'UTF-8'", // String values should be preserved
+		},
+		{
+			"PRAGMA table_info(\"users\");", 
+			"table_info(\"users\")", // Function calls preserved
+		},
+		{
+			"PRAGMA cache_size = -64000;",
+			"-64000", // Numeric values preserved
+		},
+		{
+			"PRAGMA temp_store = MEMORY;",
+			"MEMORY", // Identifier values preserved
+		},
+	}
+
+	for _, test := range queries {
+		result := Format(test.input, cfg)
+		if !containsString(result, test.expected) {
+			t.Errorf("PRAGMA value preservation failed.\nInput: %s\nExpected to contain: %s\nGot: %s", 
+				test.input, test.expected, result)
+		}
+	}
+}
+
+func TestSQLite_Phase11_PragmaValuePreservationWithUppercase(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  ", Uppercase: true}
+
+	// Even with uppercase flag, PRAGMA values should NOT be uppercased
+	query := "PRAGMA journal_mode = WAL; PRAGMA encoding = 'UTF-8';"
+	result := Format(query, cfg)
+
+	// Keywords should be uppercase, but values should be preserved
+	if !containsString(result, "PRAGMA") {
+		t.Error("PRAGMA keyword should be uppercase")
+	}
+	if !containsString(result, "WAL") || containsString(result, "wal") {
+		t.Error("PRAGMA value 'WAL' should preserve case even with uppercase flag")
+	}
+	if !containsString(result, "'UTF-8'") {
+		t.Error("PRAGMA string value should preserve case")
+	}
+}
+
+func TestSQLite_Phase11_SemicolonsInStringsAndComments(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test that semicolons inside strings and comments don't split statements
+	query := `-- Comment with ; semicolon
+	SELECT 'test; string' AS col1, /* inline; comment */ 'another;value' FROM users;
+	SELECT * FROM posts;`
+
+	result := Format(query, cfg)
+	
+	// Should result in exactly 2 SELECT statements, not more due to embedded semicolons
+	selectCount := 0
+	for i := 0; i < len(result); i++ {
+		if i+6 < len(result) && result[i:i+6] == "SELECT" {
+			selectCount++
+		}
+	}
+
+	if selectCount != 2 {
+		t.Errorf("Expected exactly 2 SELECT statements, found %d. Result:\n%s", selectCount, result)
+	}
+
+	// Verify semicolons inside strings are preserved
+	if !containsString(result, "'test; string'") {
+		t.Error("Semicolon inside string should be preserved")
+	}
+	if !containsString(result, "'another;value'") {
+		t.Error("Semicolon inside string should be preserved")  
+	}
+}
+
+func TestSQLite_Phase11_UnicodeIdentifierPreservation(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test Unicode identifiers are preserved, not altered by case conversion
+	query := `SELECT "ÄÖÜ" AS "αβγ", ` + "`カタカナ`" + `, [中文字段], "Ñoël" FROM [unicode_table];`
+	result := Format(query, cfg)
+
+	expectedUnicodeElements := []string{
+		"\"ÄÖÜ\"", // German umlauts
+		"\"αβγ\"", // Greek letters
+		"`カタカナ`", // Japanese katakana
+		"[中文字段]", // Chinese characters
+		"\"Ñoël\"", // Accented characters
+		"[unicode_table]", // Bracketed table name
+	}
+
+	for _, element := range expectedUnicodeElements {
+		if !containsString(result, element) {
+			t.Errorf("Unicode identifier should be preserved: %s\nFull result:\n%s", element, result)
+		}
+	}
+}
+
+func TestSQLite_Phase11_UnicodeWithUppercaseFlag(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  ", Uppercase: true}
+
+	// Unicode identifiers should NOT be affected by uppercase flag
+	query := `SELECT "ÄÖÜ" AS "αβγ", ` + "`カタカナ`" + ` FROM [unicode_table];`
+	result := Format(query, cfg)
+
+	// Keywords should be uppercase
+	if !containsString(result, "SELECT") || !containsString(result, "FROM") {
+		t.Error("Keywords should be uppercase")
+	}
+
+	// Unicode identifiers should preserve their exact case
+	if !containsString(result, "\"ÄÖÜ\"") || !containsString(result, "\"αβγ\"") {
+		t.Error("Unicode identifiers should preserve case even with uppercase flag")
+	}
+}
+
+func TestSQLite_Phase11_LargeComplexQueries(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test very large, deeply nested query 
+	query := `WITH RECURSIVE 
+		fibonacci(n, a, b) AS (
+			SELECT 1, 0, 1
+			UNION ALL
+			SELECT n+1, b, a+b FROM fibonacci WHERE n < 100
+		),
+		stats AS (
+			SELECT 
+				COUNT(*) as total,
+				MAX(b) as max_fib,
+				MIN(b) as min_fib,
+				AVG(CAST(b AS REAL)) as avg_fib
+			FROM fibonacci
+		),
+		categories AS (
+			SELECT 
+				n,
+				CASE
+					WHEN b % 15 = 0 THEN 'FizzBuzz'
+					WHEN b % 3 = 0 THEN 'Fizz'
+					WHEN b % 5 = 0 THEN 'Buzz'
+					WHEN b % 2 = 0 THEN 'Even'
+					ELSE 'Odd'
+				END as category,
+				json_object(
+					'number', n,
+					'fib_value', b,
+					'is_prime', (
+						SELECT COUNT(*) = 0 
+						FROM (
+							SELECT 1 
+							FROM generate_series(2, CAST(sqrt(b) AS INTEGER)) AS divisor
+							WHERE b % divisor = 0
+						)
+					)
+				) as metadata
+			FROM fibonacci
+		)
+		SELECT 
+			c.n,
+			c.category,
+			c.metadata ->> 'is_prime' as is_prime,
+			s.total,
+			ROW_NUMBER() OVER (
+				PARTITION BY c.category 
+				ORDER BY c.n DESC
+			) as category_rank,
+			LAG(c.n, 1) OVER (ORDER BY c.n) as prev_n
+		FROM categories c
+		CROSS JOIN stats s
+		WHERE c.n <= 50
+		ORDER BY c.n;`
+
+	result := Format(query, cfg)
+
+	// Should handle the complexity without errors and preserve key elements
+	expectedElements := []string{
+		"WITH",
+		"RECURSIVE", 
+		"fibonacci",
+		"UNION ALL",
+		"json_object",
+		"ROW_NUMBER() OVER",
+		"PARTITION BY",
+		"CROSS JOIN",
+		"ORDER BY",
+	}
+
+	for _, element := range expectedElements {
+		if !containsString(result, element) {
+			t.Errorf("Large query should contain: %s", element)
+		}
+	}
+
+	// Verify proper indentation is maintained
+	if !containsString(result, "    SELECT") { // Should have nested indentation
+		t.Error("Large query should maintain proper nested indentation")
+	}
+}
+
+func TestSQLite_Phase11_MalformedInputHandling(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test that formatter doesn't panic on malformed input
+	malformedQueries := []string{
+		"SELECT * FROM (SELECT 1", // Missing closing paren
+		"SELECT 'unterminated string", // Unclosed string
+		"CREATE TABLE users (id INTEGER,", // Incomplete DDL
+		"SELECT * FROM", // Incomplete FROM clause
+		"PRAGMA", // Incomplete PRAGMA
+		"INSERT INTO users VALUES (", // Incomplete VALUES
+		"SELECT /* unclosed comment", // Unclosed comment
+	}
+
+	for _, query := range malformedQueries {
+		// Should not panic - capture any panics
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("Formatter panicked on malformed input: %s\nPanic: %v", query, r)
+				}
+			}()
+			result := Format(query, cfg)
+			// Result should contain at least some of the input, even if malformed
+			if len(result) == 0 {
+				t.Errorf("Formatter returned empty result for: %s", query)
+			}
+		}()
+	}
+}
+
+func TestSQLite_Phase11_EdgeCaseParameters(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test edge cases with parameters and special characters
+	query := `SELECT 
+		?1 as param1,
+		:named_param as param2,
+		@at_param as param3,
+		$dollar_param as param4,
+		'?' as not_param,
+		"?" as not_param2,
+		-- Comment with ? and :name and @param
+		/* Block comment with $var */ 
+		json_extract(data, '$.path?key') as json_path
+	FROM test_table
+	WHERE column = ?2 AND other = :test;`
+
+	result := Format(query, cfg)
+
+	// Parameters should be preserved
+	parameterElements := []string{
+		"?1", "?2",
+		":named_param", ":test",
+		"@at_param",
+		"$dollar_param",
+	}
+
+	for _, param := range parameterElements {
+		if !containsString(result, param) {
+			t.Errorf("Parameter should be preserved: %s", param)
+		}
+	}
+
+	// Non-parameters should be preserved as strings
+	if !containsString(result, "'?'") || !containsString(result, "\"?\"") {
+		t.Error("Question marks in strings should not be treated as parameters")
+	}
+}
+
+func TestSQLite_Phase11_IntegratedScenario(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Comprehensive test combining all Phase 11 requirements
+	query := `-- Phase 11 integration test with Unicode: Тест системы
+	PRAGMA foreign_keys = ON;
+	PRAGMA encoding = 'UTF-8'; 
+	
+	CREATE TABLE "测试表" (
+		"用户ID" INTEGER PRIMARY KEY,
+		"姓名" TEXT,
+		"邮箱" TEXT UNIQUE,
+		metadata JSON DEFAULT '{}',
+		created_at DATETIME DEFAULT (datetime('now'))
+	) STRICT;
+	
+	-- Test with semicolons in strings and Unicode
+	INSERT INTO "测试表" ("姓名", "邮箱", metadata) VALUES 
+		('张三; 测试用户', 'zhang@test; fake.com', json_object('notes', 'Test; with semicolons')),
+		('李四', 'li@example.org', json_object('αβγ', 'Greek letters', 'カタカナ', 'Japanese')),
+		('Müller', 'mueller@täst.de', json_object('Ñoël', 'Accented names'));
+	
+	WITH user_stats AS (
+		SELECT 
+			COUNT(*) as total_users,
+			COUNT(*) FILTER (WHERE "邮箱" LIKE '%@%.com') as com_users,
+			json_group_array(json_object(
+				'name', "姓名",
+				'email', "邮箱", 
+				'meta', json_extract(metadata, '$')
+			)) as all_users
+		FROM "测试表"
+		WHERE "姓名" IS NOT NULL
+	)
+	SELECT 
+		us.total_users,
+		us.com_users,
+		json_extract(us.all_users, '$[0].name') as first_user,
+		?1 as param_test,
+		:user_filter as named_param,
+		@limit as at_param
+	FROM user_stats us
+	WHERE us.total_users > 0
+	ORDER BY us.total_users DESC;
+	
+	PRAGMA table_xinfo("测试表");`
+
+	result := Format(query, cfg)
+
+	// Verify all key Phase 11 elements are handled correctly
+	phase11Elements := []string{
+		// PRAGMA values preserved  
+		"PRAGMA", "foreign_keys = ON", "encoding = 'UTF-8'", "table_xinfo",
+		// Unicode identifiers preserved
+		"\"测试表\"", "\"用户ID\"", "\"姓名\"", "\"邮箱\"", 
+		// Semicolons in strings preserved (not splitting statements)
+		"'zhang@test; fake.com'", "'Test; with semicolons'",
+		// Unicode in strings preserved
+		"'张三; 测试用户'", "'αβγ'", "'カタカナ'", 
+		// Parameters preserved  
+		"?1", ":user_filter", "@limit",
+		// Complex JSON and CTEs formatted
+		"json_object", "json_extract", "WITH", "user_stats",
+		// Comments with Unicode preserved
+		"-- Phase 11 integration test with Unicode: Тест системы",
+	}
+
+	for _, element := range phase11Elements {
+		if !containsString(result, element) {
+			t.Errorf("Phase 11 integrated test should contain: %s\nFull result:\n%s", element, result)
+		}
+	}
+
+	// Verify structure is maintained
+	if !containsString(result, "CREATE TABLE") || !containsString(result, "INSERT INTO") {
+		t.Error("DDL structure should be preserved")
+	}
+	if !containsString(result, "WITH") || !containsString(result, "SELECT") {
+		t.Error("CTE and SELECT structure should be preserved") 
+	}
+}
+
 // Helper function for tests.
 func containsString(haystack, needle string) bool {
 	for i := 0; i <= len(haystack)-len(needle); i++ {
