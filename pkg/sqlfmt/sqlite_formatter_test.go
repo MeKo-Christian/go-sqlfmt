@@ -775,7 +775,7 @@ func TestSQLite_Phase4_EdgeCases(t *testing.T) {
 	}
 }
 
-// Phase 5: Core Clauses Tests
+// Phase 5: Core Clauses Tests.
 func TestSQLite_Phase5_LimitVariations(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -1045,7 +1045,7 @@ func TestSQLite_Phase5_EdgeCases(t *testing.T) {
 	}
 }
 
-// Phase 6: CTEs & Window Functions Tests
+// Phase 6: CTEs & Window Functions Tests.
 func TestSQLite_Phase6_BasicCTE(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -1188,11 +1188,11 @@ func TestSQLite_Phase6_CTEComplexExample(t *testing.T) {
 		"parent_id IS NULL",
 		"UNION ALL",
 		"ct.depth + 1",
-		"|| '/' ||",                      // Concatenation
-		"< :max_depth",                   // Named placeholder
-		"data -> 'metadata' ->> 'supplier'", // JSON operators
-		"> ?1",                           // Numbered placeholder
-		"@max_display_depth",             // @ placeholder (no space)
+		"|| '/' ||",                          // Concatenation
+		"< :max_depth",                       // Named placeholder
+		"data -> 'metadata' ->> 'supplier'",  // JSON operators
+		"> ?1",                               // Numbered placeholder
+		"@max_display_depth",                 // @ placeholder (no space)
 		"ct.name || ' (' || ct.depth || ')'", // Complex concatenation
 	}
 
@@ -1453,24 +1453,24 @@ func TestSQLite_Phase6_ComplexWindowExample(t *testing.T) {
 		"RECURSIVE",
 		"sales_hierarchy AS",
 		"performance_data AS",
-		"UNION ALL", 
-		"< :max_levels",                        // Named placeholder
+		"UNION ALL",
+		"< :max_levels",                          // Named placeholder
 		"data -> 'metrics' ->> 'bonus_eligible'", // JSON operators
-		"'Q' || quarter || '_' || emp_id",      // Concatenation
-		"= ?1",                                 // Numbered placeholder
-		"> @min_sales",                         // @ placeholder
-		"ROW_NUMBER() OVER",                    // Window function
-		"PARTITION BY",                         // Partition clause
-		"sh.level",                             // Partition columns
-		"pd.quarter",                           // Partition columns
-		"LAG(pd.sales_amount, 1) OVER",        // LAG function
-		"ROWS BETWEEN",                         // Frame specification
-		"UNBOUNDED PRECEDING",                  // Frame bound
-		"RANGE BETWEEN",                        // Range frame
-		"1 PRECEDING",                          // Range bound
-		"'Eligible: ' || sh.name",             // Complex concatenation
-		"<= $max_display_level",               // $ placeholder
-		"IS NOT NULL",                         // NULL handling
+		"'Q' || quarter || '_' || emp_id",        // Concatenation
+		"= ?1",                                   // Numbered placeholder
+		"> @min_sales",                           // @ placeholder
+		"ROW_NUMBER() OVER",                      // Window function
+		"PARTITION BY",                           // Partition clause
+		"sh.level",                               // Partition columns
+		"pd.quarter",                             // Partition columns
+		"LAG(pd.sales_amount, 1) OVER",           // LAG function
+		"ROWS BETWEEN",                           // Frame specification
+		"UNBOUNDED PRECEDING",                    // Frame bound
+		"RANGE BETWEEN",                          // Range frame
+		"1 PRECEDING",                            // Range bound
+		"'Eligible: ' || sh.name",                // Complex concatenation
+		"<= $max_display_level",                  // $ placeholder
+		"IS NOT NULL",                            // NULL handling
 	}
 
 	for _, element := range expectedElements {
@@ -1480,7 +1480,7 @@ func TestSQLite_Phase6_ComplexWindowExample(t *testing.T) {
 	}
 }
 
-// Phase 7: DDL Essentials Tests
+// Phase 7: DDL Essentials Tests.
 func TestSQLite_Phase7_CreateTableWithGeneratedColumns(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -1632,7 +1632,7 @@ func TestSQLite_Phase7_PragmaStatements(t *testing.T) {
 		"PRAGMA synchronous = NORMAL;",
 		"PRAGMA mmap_size = 268435456;",
 	}
-	
+
 	for _, query := range queries {
 		result := Format(query, cfg)
 		if !containsString(result, "PRAGMA") {
@@ -1720,7 +1720,7 @@ PRAGMA index_list('user_sessions');`
 		"VIRTUAL",
 		"STORED",
 		"julianday('now') - julianday(created_at) < 30",
-		"user_sessions STRICT", 
+		"user_sessions STRICT",
 		"WITHOUT ROWID",
 		"is_expired GENERATED ALWAYS AS",
 		"expires_at < unixepoch()",
@@ -1809,28 +1809,28 @@ PRAGMA table_xinfo(user_data);`
 	expectedElements := []string{
 		"-- DDL with all SQLite features combined",
 		"user_version = 1",
-		"application_id = 12345", 
+		"application_id = 12345",
 		"CREATE TABLE",
 		"user_data STRICT",
 		"profile JSON NOT NULL DEFAULT '{}'",
 		"GENERATED ALWAYS AS",
 		"json_extract(profile, '$.display_name')",
-		"|| ' ' ||",                                   // Concatenation
-		"COALESCE(",                                   // SQL function
+		"|| ' ' ||", // Concatenation
+		"COALESCE(", // SQL function
 		"VIRTUAL",
 		"STORED",
 		"json_extract(profile, '$.subscription.type')", // JSON operators
 		"= 'premium'",
 		"CASE",
-		"(?1, :profile_json, @settings_json)",  // All placeholder types
-		"ON CONFLICT",                                 // UPSERT
+		"(?1, :profile_json, @settings_json)", // All placeholder types
+		"ON CONFLICT",                         // UPSERT
 		"DO UPDATE",
-		"json_patch(profile, EXCLUDED.profile)",      // JSON function
+		"json_patch(profile, EXCLUDED.profile)", // JSON function
 		"CREATE INDEX",
 		"IF NOT EXISTS",
 		"idx_user_theme",
 		"user_tier IN ('PREMIUM', 'VERIFIED')", // Complex WHERE
-		"table_xinfo(user_data)",                     // Schema inspection
+		"table_xinfo(user_data)",               // Schema inspection
 	}
 
 	for _, element := range expectedElements {
@@ -1844,7 +1844,7 @@ func TestSQLite_Phase7_EdgeCases(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test edge cases and complex scenarios
-	
+
 	// Generated column with complex expression and parentheses
 	query1 := `CREATE TABLE calculations (
 		a REAL,
@@ -1893,7 +1893,7 @@ func TestSQLite_Phase7_EdgeCases(t *testing.T) {
 	}
 }
 
-// Phase 8: Triggers & Views Tests
+// Phase 8: Triggers & Views Tests.
 func TestSQLite_Phase8_CreateTriggerBasic(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -1990,7 +1990,7 @@ func TestSQLite_Phase8_CreateTriggerWithPlaceholders(t *testing.T) {
 			VALUES ('sensitive_data', NEW.id, :user_id, @timestamp);
 		END;`
 	result := Format(query, cfg)
-	
+
 	// Placeholders should be preserved
 	if !containsString(result, "= ?1") {
 		t.Error("SQLite should preserve numbered placeholders in trigger WHEN clause")
@@ -2041,7 +2041,7 @@ func TestSQLite_Phase8_CreateTriggerComplexBody(t *testing.T) {
 		"CREATE TRIGGER",
 		"complex_user_trigger",
 		"AFTER",
-		"INSERT", 
+		"INSERT",
 		"FOR EACH ROW",
 		"BEGIN",
 		"-- Update statistics",
@@ -2054,7 +2054,7 @@ func TestSQLite_Phase8_CreateTriggerComplexBody(t *testing.T) {
 		"NEW.name",
 		"NEW.email",
 		"json_object", // JSON function
-		"'user_id'", 
+		"'user_id'",
 		"substr(NEW.email", // String functions
 		"instr(NEW.email, '@')",
 		"NEW.email IS NOT NULL", // NULL check
@@ -2079,7 +2079,7 @@ func TestSQLite_Phase8_CreateTriggerIfNotExists(t *testing.T) {
 			VALUES ('important_table', NEW.id, datetime('now'));
 		END;`
 	result := Format(query, cfg)
-	
+
 	if !containsString(result, "CREATE TRIGGER") {
 		t.Error("SQLite should format CREATE TRIGGER IF NOT EXISTS")
 	}
@@ -2138,7 +2138,7 @@ func TestSQLite_Phase8_CreateViewIfNotExists(t *testing.T) {
 		JOIN users u ON o.user_id = u.id
 		WHERE o.created_at > datetime('now', '-30 days');`
 	result := Format(query, cfg)
-	
+
 	if !containsString(result, "CREATE VIEW") {
 		t.Error("SQLite should format CREATE VIEW IF NOT EXISTS")
 	}
@@ -2345,7 +2345,7 @@ CREATE TRIGGER IF NOT EXISTS user_change_logger
 		"datetime", // Date functions
 		"'-7 days'",
 		"ROW_NUMBER", // Window functions
-		"OVER", 
+		"OVER",
 		"COUNT(*)", // Window ordering
 		"DESC",
 		"GROUP BY", // Aggregation
@@ -2360,17 +2360,17 @@ CREATE TRIGGER IF NOT EXISTS user_change_logger
 		"NEW.email", // NEW/OLD references
 		"OLD.email",
 		"BEGIN",
-		"change_audit", 
+		"change_audit",
 		"json_object", // JSON functions
-		"'email'", // JSON construction  
-		"OLD.email", 
-		"NEW.email", // Boolean expressions
+		"'email'",     // JSON construction
+		"OLD.email",
+		"NEW.email",                     // Boolean expressions
 		"'Both email and name changed'", // String literals
-		"OLD.email", // Concatenation components
+		"OLD.email",                     // Concatenation components
 		"NEW.email",
-		"datetime('now')", // Date functions
+		"datetime('now')",   // Date functions
 		"INSERT OR REPLACE", // UPSERT
-		"COALESCE", // NULL handling
+		"COALESCE",          // NULL handling
 		"END",
 	}
 
@@ -2381,7 +2381,7 @@ CREATE TRIGGER IF NOT EXISTS user_change_logger
 	}
 }
 
-// Phase 11: Final Polish & Edge Cases Tests
+// Phase 11: Final Polish & Edge Cases Tests.
 func TestSQLite_Phase11_PragmaValuePreservation(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -2399,7 +2399,7 @@ func TestSQLite_Phase11_PragmaValuePreservation(t *testing.T) {
 			"'UTF-8'", // String values should be preserved
 		},
 		{
-			"PRAGMA table_info(\"users\");", 
+			"PRAGMA table_info(\"users\");",
 			"table_info(\"users\")", // Function calls preserved
 		},
 		{
@@ -2415,7 +2415,7 @@ func TestSQLite_Phase11_PragmaValuePreservation(t *testing.T) {
 	for _, test := range queries {
 		result := Format(test.input, cfg)
 		if !containsString(result, test.expected) {
-			t.Errorf("PRAGMA value preservation failed.\nInput: %s\nExpected to contain: %s\nGot: %s", 
+			t.Errorf("PRAGMA value preservation failed.\nInput: %s\nExpected to contain: %s\nGot: %s",
 				test.input, test.expected, result)
 		}
 	}
@@ -2449,10 +2449,10 @@ func TestSQLite_Phase11_SemicolonsInStringsAndComments(t *testing.T) {
 	SELECT * FROM posts;`
 
 	result := Format(query, cfg)
-	
+
 	// Should result in exactly 2 SELECT statements, not more due to embedded semicolons
 	selectCount := 0
-	for i := 0; i < len(result); i++ {
+	for i := range len(result) {
 		if i+6 < len(result) && result[i:i+6] == "SELECT" {
 			selectCount++
 		}
@@ -2467,7 +2467,7 @@ func TestSQLite_Phase11_SemicolonsInStringsAndComments(t *testing.T) {
 		t.Error("Semicolon inside string should be preserved")
 	}
 	if !containsString(result, "'another;value'") {
-		t.Error("Semicolon inside string should be preserved")  
+		t.Error("Semicolon inside string should be preserved")
 	}
 }
 
@@ -2479,11 +2479,11 @@ func TestSQLite_Phase11_UnicodeIdentifierPreservation(t *testing.T) {
 	result := Format(query, cfg)
 
 	expectedUnicodeElements := []string{
-		"\"ÄÖÜ\"", // German umlauts
-		"\"αβγ\"", // Greek letters
-		"`カタカナ`", // Japanese katakana
-		"[中文字段]", // Chinese characters
-		"\"Ñoël\"", // Accented characters
+		"\"ÄÖÜ\"",         // German umlauts
+		"\"αβγ\"",         // Greek letters
+		"`カタカナ`",          // Japanese katakana
+		"[中文字段]",          // Chinese characters
+		"\"Ñoël\"",        // Accented characters
 		"[unicode_table]", // Bracketed table name
 	}
 
@@ -2515,7 +2515,7 @@ func TestSQLite_Phase11_UnicodeWithUppercaseFlag(t *testing.T) {
 func TestSQLite_Phase11_LargeComplexQueries(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Test very large, deeply nested query 
+	// Test very large, deeply nested query
 	query := `WITH RECURSIVE 
 		fibonacci(n, a, b) AS (
 			SELECT 1, 0, 1
@@ -2574,7 +2574,7 @@ func TestSQLite_Phase11_LargeComplexQueries(t *testing.T) {
 	// Should handle the complexity without errors and preserve key elements
 	expectedElements := []string{
 		"WITH",
-		"RECURSIVE", 
+		"RECURSIVE",
 		"fibonacci",
 		"UNION ALL",
 		"json_object",
@@ -2601,13 +2601,13 @@ func TestSQLite_Phase11_MalformedInputHandling(t *testing.T) {
 
 	// Test that formatter doesn't panic on malformed input
 	malformedQueries := []string{
-		"SELECT * FROM (SELECT 1", // Missing closing paren
-		"SELECT 'unterminated string", // Unclosed string
+		"SELECT * FROM (SELECT 1",         // Missing closing paren
+		"SELECT 'unterminated string",     // Unclosed string
 		"CREATE TABLE users (id INTEGER,", // Incomplete DDL
-		"SELECT * FROM", // Incomplete FROM clause
-		"PRAGMA", // Incomplete PRAGMA
-		"INSERT INTO users VALUES (", // Incomplete VALUES
-		"SELECT /* unclosed comment", // Unclosed comment
+		"SELECT * FROM",                   // Incomplete FROM clause
+		"PRAGMA",                          // Incomplete PRAGMA
+		"INSERT INTO users VALUES (",      // Incomplete VALUES
+		"SELECT /* unclosed comment",      // Unclosed comment
 	}
 
 	for _, query := range malformedQueries {
@@ -2717,15 +2717,15 @@ func TestSQLite_Phase11_IntegratedScenario(t *testing.T) {
 
 	// Verify all key Phase 11 elements are handled correctly
 	phase11Elements := []string{
-		// PRAGMA values preserved  
+		// PRAGMA values preserved
 		"PRAGMA", "foreign_keys = ON", "encoding = 'UTF-8'", "table_xinfo",
 		// Unicode identifiers preserved
-		"\"测试表\"", "\"用户ID\"", "\"姓名\"", "\"邮箱\"", 
+		"\"测试表\"", "\"用户ID\"", "\"姓名\"", "\"邮箱\"",
 		// Semicolons in strings preserved (not splitting statements)
 		"'zhang@test; fake.com'", "'Test; with semicolons'",
 		// Unicode in strings preserved
-		"'张三; 测试用户'", "'αβγ'", "'カタカナ'", 
-		// Parameters preserved  
+		"'张三; 测试用户'", "'αβγ'", "'カタカナ'",
+		// Parameters preserved
 		"?1", ":user_filter", "@limit",
 		// Complex JSON and CTEs formatted
 		"json_object", "json_extract", "WITH", "user_stats",
@@ -2744,7 +2744,7 @@ func TestSQLite_Phase11_IntegratedScenario(t *testing.T) {
 		t.Error("DDL structure should be preserved")
 	}
 	if !containsString(result, "WITH") || !containsString(result, "SELECT") {
-		t.Error("CTE and SELECT structure should be preserved") 
+		t.Error("CTE and SELECT structure should be preserved")
 	}
 }
 

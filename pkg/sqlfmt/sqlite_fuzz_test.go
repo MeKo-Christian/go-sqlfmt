@@ -7,7 +7,7 @@ import (
 	"unicode/utf8"
 )
 
-// Phase 11 fuzz testing for SQLite formatter robustness
+// Phase 11 fuzz testing for SQLite formatter robustness.
 func FuzzSQLiteFormatter(f *testing.F) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -56,13 +56,13 @@ func FuzzSQLiteFormatter(f *testing.F) {
 	})
 }
 
-// Stress test for very large inputs
+// Stress test for very large inputs.
 func TestSQLite_Phase11_StressTestLargeInputs(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Generate progressively larger queries to test memory usage and performance
 	baseSizes := []int{1000, 10000, 50000}
-	
+
 	for _, size := range baseSizes {
 		t.Run(fmt.Sprintf("size_%d", size), func(t *testing.T) {
 			// Create a large query with nested structure
@@ -73,15 +73,15 @@ func TestSQLite_Phase11_StressTestLargeInputs(t *testing.T) {
 			builder.WriteString(fmt.Sprintf("  SELECT n + 1 FROM large_cte WHERE n < %d\n", size/100))
 			builder.WriteString(")\n")
 			builder.WriteString("SELECT \n")
-			
+
 			// Add many columns to make it large
-			for i := 0; i < size/100; i++ {
+			for i := range size / 100 {
 				if i > 0 {
 					builder.WriteString(",\n")
 				}
 				builder.WriteString(fmt.Sprintf("  CASE WHEN n %% %d = 0 THEN 'multiple_of_%d' ELSE 'other' END AS col%d", i+2, i+2, i))
 			}
-			
+
 			builder.WriteString("\nFROM large_cte\nORDER BY n;")
 			query := builder.String()
 
@@ -93,22 +93,22 @@ func TestSQLite_Phase11_StressTestLargeInputs(t *testing.T) {
 			}()
 
 			result := Format(query, cfg)
-			
+
 			// Basic checks
 			if !strings.Contains(result, "WITH") || !strings.Contains(result, "SELECT") {
 				t.Error("Large query should maintain basic structure")
 			}
-			
+
 			// Memory usage check - result shouldn't be dramatically larger than input
 			if len(result) > len(query)*10 {
-				t.Errorf("Result size (%d) is >10x input size (%d), possible memory issue", 
+				t.Errorf("Result size (%d) is >10x input size (%d), possible memory issue",
 					len(result), len(query))
 			}
 		})
 	}
 }
 
-// Test extreme edge cases
+// Test extreme edge cases.
 func TestSQLite_Phase11_ExtremeEdgeCases(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -140,7 +140,7 @@ func TestSQLite_Phase11_ExtremeEdgeCases(t *testing.T) {
 			}()
 
 			result := Format(test.input, cfg)
-			
+
 			// Should produce some result (even if just formatted whitespace)
 			if len(test.input) > 0 && !utf8.ValidString(result) {
 				t.Errorf("Invalid UTF-8 output for %s", test.name)
@@ -149,10 +149,10 @@ func TestSQLite_Phase11_ExtremeEdgeCases(t *testing.T) {
 	}
 }
 
-// Benchmark SQLite formatting performance  
+// Benchmark SQLite formatting performance.
 func BenchmarkSQLiteFormatter(b *testing.B) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
-	
+
 	// Representative SQLite query
 	query := `-- Performance test query
 	PRAGMA foreign_keys = ON;
@@ -193,7 +193,7 @@ func BenchmarkSQLiteFormatter(b *testing.B) {
 	ORDER BY ds.avg_salary DESC, ds.employee_count DESC;`
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		Format(query, cfg)
 	}
 }

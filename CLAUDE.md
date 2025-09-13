@@ -208,11 +208,42 @@ go test ./cmd                              # CLI tests
 **Run Tests by Pattern**
 
 ```bash
-go test ./pkg/sqlfmt -run TestFormat       # All formatting tests
-go test ./pkg/sqlfmt -run TestPostgreSQL   # PostgreSQL-specific tests
-go test ./pkg/sqlfmt -run TestTokenizer    # Tokenizer tests
-just test-golden                           # Golden file tests
-just test-snapshots                        # Snapshot tests
+go test ./pkg/sqlfmt -run TestFormat             # All formatting tests
+go test ./pkg/sqlfmt -run TestPostgreSQL         # PostgreSQL-specific tests
+go test ./pkg/sqlfmt -run TestPostgreSQLFormatter # PostgreSQL formatter tests
+go test ./pkg/sqlfmt -run TestTokenizer          # Tokenizer tests
+go test ./pkg/sqlfmt -run TestMySQL              # MySQL-specific tests
+go test ./pkg/sqlfmt -run TestSQLite             # SQLite-specific tests
+just test-golden                                 # Golden file tests
+just test-snapshots                              # Snapshot tests
+```
+
+**PostgreSQL-Specific Testing**
+
+```bash
+# Run comprehensive PostgreSQL tests
+go test ./pkg/sqlfmt -run TestPostgreSQL -v
+
+# Run specific PostgreSQL formatter tests
+go test ./pkg/sqlfmt -run TestPostgreSQLFormatter -v
+
+# Test PostgreSQL golden files (complex queries)
+just test-golden
+# Test data locations:
+# - Input: testdata/input/postgresql/*.sql
+# - Expected: testdata/golden/postgresql/*.sql
+
+# Update PostgreSQL snapshots if output changes
+just update-snapshots
+# or: UPDATE_SNAPS=true go test ./pkg/sqlfmt -run TestSnapshot
+
+# PostgreSQL feature-specific test patterns
+go test ./pkg/sqlfmt -run "TestPostgreSQL.*Dollar"    # Dollar-quoted strings
+go test ./pkg/sqlfmt -run "TestPostgreSQL.*Cast"      # Type casting
+go test ./pkg/sqlfmt -run "TestPostgreSQL.*JSON"      # JSON operations
+go test ./pkg/sqlfmt -run "TestPostgreSQL.*CTE"       # Common Table Expressions
+go test ./pkg/sqlfmt -run "TestPostgreSQL.*Window"    # Window functions
+go test ./pkg/sqlfmt -run "TestPostgreSQL.*Array"     # Array operations
 ```
 
 **Test Coverage and Benchmarks**

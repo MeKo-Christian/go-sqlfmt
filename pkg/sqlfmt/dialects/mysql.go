@@ -101,7 +101,8 @@ func NewMySQLTokenizerConfig() *TokenizerConfig {
 		ReservedTopLevelWordsNoIndent: mySQLReservedTopLevelWordsNoIndent,
 		// Phase 2: Enhanced string and identifier support
 		// Backticks for identifiers, single/double quotes for strings
-		StringTypes:             []string{"''", "\"\"", "``"},
+		// Phase 12: Add support for hex/bit literal forms X'ABCD' and B'1010'
+		StringTypes:             []string{"''", "\"\"", "``", "X''", "B''"},
 		OpenParens:              []string{"(", "CASE", "BEGIN", "IF", "WHILE", "LOOP", "REPEAT"},
 		CloseParens:             []string{")", "END", "END IF", "END WHILE", "END LOOP", "END REPEAT"},
 		IndexedPlaceholderTypes: []string{"?"},       // MySQL uses ? for parameters
