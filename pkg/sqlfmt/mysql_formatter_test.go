@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	basicSelectQuery    = "SELECT id, name FROM users WHERE active = true;"
-	basicCreateTable    = "CREATE TABLE items (a INT PRIMARY KEY, b TEXT);"
+	basicSelectQuery = "SELECT id, name FROM users WHERE active = true;"
+	basicCreateTable = "CREATE TABLE items (a INT PRIMARY KEY, b TEXT);"
 )
 
 func TestMySQLFormatter_Format(t *testing.T) {
@@ -54,13 +54,13 @@ func TestMySQLFormatter_Format(t *testing.T) {
 	t.Run("formats SELECT with backtick identifiers", func(t *testing.T) {
 		query := "SELECT `user_id`, `full_name` FROM `user_table` WHERE `active` = 1;"
 		exp := Dedent("" +
-            "SELECT\n" +
-            "  `user_id`,\n" +
-            "  `full_name`\n" +
-            "FROM\n" +
-            "  `user_table`\n" +
-            "WHERE\n" +
-            "  `active` = 1;")
+			"SELECT\n" +
+			"  `user_id`,\n" +
+			"  `full_name`\n" +
+			"FROM\n" +
+			"  `user_table`\n" +
+			"WHERE\n" +
+			"  `active` = 1;")
 		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
@@ -199,12 +199,12 @@ func TestMySQLFormatter_Format(t *testing.T) {
 	})
 
 	t.Run("handles double-quoted strings", func(t *testing.T) {
-		query := `SELECT 'single quoted', "double quoted", `+"`backtick quoted`"+` FROM test;`
+		query := `SELECT 'single quoted', "double quoted", ` + "`backtick quoted`" + ` FROM test;`
 		exp := Dedent(`
             SELECT
               'single quoted',
               "double quoted",
-              `+"`backtick quoted`"+`
+              ` + "`backtick quoted`" + `
             FROM
               test;
         `)
@@ -222,11 +222,11 @@ func TestMySQLFormatter_Format(t *testing.T) {
 		exp := Dedent(`
             SELECT
               /*! SQL_CALC_FOUND_ROWS */
-              `+"`user_id`"+`,
+              ` + "`user_id`" + `,
               "full_name",
               0xFF as flags
             FROM
-              `+"`user_table`"+` -- main user table  
+              ` + "`user_table`" + ` -- main user table
             WHERE
               active = TRUE # active users only
               AND flags & 0b1010 > 0
@@ -239,7 +239,7 @@ func TestMySQLFormatter_Format(t *testing.T) {
 	})
 
 	// Phase 4: Operators & Special Tokens Tests
-	
+
 	t.Run("formats JSON extraction operators", func(t *testing.T) {
 		query := "SELECT doc->'$.user', data->>'$.name' FROM json_table WHERE settings->'$.enabled' = 'true';"
 		exp := Dedent(`
@@ -710,10 +710,9 @@ func TestMySQLFormatter_Format(t *testing.T) {
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
-
 }
 
-// Phase 7: CTEs & Window Functions Tests
+// Phase 7: CTEs & Window Functions Tests.
 func TestMySQLFormatter_CTEs(t *testing.T) {
 	t.Run("formats simple WITH query", func(t *testing.T) {
 		query := "WITH user_count AS (SELECT COUNT(*) as total FROM users) SELECT total FROM user_count;"
@@ -1605,5 +1604,93 @@ func TestMySQLFormatter_WindowFunctions(t *testing.T) {
 			exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 			require.Equal(t, exp, result)
 		})
+	})
+
+	// Phase 12: Final Polish & Edge Cases Tests
+
+	t.Run("formats backtick identifiers with unicode and emoji", func(t *testing.T) {
+		query := "SELECT `用户ID`, `имя`, `🚀rocket_field`, `café_name` FROM `表格📊` WHERE `数量` > 100;"
+		exp := Dedent(`
+            SELECT
+              ` + "`用户ID`" + `,
+              ` + "`имя`" + `,
+              ` + "`🚀rocket_field`" + `,
+              ` + "`café_name`" + `
+            FROM
+              ` + "`表格📊`" + `
+            WHERE
+              ` + "`数量`" + ` > 100;
+        `)
+		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("formats versioned comments preserved verbatim", func(t *testing.T) {
+		query := "SELECT /*! STRAIGHT_JOIN */ id, name FROM users /*! USE INDEX (idx_name) */ WHERE /*! SQL_BUFFER_RESULT */ active = 1;"
+		exp := Dedent(`
+            SELECT
+              /*! STRAIGHT_JOIN */
+              id,
+              name
+            FROM
+              users
+              /*! USE INDEX (idx_name) */
+            WHERE
+              /*! SQL_BUFFER_RESULT */
+              active = 1;
+        `)
+		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("keeps NOT REGEXP as single logical unit", func(t *testing.T) {
+		query := "SELECT name FROM users WHERE email NOT REGEXP '^admin' AND username NOT RLIKE '^test';"
+		exp := Dedent(`
+            SELECT
+              name
+            FROM
+              users
+            WHERE
+              email NOT REGEXP '^admin'
+              AND username NOT RLIKE '^test';
+        `)
+		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("keeps CONCAT as function (not || operator)", func(t *testing.T) {
+		query := "SELECT CONCAT(first_name, ' ', last_name) as full_name, id FROM users WHERE status || status = 'active';"
+		exp := Dedent(`
+            SELECT
+              CONCAT(first_name, ' ', last_name) as full_name,
+              id
+            FROM
+              users
+            WHERE
+              status || status = 'active';
+        `)
+		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
+	})
+
+	t.Run("handles hex/bit literal forms X'ABCD' and B'1010'", func(t *testing.T) {
+		query := "SELECT X'41424344' as hex_str, B'1010' as bin_val, 0xFF as hex_num FROM test WHERE flags = X'FF';"
+		exp := Dedent(`
+            SELECT
+              X'41424344' as hex_str,
+              B'1010' as bin_val,
+              0xFF as hex_num
+            FROM
+              test
+            WHERE
+              flags = X'FF';
+        `)
+		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
+		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
+		require.Equal(t, exp, result)
 	})
 }

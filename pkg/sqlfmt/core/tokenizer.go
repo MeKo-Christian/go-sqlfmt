@@ -91,7 +91,8 @@ func createStringPattern(stringTypes []string) string {
 		"\"\"": "((\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*(\"|$))+)",
 		"''":   "(('[^'\\\\]*(?:\\\\.[^'\\\\]*)*('|$))+)",
 		"N''":  "((N'[^N'\\\\]*(?:\\\\.[^N'\\\\]*)*('|$))+)",
-		"X''":  "(((?i)[Xx]'[0-9a-fA-F]*($|'))+)",  // SQLite blob literals
+		"X''":  "(((?i)[Xx]'[0-9a-fA-F]*($|'))+)", // Hex blob literals
+		"B''":  "(((?i)[Bb]'[01]*($|'))+)",        // Binary literals
 		"$$":   "((\\$\\$[^\\$]*($|\\$\\$))+)",
 	}
 	result := make([]string, 0, len(stringTypes))

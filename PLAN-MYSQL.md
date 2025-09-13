@@ -106,19 +106,19 @@
 
 ## Phase 11: Documentation
 
-- [ ] README: add MySQL to supported dialects list with examples & CLI flags (match upstream style) ([GitHub][1])
-- [ ] Brief notes on:
-  - [ ] Comments supported (incl. `/*! … */`)
-  - [ ] Placeholders (`?`)
-  - [ ] Known limitations (no `DELIMITER` management; no `ANSI_QUOTES` mode)
+- [x] README: add MySQL to supported dialects list with examples & CLI flags (match upstream style) ([GitHub][1])
+- [x] Brief notes on:
+  - [x] Comments supported (incl. `/*! … */`)
+  - [x] Placeholders (`?`)
+  - [x] Known limitations (no `DELIMITER` management; no `ANSI_QUOTES` mode)
 
 ## Phase 12: Final Polish & Edge Cases
 
-- [ ] Backtick identifiers with unicode (including emoji) remain intact
-- [ ] Ensure `/*! … */` preserved verbatim (not reflowed) ([dev.mysql.com][2])
-- [ ] `NOT REGEXP` kept as a single logical unit for spacing
-- [ ] Keep `CONCAT()` as function (don’t invent `||`)
-- [ ] Optional: tolerate hex/bit literal forms in tokenizer (`X'ABCD'`, `B'1010'`) in addition to `0x…/0b…`
+- [x] Backtick identifiers with unicode (including emoji) remain intact
+- [x] Ensure `/*! … */` preserved verbatim (not reflowed) ([dev.mysql.com][2])
+- [x] `NOT REGEXP` kept as a single logical unit for spacing
+- [x] Keep `CONCAT()` as function (don't invent `||`)
+- [x] Added hex/bit literal forms in tokenizer (`X'ABCD'`, `B'1010'`) in addition to `0x…/0b…`
 
 ---
 

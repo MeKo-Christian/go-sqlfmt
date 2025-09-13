@@ -1,3 +1,6 @@
+// Package dialects provides PostgreSQL-specific SQL formatting functionality.
+// This package implements comprehensive PostgreSQL support including dollar-quoted strings,
+// type casting operators, JSON/JSONB operations, CTEs, window functions, and PL/pgSQL constructs.
 package dialects
 
 import (
@@ -6,7 +9,9 @@ import (
 )
 
 var (
-	// PostgreSQL reuses standard SQL reserved words and adds PostgreSQL-specific ones.
+	// postgreSQLReservedWords extends standard SQL with PostgreSQL-specific keywords.
+	// Includes pattern matching (ILIKE, SIMILAR TO), JSON operators, window functions,
+	// procedural constructs, and DDL enhancements.
 	postgreSQLReservedWords = append(standardSQLReservedWords, []string{
 		"ILIKE", "SIMILAR TO", "ON CONFLICT", "DO UPDATE", "DO NOTHING",
 		// Window function keywords
@@ -38,7 +43,8 @@ var (
 		"REINDEX", "CLUSTER", "VACUUM", "ANALYZE",
 	}...)
 
-	// PostgreSQL adds CTE and RETURNING support to top-level words.
+	// postgreSQLReservedTopLevelWords adds PostgreSQL-specific top-level keywords that start new statement sections.
+	// These keywords cause new lines and reset indentation level.
 	postgreSQLReservedTopLevelWords = append(standardSQLReservedTopLevelWords, []string{
 		"WITH", "WITH RECURSIVE", "RETURNING", "WINDOW",
 		// Procedural blocks and functions
@@ -47,23 +53,50 @@ var (
 		"CREATE INDEX", "CREATE UNIQUE INDEX", "DROP INDEX", "REINDEX",
 	}...)
 
+	// postgreSQLReservedTopLevelWordsNoIndent inherits from standard SQL - no PostgreSQL-specific additions needed.
 	postgreSQLReservedTopLevelWordsNoIndent = standardSQLReservedTopLevelWordsNoIndent
 
-	// Add LATERAL join support to newline words.
+	// postgreSQLReservedNewlineWords adds LATERAL join support to keywords that trigger new lines.
 	postgreSQLReservedNewlineWords = append(standardSQLReservedNewlineWords, []string{
 		"LATERAL JOIN", "LEFT LATERAL JOIN", "RIGHT LATERAL JOIN", "CROSS JOIN LATERAL",
 	}...)
 )
 
+// PostgreSQLFormatter implements PostgreSQL-specific SQL formatting.
+// It supports all PostgreSQL language features including dollar-quoted strings,
+// type casting, JSON operations, CTEs, window functions, and PL/pgSQL constructs.
 type PostgreSQLFormatter struct {
 	cfg *Config
 }
 
+// NewPostgreSQLFormatter creates a new PostgreSQL formatter with dialect-specific configuration.
+// The formatter automatically configures support for:
+//   - Dollar-quoted strings ($$...$$, $tag$...$tag$)
+//   - PostgreSQL operators (::, ->, ->>, #>, #>>, @>, <@, ?, ?|, ?&, ~, !~, ~*, !~*)
+//   - Numbered placeholders ($1, $2, $3...)
+//   - PostgreSQL-specific keywords and formatting rules
+//
+// Example usage:
+//
+//	cfg := &Config{Indent: "  ", Language: core.PostgreSQL}
+//	formatter := NewPostgreSQLFormatter(cfg)
+//	result := formatter.Format("SELECT data->>'name' FROM users WHERE id = $1")
 func NewPostgreSQLFormatter(cfg *Config) *PostgreSQLFormatter {
 	cfg.TokenizerConfig = NewPostgreSQLTokenizerConfig()
 	return &PostgreSQLFormatter{cfg: cfg}
 }
 
+// NewPostgreSQLTokenizerConfig creates a tokenizer configuration for PostgreSQL dialect.
+// Configures support for all PostgreSQL-specific syntax elements:
+//   - Dollar-quoted strings: $$ and $tag$ varieties
+//   - Numbered placeholders: $1, $2, $3... (1-based indexing)
+//   - Named placeholders: @param, :param
+//   - PostgreSQL line comments: --
+//   - Standard string types with PostgreSQL extensions
+//
+// The tokenizer handles PostgreSQL operators and keywords through the reserved word lists
+// and provides proper recognition of PostgreSQL-specific constructs like ILIKE, SIMILAR TO,
+// JSON operators, window functions, and procedural language elements.
 func NewPostgreSQLTokenizerConfig() *TokenizerConfig {
 	return &TokenizerConfig{
 		ReservedWords:                 postgreSQLReservedWords,
@@ -79,6 +112,8 @@ func NewPostgreSQLTokenizerConfig() *TokenizerConfig {
 	}
 }
 
+// Format formats a PostgreSQL query string according to PostgreSQL formatting conventions.
+// Handles all PostgreSQL-specific syntax including type casts, JSON operations, and procedural constructs.
 func (psf *PostgreSQLFormatter) Format(query string) string {
 	return core.FormatQuery(
 		psf.cfg,
@@ -87,7 +122,16 @@ func (psf *PostgreSQLFormatter) Format(query string) string {
 	)
 }
 
-// tokenOverride handles PostgreSQL-specific token formatting.
+// tokenOverride handles PostgreSQL-specific token formatting overrides.
+// Currently implements special formatting for the type cast operator (::) which should
+// be formatted without spaces on either side, following PostgreSQL conventions.
+//
+// Examples:
+//
+//	'text'::varchar  -> 'text'::varchar  (no spaces around ::)
+//	value::numeric   -> value::numeric   (no spaces around ::)
+//
+// Future enhancements may include special handling for other PostgreSQL-specific operators.
 func (psf *PostgreSQLFormatter) tokenOverride(tok types.Token, previousReservedWord types.Token) types.Token {
 	// Handle type cast operator :: - format without spaces (PostgreSQL convention)
 	if tok.Type == types.TokenTypeOperator && tok.Value == "::" {

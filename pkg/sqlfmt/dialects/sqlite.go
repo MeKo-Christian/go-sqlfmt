@@ -12,21 +12,21 @@ var (
 		"DROP", "EACH", "ELSE", "END", "ESCAPE", "EXCEPT", "EXCLUDE", "EXCLUSIVE", "EXISTS", "EXPLAIN", "FAIL",
 		"FILTER", "FIRST", "FOLLOWING", "FOR", "FOREIGN", "FROM", "FULL", "GENERATED", "GLOB",
 		"GROUP", "GROUPS", "HAVING", "IF", "IF EXISTS", "IF NOT EXISTS", "IGNORE", "IMMEDIATE", "IN", "INDEX", "INDEXED",
-		"INITIALLY", "INNER", "INSERT", "INSERT OR ABORT", "INSERT OR FAIL", "INSERT OR IGNORE", 
-		"INSERT OR REPLACE", "INSERT OR ROLLBACK", "INSTEAD", "INTERSECT", "INTO", "IS", "IS DISTINCT FROM", 
-		"IS NOT DISTINCT FROM", "ISNULL", "JOIN", "KEY", "LAST", "LEFT", "LIKE", "LIMIT", "MATCH", 
-		"MATERIALIZED", "NATURAL", "NO", "NOT", "NOTHING", "NOTNULL", "NULL", "NULLS", "OF", "OFFSET", 
-		"ON", "ON CONFLICT", "OR", "ORDER", "OTHERS", "OUTER", "OVER", "PARTITION", "PLAN", "PRAGMA", "PRECEDING", 
-		"PRIMARY", "QUERY", "RAISE", "RANGE", "RECURSIVE", "REFERENCES", "REGEXP", "REINDEX", "RELEASE", 
-		"RENAME", "REPLACE", "RESTRICT", "RETURNING", "RIGHT", "ROLLBACK", "ROW", "ROWS", "SAVEPOINT", 
-		"SELECT", "SET", "STORED", "STRICT", "TABLE", "TEMP", "TEMPORARY", "THEN", "TIES", "TO", 
-		"TRANSACTION", "TRIGGER", "UNBOUNDED", "UNION", "UNIQUE", "UPDATE", "USING", "VACUUM", "VALUES", 
+		"INITIALLY", "INNER", "INSERT", "INSERT OR ABORT", "INSERT OR FAIL", "INSERT OR IGNORE",
+		"INSERT OR REPLACE", "INSERT OR ROLLBACK", "INSTEAD", "INTERSECT", "INTO", "IS", "IS DISTINCT FROM",
+		"IS NOT DISTINCT FROM", "ISNULL", "JOIN", "KEY", "LAST", "LEFT", "LIKE", "LIMIT", "MATCH",
+		"MATERIALIZED", "NATURAL", "NO", "NOT", "NOTHING", "NOTNULL", "NULL", "NULLS", "OF", "OFFSET",
+		"ON", "ON CONFLICT", "OR", "ORDER", "OTHERS", "OUTER", "OVER", "PARTITION", "PLAN", "PRAGMA", "PRECEDING",
+		"PRIMARY", "QUERY", "RAISE", "RANGE", "RECURSIVE", "REFERENCES", "REGEXP", "REINDEX", "RELEASE",
+		"RENAME", "REPLACE", "RESTRICT", "RETURNING", "RIGHT", "ROLLBACK", "ROW", "ROWS", "SAVEPOINT",
+		"SELECT", "SET", "STORED", "STRICT", "TABLE", "TEMP", "TEMPORARY", "THEN", "TIES", "TO",
+		"TRANSACTION", "TRIGGER", "UNBOUNDED", "UNION", "UNIQUE", "UPDATE", "USING", "VACUUM", "VALUES",
 		"VIEW", "VIRTUAL", "WHEN", "WHERE", "WINDOW", "WITH", "WITHOUT", "WITHOUT ROWID",
 	}
 
 	sqliteReservedTopLevelWords = []string{
 		"ADD", "AFTER", "ALTER COLUMN", "ALTER TABLE", "BEGIN", "CREATE INDEX", "CREATE TABLE", "CREATE TRIGGER", "CREATE UNIQUE INDEX", "CREATE VIEW", "DELETE FROM", "DO NOTHING", "DO UPDATE", "DROP INDEX", "DROP TABLE", "EXCEPT", "FETCH FIRST", "FROM", "GROUP BY",
-		"HAVING", "INSERT INTO", "INSERT OR ABORT", "INSERT OR FAIL", "INSERT OR IGNORE", "INSERT OR REPLACE", "INSERT OR ROLLBACK", 
+		"HAVING", "INSERT INTO", "INSERT OR ABORT", "INSERT OR FAIL", "INSERT OR IGNORE", "INSERT OR REPLACE", "INSERT OR ROLLBACK",
 		"INSERT", "LIMIT", "ON CONFLICT", "ORDER BY", "PRAGMA", "SELECT", "SET", "UPDATE", "VALUES", "WHERE", "WITH",
 	}
 
@@ -55,12 +55,12 @@ func NewSQLiteTokenizerConfig() *TokenizerConfig {
 		ReservedTopLevelWords:         sqliteReservedTopLevelWords,
 		ReservedNewlineWords:          sqliteReservedNewlineWords,
 		ReservedTopLevelWordsNoIndent: sqliteReservedTopLevelWordsNoIndent,
-		StringTypes:                   []string{`""`, "''", "``", "[]", "X''"},  // SQLite identifier and string quoting
+		StringTypes:                   []string{`""`, "''", "``", "[]", "X''"}, // SQLite identifier and string quoting
 		OpenParens:                    []string{"(", "CASE"},
 		CloseParens:                   []string{")", "END"},
-		IndexedPlaceholderTypes:       []string{"?"},                             // SQLite supports ? and ?NNN
-		NamedPlaceholderTypes:         []string{":", "@", "$"},                   // SQLite named parameters
-		LineCommentTypes:              []string{"--"},                           // SQLite only supports -- comments, not #
+		IndexedPlaceholderTypes:       []string{"?"},           // SQLite supports ? and ?NNN
+		NamedPlaceholderTypes:         []string{":", "@", "$"}, // SQLite named parameters
+		LineCommentTypes:              []string{"--"},          // SQLite only supports -- comments, not #
 		SpecialWordChars:              []string{},
 	}
 }
