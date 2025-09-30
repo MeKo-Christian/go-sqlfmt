@@ -11,6 +11,7 @@ type Formatter = core.Formatter
 type (
 	Config          = core.Config
 	Language        = core.Language
+	KeywordCase     = core.KeywordCase
 	TokenizerConfig = core.TokenizerConfig
 	ColorConfig     = core.ColorConfig
 )
@@ -24,6 +25,11 @@ const (
 	PostgreSQL  = core.PostgreSQL
 	MySQL       = core.MySQL
 	SQLite      = core.SQLite
+
+	KeywordCasePreserve  = core.KeywordCasePreserve
+	KeywordCaseUppercase = core.KeywordCaseUppercase
+	KeywordCaseLowercase = core.KeywordCaseLowercase
+	KeywordCaseDialect   = core.KeywordCaseDialect
 )
 
 // CreateFormatterForLanguage creates a formatter based on the language configuration.

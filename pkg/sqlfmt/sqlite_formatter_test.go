@@ -2422,7 +2422,7 @@ func TestSQLite_Phase11_PragmaValuePreservation(t *testing.T) {
 }
 
 func TestSQLite_Phase11_PragmaValuePreservationWithUppercase(t *testing.T) {
-	cfg := &Config{Language: SQLite, Indent: "  ", Uppercase: true}
+	cfg := &Config{Language: SQLite, Indent: "  ", KeywordCase: KeywordCaseUppercase}
 
 	// Even with uppercase flag, PRAGMA values should NOT be uppercased
 	query := "PRAGMA journal_mode = WAL; PRAGMA encoding = 'UTF-8';"
@@ -2495,7 +2495,7 @@ func TestSQLite_Phase11_UnicodeIdentifierPreservation(t *testing.T) {
 }
 
 func TestSQLite_Phase11_UnicodeWithUppercaseFlag(t *testing.T) {
-	cfg := &Config{Language: SQLite, Indent: "  ", Uppercase: true}
+	cfg := &Config{Language: SQLite, Indent: "  ", KeywordCase: KeywordCaseUppercase}
 
 	// Unicode identifiers should NOT be affected by uppercase flag
 	query := `SELECT "ÄÖÜ" AS "αβγ", ` + "`カタカナ`" + ` FROM [unicode_table];`

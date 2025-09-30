@@ -153,8 +153,8 @@ func TestValidateFile(t *testing.T) {
 }
 
 // runValidateTest is like runValidate but doesn't call os.Exit.
-func runValidateTest(_ *cobra.Command, args []string) error {
-	config := buildConfig()
+func runValidateTest(cmd *cobra.Command, args []string) error {
+	config := buildConfig(cmd)
 
 	// If no args or args is "-", validate stdin
 	if len(args) == 0 || (len(args) == 1 && args[0] == "-") {

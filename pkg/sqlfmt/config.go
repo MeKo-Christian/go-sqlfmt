@@ -21,10 +21,21 @@ const (
 	DefaultLinesBetweenQueries = 2
 )
 
+type KeywordCase string
+
+const (
+	KeywordCasePreserve  KeywordCase = "preserve"
+	KeywordCaseUppercase KeywordCase = "uppercase"
+	KeywordCaseLowercase KeywordCase = "lowercase"
+	KeywordCaseDialect   KeywordCase = "dialect"
+
+	DefaultKeywordCase = KeywordCasePreserve
+)
+
 type Config struct {
 	Language            Language
 	Indent              string
-	Uppercase           bool
+	KeywordCase         KeywordCase
 	LinesBetweenQueries int
 	Params              *Params
 	ColorConfig         *ColorConfig
@@ -35,6 +46,7 @@ func NewDefaultConfig() *Config {
 	return &Config{
 		Language:            StandardSQL,
 		Indent:              DefaultIndent,
+		KeywordCase:         DefaultKeywordCase,
 		LinesBetweenQueries: DefaultLinesBetweenQueries,
 		Params:              NewMapParams(nil),
 		ColorConfig:         &ColorConfig{},
@@ -52,8 +64,14 @@ func (c *Config) WithIndent(indent string) *Config {
 	return c
 }
 
+func (c *Config) WithKeywordCase(keywordCase KeywordCase) *Config {
+	c.KeywordCase = keywordCase
+	return c
+}
+
+// WithUppercase is a convenience method for backward compatibility.
 func (c *Config) WithUppercase() *Config {
-	c.Uppercase = true
+	c.KeywordCase = KeywordCaseUppercase
 	return c
 }
 

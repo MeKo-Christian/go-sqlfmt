@@ -16,6 +16,7 @@ var (
 	write        bool
 	color        bool
 	uppercase    bool
+	keywordCase  string
 	linesBetween int
 )
 
@@ -41,12 +42,23 @@ func init() {
 	formatCmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	formatCmd.Flags().BoolVarP(&write, "write", "w", false, "Write result to file instead of stdout")
 	formatCmd.Flags().BoolVar(&color, "color", false, "Enable ANSI color formatting")
-	formatCmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert keywords to uppercase")
+	formatCmd.Flags().BoolVar(
+		&uppercase,
+		"uppercase",
+		false,
+		"Deprecated: convert keywords to uppercase",
+	)
+	formatCmd.Flags().StringVar(
+		&keywordCase,
+		"keyword-case",
+		"preserve",
+		"Keyword casing options",
+	)
 	formatCmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
 }
 
 func runFormat(cmd *cobra.Command, args []string) error {
-	config := buildConfig()
+	config := buildConfig(cmd)
 
 	// If no args or args is "-", read from stdin
 	if len(args) == 0 || (len(args) == 1 && args[0] == "-") {
@@ -63,35 +75,73 @@ func runFormat(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func buildConfig() *sqlfmt.Config {
+func buildConfig(cmd *cobra.Command) *sqlfmt.Config {
 	config := sqlfmt.NewDefaultConfig()
 
-	// Set language
-	switch strings.ToLower(lang) {
-	case "sql", "standard":
-		config.WithLang(sqlfmt.StandardSQL)
-	case "postgresql", "postgres":
-		config.WithLang(sqlfmt.PostgreSQL)
-	case "mysql", "mariadb":
-		config.WithLang(sqlfmt.MySQL)
-	case "pl/sql", "plsql", "oracle":
-		config.WithLang(sqlfmt.PLSQL)
-	case "db2":
-		config.WithLang(sqlfmt.DB2)
-	case "n1ql":
-		config.WithLang(sqlfmt.N1QL)
-	case "sqlite":
-		config.WithLang(sqlfmt.SQLite)
-	default:
-		fmt.Fprintf(os.Stderr, "Warning: unknown language %s, using standard SQL\n", lang)
-		config.WithLang(sqlfmt.StandardSQL)
+	// Load config file if available
+	if configFile, err := sqlfmt.LoadConfigFile(); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to load config file: %v\n", err)
+	} else {
+		if err := configFile.ApplyToConfig(config); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to apply config file: %v\n", err)
+		}
 	}
 
-	config.WithIndent(indent)
-	if uppercase {
-		config.WithUppercase()
+	// Command-line flags override config file settings
+	// We need to detect if flags were explicitly set vs using defaults
+
+	// Set language (only if explicitly provided via flag)
+	if cmd.Flags().Changed("lang") {
+		switch strings.ToLower(lang) {
+		case "sql", "standard":
+			config.WithLang(sqlfmt.StandardSQL)
+		case "postgresql", "postgres":
+			config.WithLang(sqlfmt.PostgreSQL)
+		case "mysql", "mariadb":
+			config.WithLang(sqlfmt.MySQL)
+		case "pl/sql", "plsql", "oracle":
+			config.WithLang(sqlfmt.PLSQL)
+		case "db2":
+			config.WithLang(sqlfmt.DB2)
+		case "n1ql":
+			config.WithLang(sqlfmt.N1QL)
+		case "sqlite":
+			config.WithLang(sqlfmt.SQLite)
+		default:
+			fmt.Fprintf(os.Stderr, "Warning: unknown language %s, using standard SQL\n", lang)
+			config.WithLang(sqlfmt.StandardSQL)
+		}
 	}
-	config.WithLinesBetweenQueries(linesBetween)
+
+	// Set indentation (only if explicitly provided)
+	if cmd.Flags().Changed("indent") {
+		config.WithIndent(indent)
+	}
+
+	// Handle keyword casing - --uppercase flag takes precedence for backward compatibility
+	if cmd.Flags().Changed("uppercase") && uppercase {
+		config.WithKeywordCase(sqlfmt.KeywordCaseUppercase)
+	} else if cmd.Flags().Changed("keyword-case") {
+		// Convert string to KeywordCase type
+		switch strings.ToLower(keywordCase) {
+		case "preserve":
+			config.WithKeywordCase(sqlfmt.KeywordCasePreserve)
+		case "uppercase":
+			config.WithKeywordCase(sqlfmt.KeywordCaseUppercase)
+		case "lowercase":
+			config.WithKeywordCase(sqlfmt.KeywordCaseLowercase)
+		case "dialect":
+			config.WithKeywordCase(sqlfmt.KeywordCaseDialect)
+		default:
+			fmt.Fprintf(os.Stderr, "Warning: unknown keyword-case %s, using preserve\n", keywordCase)
+			config.WithKeywordCase(sqlfmt.KeywordCasePreserve)
+		}
+	}
+
+	// Set lines between queries (only if explicitly provided)
+	if cmd.Flags().Changed("lines-between") {
+		config.WithLinesBetweenQueries(linesBetween)
+	}
 
 	if color {
 		config.WithColorConfig(sqlfmt.NewDefaultColorConfig())

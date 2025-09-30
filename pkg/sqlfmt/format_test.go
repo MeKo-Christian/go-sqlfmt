@@ -928,7 +928,7 @@ func TestFormatSpecialUnicode(t *testing.T) {
 					cola > 1
 					AND colb = 3
 			`),
-			cfg: Config{Uppercase: true},
+			cfg: Config{KeywordCase: KeywordCaseUppercase},
 		},
 	}
 

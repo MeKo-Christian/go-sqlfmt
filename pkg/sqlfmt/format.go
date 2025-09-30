@@ -48,7 +48,7 @@ func createFormatterForLanguage(c *Config) Formatter {
 	coreCfg := &core.Config{
 		Language:            core.Language(c.Language),
 		Indent:              c.Indent,
-		Uppercase:           c.Uppercase,
+		KeywordCase:         core.KeywordCase(c.KeywordCase),
 		LinesBetweenQueries: c.LinesBetweenQueries,
 		Params:              convertParams(c.Params, c.Language),
 		ColorConfig:         convertColorConfig(c.ColorConfig),
@@ -130,7 +130,7 @@ func convertToInternalConfig(c *Config) *core.Config {
 	return &core.Config{
 		Language:            core.Language(c.Language),
 		Indent:              c.Indent,
-		Uppercase:           c.Uppercase,
+		KeywordCase:         core.KeywordCase(c.KeywordCase),
 		LinesBetweenQueries: c.LinesBetweenQueries,
 		Params:              convertParams(c.Params, c.Language),
 		ColorConfig:         convertColorConfig(c.ColorConfig),

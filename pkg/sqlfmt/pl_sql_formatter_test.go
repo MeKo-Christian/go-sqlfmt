@@ -288,7 +288,7 @@ func TestPLSQLFormatter_FormatCase(t *testing.T) {
               END;
             `),
 			cfg: Config{
-				Uppercase: true,
+				KeywordCase: KeywordCaseUppercase,
 			},
 		},
 	}

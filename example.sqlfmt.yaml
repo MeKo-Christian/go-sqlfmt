@@ -1,0 +1,12 @@
+# Example .sqlfmt.yaml configuration file
+# Place this in your project root, home directory, or current directory
+# Command-line flags will override these settings
+# SQL dialect to use by default
+language: postgresql
+# How to format SQL keywords
+# Options: preserve, uppercase, lowercase, dialect
+keyword_case: lowercase
+# Indentation string (spaces or tabs)
+indent: "    "
+# Number of lines between separate queries
+lines_between_queries: 1

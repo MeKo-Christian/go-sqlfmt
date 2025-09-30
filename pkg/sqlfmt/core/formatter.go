@@ -225,7 +225,8 @@ func (f *formatter) formatOpeningParentheses(tok types.Token, query *strings.Bui
 	}
 
 	value := tok.Value
-	if f.cfg.Uppercase {
+	// For parentheses, only apply casing if they are SQL keywords (unlikely, but preserve old logic)
+	if f.cfg.KeywordCase == KeywordCaseUppercase {
 		value = strings.ToUpper(value)
 	}
 	query.WriteString(value)
@@ -240,7 +241,8 @@ func (f *formatter) formatOpeningParentheses(tok types.Token, query *strings.Bui
 // formatClosingParentheses ends an inline block if one is active, or decreases the
 // block level, then adds the closing paren.
 func (f *formatter) formatClosingParentheses(tok types.Token, query *strings.Builder) {
-	if f.cfg.Uppercase {
+	// For parentheses, only apply casing if they are SQL keywords (unlikely, but preserve old logic)
+	if f.cfg.KeywordCase == KeywordCaseUppercase {
 		tok.Value = strings.ToUpper(tok.Value)
 	}
 
@@ -313,11 +315,36 @@ func (f *formatter) formatWithSpaces(tok types.Token, query *strings.Builder) {
 
 // formatReservedWord makes sure the reserved word is formatted according to the Config.
 func (f *formatter) formatReservedWord(value string) string {
-	if f.cfg.Uppercase {
+	switch f.cfg.KeywordCase {
+	case KeywordCaseUppercase:
 		value = strings.ToUpper(value)
+	case KeywordCaseLowercase:
+		value = strings.ToLower(value)
+	case KeywordCaseDialect:
+		value = f.formatDialectSpecificCase(value)
+	case KeywordCasePreserve:
+		// Keep original case
+		fallthrough
+	default:
+		// Keep original case
 	}
 	value = utils.AddANSIFormats(f.cfg.ColorConfig.ReservedWordFormatOptions, value)
 	return value
+}
+
+// formatDialectSpecificCase formats the reserved word according to dialect conventions.
+func (f *formatter) formatDialectSpecificCase(value string) string {
+	switch f.cfg.Language {
+	case StandardSQL, DB2, PLSQL:
+		// Standard SQL, DB2, and Oracle traditionally use uppercase
+		return strings.ToUpper(value)
+	case PostgreSQL, MySQL, N1QL, SQLite:
+		// PostgreSQL, MySQL, N1QL, and SQLite commonly use lowercase
+		return strings.ToLower(value)
+	default:
+		// Default to preserving original case for unknown dialects
+		return value
+	}
 }
 
 func (f *formatter) formatQuerySeparator(tok types.Token, query *strings.Builder) {

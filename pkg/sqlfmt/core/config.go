@@ -20,11 +20,20 @@ const (
 	SQLite      Language = "sqlite"
 )
 
+type KeywordCase string
+
+const (
+	KeywordCasePreserve  KeywordCase = "preserve"
+	KeywordCaseUppercase KeywordCase = "uppercase"
+	KeywordCaseLowercase KeywordCase = "lowercase"
+	KeywordCaseDialect   KeywordCase = "dialect"
+)
+
 // Config represents the configuration for formatting.
 type Config struct {
 	Language            Language
 	Indent              string
-	Uppercase           bool
+	KeywordCase         KeywordCase
 	LinesBetweenQueries int
 	Params              *utils.ParamsConfig
 	ColorConfig         *ColorConfig

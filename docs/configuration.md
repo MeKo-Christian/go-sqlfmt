@@ -41,16 +41,19 @@ sqlfmt format \
 ### Language (SQL Dialect)
 
 **Library**:
+
 ```go
 cfg := sqlfmt.NewDefaultConfig().WithLang(sqlfmt.PostgreSQL)
 ```
 
 **CLI**:
+
 ```bash
 sqlfmt format --lang=postgresql query.sql
 ```
 
 **Available Languages**:
+
 - `sqlfmt.StandardSQL` / `--lang=sql` - Standard SQL (ANSI SQL)
 - `sqlfmt.PostgreSQL` / `--lang=postgresql` - PostgreSQL dialect
 - `sqlfmt.MySQL` / `--lang=mysql` - MySQL dialect
@@ -64,6 +67,7 @@ sqlfmt format --lang=postgresql query.sql
 ### Indentation
 
 **Library**:
+
 ```go
 cfg := sqlfmt.NewDefaultConfig().WithIndent("    ")  // 4 spaces
 cfg := sqlfmt.NewDefaultConfig().WithIndent("\t")    // Tabs
@@ -71,6 +75,7 @@ cfg := sqlfmt.NewDefaultConfig().WithIndent("  ")    // 2 spaces (default)
 ```
 
 **CLI**:
+
 ```bash
 sqlfmt format --indent="    " query.sql   # 4 spaces
 sqlfmt format --indent="\t" query.sql     # Tabs
@@ -81,16 +86,19 @@ sqlfmt format --indent="\t" query.sql     # Tabs
 ### Uppercase Keywords
 
 **Library**:
+
 ```go
 cfg := sqlfmt.NewDefaultConfig().WithUppercase(true)
 ```
 
 **CLI**:
+
 ```bash
 sqlfmt format --uppercase query.sql
 ```
 
 **Effect**:
+
 ```sql
 -- With uppercase=false (default)
 select * from users where active = true;
@@ -104,16 +112,19 @@ SELECT * FROM users WHERE active = TRUE;
 ### Lines Between Queries
 
 **Library**:
+
 ```go
 cfg := sqlfmt.NewDefaultConfig().WithLinesBetweenQueries(3)
 ```
 
 **CLI**:
+
 ```bash
 sqlfmt format --lines-between=3 query.sql
 ```
 
 **Effect**:
+
 ```sql
 SELECT * FROM users;
 
@@ -130,6 +141,7 @@ Configure parameter substitution for placeholders in SQL queries.
 #### Named Parameters
 
 **Library**:
+
 ```go
 params := sqlfmt.NewMapParams(map[string]string{
     "username": "'john_doe'",
@@ -141,11 +153,13 @@ cfg := sqlfmt.NewDefaultConfig().WithParams(params)
 ```
 
 **Input**:
+
 ```sql
 SELECT * FROM users WHERE username = @username AND status = @status LIMIT @limit;
 ```
 
 **Output**:
+
 ```sql
 SELECT
   *
@@ -161,6 +175,7 @@ LIMIT
 #### Indexed Parameters
 
 **Library**:
+
 ```go
 params := sqlfmt.NewListParams([]string{
     "'john_doe'",
@@ -172,6 +187,7 @@ cfg := sqlfmt.NewDefaultConfig().WithParams(params)
 ```
 
 **Input**:
+
 ```sql
 SELECT * FROM users WHERE username = ? AND status = ? LIMIT ?;
 ```
@@ -181,6 +197,7 @@ SELECT * FROM users WHERE username = ? AND status = ? LIMIT ?;
 #### PostgreSQL Numbered Parameters
 
 **Library**:
+
 ```go
 params := sqlfmt.NewListParams([]string{
     "'john_doe'",
@@ -194,6 +211,7 @@ cfg := sqlfmt.NewDefaultConfig().
 ```
 
 **Input**:
+
 ```sql
 SELECT * FROM users WHERE username = $1 AND status = $2 LIMIT $3;
 ```
@@ -207,6 +225,7 @@ Configure ANSI color formatting for terminal output.
 #### Using Pretty Functions
 
 **Library**:
+
 ```go
 // Use default colors
 formatted := sqlfmt.PrettyFormat(query)
@@ -218,6 +237,7 @@ sqlfmt.PrettyPrint(query, cfg)
 ```
 
 **CLI**:
+
 ```bash
 sqlfmt pretty-format query.sql
 sqlfmt pretty-print query.sql
@@ -227,6 +247,7 @@ sqlfmt format --color query.sql
 #### Custom Color Configuration
 
 **Library**:
+
 ```go
 // Create custom color configuration
 clr := sqlfmt.NewDefaultColorConfig()
@@ -255,6 +276,7 @@ result := sqlfmt.Format(query, cfg)
 #### Available Colors
 
 **Basic Colors**:
+
 - `sqlfmt.ColorBlack`
 - `sqlfmt.ColorRed`
 - `sqlfmt.ColorGreen`
@@ -265,6 +287,7 @@ result := sqlfmt.Format(query, cfg)
 - `sqlfmt.ColorWhite`
 
 **Bright Colors**:
+
 - `sqlfmt.ColorBrightRed`
 - `sqlfmt.ColorBrightGreen`
 - `sqlfmt.ColorBrightYellow`
@@ -274,6 +297,7 @@ result := sqlfmt.Format(query, cfg)
 - `sqlfmt.ColorBrightWhite`
 
 **Formatting Options**:
+
 - `sqlfmt.FormatBold`
 - `sqlfmt.FormatDim`
 - `sqlfmt.FormatItalic`
@@ -287,6 +311,7 @@ Advanced configuration for customizing SQL tokenization behavior.
 #### Basic Tokenizer Customization
 
 **Library**:
+
 ```go
 // Get standard SQL tokenizer config
 tokCfg := sqlfmt.NewStandardSQLTokenizerConfig()
@@ -317,6 +342,7 @@ cfg := sqlfmt.NewDefaultConfig().WithTokenizerConfig(pgCfg)
 #### Tokenizer Configuration Fields
 
 **TokenizerConfig struct**:
+
 ```go
 type TokenizerConfig struct {
     ReservedWords                 []string // All reserved words
@@ -333,6 +359,7 @@ type TokenizerConfig struct {
 ```
 
 **Example Customization**:
+
 ```go
 tokCfg := &sqlfmt.TokenizerConfig{
     ReservedWords: []string{

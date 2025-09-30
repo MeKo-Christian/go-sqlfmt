@@ -13,12 +13,14 @@ Thank you for your interest in contributing to go-sqlfmt! This guide will help y
 ### Setting up the Development Environment
 
 1. **Fork and clone the repository**:
+
    ```bash
    git clone https://github.com/your-username/go-sqlfmt.git
    cd go-sqlfmt
    ```
 
 2. **Install development dependencies**:
+
    ```bash
    just setup-deps
    ```
@@ -118,22 +120,26 @@ go-sqlfmt/
 ### Key Components
 
 **Public API (`pkg/sqlfmt/format.go`)**
+
 - `Format(query string, cfg ...*Config) string` - Format SQL query
 - `PrettyFormat(query string, cfg ...*Config) string` - Format with ANSI colors
 - `PrettyPrint(query string, cfg ...*Config)` - Format with colors and print
 
 **Configuration System (`pkg/sqlfmt/config.go`)**
+
 - Language constants (`StandardSQL`, `PostgreSQL`, `DB2`, `PLSQL`, `N1QL`)
 - `Config` struct with fluent builder methods (`WithLang()`, `WithIndent()`, etc.)
 - Color configuration and tokenizer customization
 
 **Core Engine (`pkg/sqlfmt/core/`)**
+
 - `formatter.go` - Main formatting logic and query processing
 - `tokenizer.go` - SQL tokenization with dialect-specific rules
 - `config.go` - Internal configuration interfaces
 
 **Dialect System (`pkg/sqlfmt/dialects/`)**
 Each dialect implements the `Formatter` interface with dialect-specific:
+
 - Reserved word lists
 - Tokenization rules
 - Formatting behavior
@@ -223,6 +229,7 @@ The project uses multiple testing approaches:
 ### Adding Tests
 
 For new features:
+
 ```bash
 # Add test cases to appropriate _test.go files
 # Add golden files in testdata/input/{dialect}/ and testdata/golden/{dialect}/
@@ -249,6 +256,7 @@ just update-snapshots
 
 1. **Create the dialect file**: `pkg/sqlfmt/dialects/{dialect}.go`
 2. **Implement the Formatter interface**:
+
    ```go
    type YourDialectFormatter struct {
        cfg *Config
@@ -313,6 +321,7 @@ go test -bench=BenchmarkTokenizer ./pkg/sqlfmt/core
 ### Version Management
 
 The project follows semantic versioning (semver):
+
 - **MAJOR**: Incompatible API changes
 - **MINOR**: New functionality (backward compatible)
 - **PATCH**: Bug fixes (backward compatible)
@@ -336,6 +345,7 @@ The project follows semantic versioning (semver):
 ### Development Questions
 
 When asking for help:
+
 1. **Provide context**: What are you trying to achieve?
 2. **Share code**: Include relevant code snippets
 3. **Include errors**: Share any error messages
@@ -344,6 +354,7 @@ When asking for help:
 ### Code Review Process
 
 Pull requests will be reviewed for:
+
 1. **Functionality**: Does it work as intended?
 2. **Testing**: Are there adequate tests?
 3. **Code quality**: Is the code clear and maintainable?

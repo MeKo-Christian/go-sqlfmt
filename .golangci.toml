@@ -110,6 +110,14 @@ linters = ['funlen']
 path = '.*_test\.go'
 
 [[linters.exclusions.rules]]
+linters = ['gosmopolitan']
+path = '.*mysql_formatter_test\.go'
+
+[[linters.exclusions.rules]]
+linters = ['gosmopolitan']
+path = '.*sqlite_formatter_test\.go'
+
+[[linters.exclusions.rules]]
 linters = ['err113', 'wrapcheck']
 path = 'cmd/.*\.go'
 

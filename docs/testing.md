@@ -7,6 +7,7 @@ This project uses a comprehensive multi-level testing approach to ensure reliabi
 ### Test Organization Overview
 
 **Public API Tests (`pkg/sqlfmt/`)**
+
 - `format_test.go` - Comprehensive table-driven tests for core formatting functionality
 - `golden_test.go` - Golden file-based testing using external test data files
 - `snapshot_test.go` - Snapshot-based regression testing with automatic test data management
@@ -14,10 +15,12 @@ This project uses a comprehensive multi-level testing approach to ensure reliabi
 - `*_formatter_test.go` - Dialect-specific formatter tests (postgresql, mysql, sqlite, db2, n1ql, plsql)
 
 **Internal Unit Tests (`pkg/sqlfmt/` subdirectories)**
+
 - `core/tokenizer_test.go` - Direct unit tests for internal tokenizer functionality
 - `utils/dedent_test.go` - Unit tests for utility functions
 
 **CLI Integration Tests (`cmd/`)**
+
 - `format_test.go` - Command-line interface integration tests
 - `validate_test.go` - Validation command tests
 - `dialects_test.go` - Dialect selection tests
@@ -27,11 +30,13 @@ This project uses a comprehensive multi-level testing approach to ensure reliabi
 #### 1. Table-Driven Tests
 
 Used extensively in `format_test.go` for systematic testing of formatting scenarios:
+
 - Clear separation of input, expected output, and configuration
 - Easy to add new test cases and maintain existing ones
 - Covers core formatting functionality across all dialects
 
 Example structure:
+
 ```go
 func TestFormat(t *testing.T) {
     tests := []struct {
@@ -66,6 +71,7 @@ func TestFormat(t *testing.T) {
 - Excellent for comprehensive dialect testing and regression detection
 
 Structure:
+
 ```
 testdata/
 ├── input/
@@ -96,6 +102,7 @@ testdata/
 - Provides Jest-like snapshot testing experience
 
 Snapshot files are automatically generated and managed:
+
 ```
 pkg/sqlfmt/__snapshots__/
 ├── snapshot_test.snap
@@ -229,6 +236,7 @@ go test ./pkg/sqlfmt -run "TestSQLite.*CTE"       # Common Table Expressions
 ### Golden File Organization
 
 Test data is organized by dialect:
+
 - **Input**: `testdata/input/{dialect}/*.sql`
 - **Expected**: `testdata/golden/{dialect}/*.sql`
 
@@ -344,21 +352,25 @@ When adding dialect-specific features:
 ### Common Issues
 
 **Tests failing after changes**:
+
 1. Check if formatting behavior intentionally changed
 2. Update test expectations if change is intended
 3. Fix implementation if change is unintended
 
 **Snapshot tests failing**:
+
 1. Review snapshot diffs carefully
 2. Update snapshots if changes are correct: `just update-snapshots`
 3. Fix implementation if snapshots show unexpected changes
 
 **Golden file tests failing**:
+
 1. Compare actual vs expected output
 2. Update golden files if formatting improved
 3. Check for regressions if output seems wrong
 
 **Performance issues**:
+
 1. Identify slow tests with `go test -v`
 2. Profile test execution if needed
 3. Optimize test data or implementation
