@@ -4,6 +4,8 @@
 package dialects
 
 import (
+	"strings"
+
 	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/core"
 	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/types"
 )
@@ -45,6 +47,7 @@ var (
 
 	// postgreSQLReservedTopLevelWords adds PostgreSQL-specific top-level keywords that start new statement sections.
 	// These keywords cause new lines and reset indentation level.
+	// Note: "DO" is included as top-level but is context-aware via tokenOverride to handle UPSERT correctly.
 	postgreSQLReservedTopLevelWords = append(standardSQLReservedTopLevelWords, []string{
 		"WITH", "WITH RECURSIVE", "RETURNING", "WINDOW",
 		// Procedural blocks and functions
@@ -56,9 +59,11 @@ var (
 	// postgreSQLReservedTopLevelWordsNoIndent inherits from standard SQL - no PostgreSQL-specific additions needed.
 	postgreSQLReservedTopLevelWordsNoIndent = standardSQLReservedTopLevelWordsNoIndent
 
-	// postgreSQLReservedNewlineWords adds LATERAL join support to keywords that trigger new lines.
+	// postgreSQLReservedNewlineWords adds LATERAL join support and UPSERT keywords that trigger new lines.
 	postgreSQLReservedNewlineWords = append(standardSQLReservedNewlineWords, []string{
 		"LATERAL JOIN", "LEFT LATERAL JOIN", "RIGHT LATERAL JOIN", "CROSS JOIN LATERAL",
+		// UPSERT clause keywords
+		"ON CONFLICT",
 	}...)
 )
 
@@ -123,23 +128,65 @@ func (psf *PostgreSQLFormatter) Format(query string) string {
 }
 
 // tokenOverride handles PostgreSQL-specific token formatting overrides.
-// Currently implements special formatting for the type cast operator (::) which should
-// be formatted without spaces on either side, following PostgreSQL conventions.
+// Implements context-aware formatting for:
+//
+// 1. Type cast operator (::) - formatted without spaces following PostgreSQL conventions
+// 2. DO keyword - context-aware handling for UPSERT vs standalone DO blocks
 //
 // Examples:
 //
-//	'text'::varchar  -> 'text'::varchar  (no spaces around ::)
-//	value::numeric   -> value::numeric   (no spaces around ::)
+//	Type casting:
+//	  'text'::varchar  -> 'text'::varchar  (no spaces around ::)
+//	  value::numeric   -> value::numeric   (no spaces around ::)
 //
-// Future enhancements may include special handling for other PostgreSQL-specific operators.
+//	DO keyword context awareness:
+//	  ON CONFLICT (id) DO UPDATE SET ...  -> DO stays inline (UPSERT context)
+//	  DO $$ BEGIN ... END $$;             -> DO creates newline (standalone block)
+//
+//nolint:cyclop // Context-aware logic requires checking multiple conditions
 func (psf *PostgreSQLFormatter) tokenOverride(tok types.Token, previousReservedWord types.Token) types.Token {
 	// Handle type cast operator :: - format without spaces (PostgreSQL convention)
 	if tok.Type == types.TokenTypeOperator && tok.Value == "::" {
-		// Create a new token with a modified type to handle special formatting
 		return types.Token{
 			Type:  types.TokenTypeSpecialOperator,
 			Value: tok.Value,
 			Key:   tok.Key,
+		}
+	}
+
+	// Handle DO keyword context-awareness for UPSERT vs standalone blocks
+	// In UPSERT context (after ON CONFLICT), DO should not create a top-level break
+	// In standalone context, DO should create a top-level break for PL/pgSQL blocks
+	if tok.Type == types.TokenTypeReservedTopLevel && tok.Value == "DO" {
+		// Check if we're in UPSERT context by looking at previous reserved word
+		// Previous word could be "ON CONFLICT" directly, or "WHERE" (in ON CONFLICT ... WHERE ... DO pattern)
+		if !previousReservedWord.Empty() {
+			prevVal := strings.ToUpper(previousReservedWord.Value)
+			if strings.Contains(prevVal, "CONFLICT") || prevVal == "WHERE" {
+				// In UPSERT context: downgrade to regular reserved
+				// This prevents unwanted newline and keeps UPSERT clause together
+				return types.Token{
+					Type:  types.TokenTypeReserved,
+					Value: tok.Value,
+					Key:   tok.Key,
+				}
+			}
+		}
+		// Otherwise keep as top-level for standalone DO blocks
+	}
+
+	// Handle UPDATE keyword context-awareness for UPSERT
+	// After "DO" in UPSERT context, UPDATE should not create top-level break
+	if tok.Type == types.TokenTypeReservedTopLevel && tok.Value == "UPDATE" {
+		// Check if previous reserved word is "DO" or starts with "DO " (for "DO NOTHING")
+		prevVal := strings.ToUpper(previousReservedWord.Value)
+		if prevVal == "DO" || strings.HasPrefix(prevVal, "DO ") {
+			// In UPSERT context after DO: downgrade UPDATE to regular reserved
+			return types.Token{
+				Type:  types.TokenTypeReserved,
+				Value: tok.Value,
+				Key:   tok.Key,
+			}
 		}
 	}
 

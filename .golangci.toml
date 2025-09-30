@@ -118,6 +118,10 @@ linters = ['gosmopolitan']
 path = '.*sqlite_formatter_test\.go'
 
 [[linters.exclusions.rules]]
+linters = ['gosmopolitan']
+path = '.*sqlite_fuzz_test\.go'
+
+[[linters.exclusions.rules]]
 linters = ['err113', 'wrapcheck']
 path = 'cmd/.*\.go'
 

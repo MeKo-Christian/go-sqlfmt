@@ -29,8 +29,7 @@ func TestSnapshotFormatting_StandardSQL(t *testing.T) {
 	formatter := NewStandardSQLFormatter(NewDefaultConfig())
 
 	t.Run("basic SELECT", func(t *testing.T) {
-		query := "SELECT id, name FROM users WHERE active = true;"
-		result := formatter.Format(query)
+		result := formatter.Format(basicSelectQuery)
 		snaps.MatchSnapshot(t, result)
 	})
 
@@ -45,8 +44,7 @@ func TestSnapshotFormatting_PostgreSQL(t *testing.T) {
 	formatter := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL))
 
 	t.Run("basic SELECT", func(t *testing.T) {
-		query := "SELECT id, name FROM users WHERE active = true;"
-		result := formatter.Format(query)
+		result := formatter.Format(basicSelectQuery)
 		snaps.MatchSnapshot(t, result)
 	})
 
@@ -91,8 +89,7 @@ func TestSnapshotFormatting_MySQL(t *testing.T) {
 	formatter := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL))
 
 	t.Run("basic SELECT", func(t *testing.T) {
-		query := "SELECT id, name FROM users WHERE active = true;"
-		result := formatter.Format(query)
+		result := formatter.Format(basicSelectQuery)
 		snaps.MatchSnapshot(t, result)
 	})
 
@@ -155,8 +152,7 @@ func TestSnapshotFormatting_SQLite(t *testing.T) {
 	formatter := NewSQLiteFormatter(NewDefaultConfig().WithLang(SQLite))
 
 	t.Run("basic SELECT", func(t *testing.T) {
-		query := "SELECT id, name FROM users WHERE active = true;"
-		result := formatter.Format(query)
+		result := formatter.Format(basicSelectQuery)
 		snaps.MatchSnapshot(t, result)
 	})
 

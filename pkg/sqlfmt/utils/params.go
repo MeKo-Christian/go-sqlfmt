@@ -52,28 +52,40 @@ func (p *Params) Get(key string, defaultValue string) string {
 	}
 
 	if key != "" {
-		if param, exists := p.params.MapParams[key]; exists {
-			return param
-		}
-
-		if idx, err := strconv.Atoi(key); err == nil {
-			// Handle SQLite 1-based indexing
-			if p.params.UseSQLiteIndexing {
-				// SQLite uses 1-based indexing: ?1 maps to ListParams[0]
-				if idx >= 1 && idx-1 < len(p.params.ListParams) {
-					return p.params.ListParams[idx-1]
-				}
-			} else {
-				// Default 0-based indexing: ?0 maps to ListParams[0]
-				if idx >= 0 && idx < len(p.params.ListParams) {
-					return p.params.ListParams[idx]
-				}
-			}
-		}
-
-		return defaultValue
+		return p.getByKey(key, defaultValue)
 	}
 
+	return p.getByIndex(defaultValue)
+}
+
+func (p *Params) getByKey(key string, defaultValue string) string {
+	if param, exists := p.params.MapParams[key]; exists {
+		return param
+	}
+
+	if idx, err := strconv.Atoi(key); err == nil {
+		return p.getByNumericIndex(idx, defaultValue)
+	}
+
+	return defaultValue
+}
+
+func (p *Params) getByNumericIndex(idx int, defaultValue string) string {
+	if p.params.UseSQLiteIndexing {
+		// SQLite uses 1-based indexing: ?1 maps to ListParams[0]
+		if idx >= 1 && idx-1 < len(p.params.ListParams) {
+			return p.params.ListParams[idx-1]
+		}
+	} else {
+		// Default 0-based indexing: ?0 maps to ListParams[0]
+		if idx >= 0 && idx < len(p.params.ListParams) {
+			return p.params.ListParams[idx]
+		}
+	}
+	return defaultValue
+}
+
+func (p *Params) getByIndex(defaultValue string) string {
 	if p.index >= len(p.params.ListParams) {
 		return defaultValue
 	}

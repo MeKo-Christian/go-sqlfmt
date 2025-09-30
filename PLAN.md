@@ -24,63 +24,48 @@ Most dialect-specific features have been successfully implemented. This plan foc
 - [x] Run `just lint` to verify no remaining issues
 - [x] Commit formatting fixes
 
-### 1.2 SQLite Phase 2 Tokenizer Verification
+### 1.2 SQLite Phase 2 Tokenizer Verification ✅
 
-**Status**: Implementation exists but checklist shows incomplete
+**Status**: ✅ Complete (2025-09-30)
 
-- [ ] Verify identifier quoting works correctly:
-  - [ ] Test double-quotes: `"table_name"`
-  - [ ] Test backticks: `` `column_name` ``
-  - [ ] Test brackets: `[identifier name]`
-  - [ ] Test mixed usage in same query
-- [ ] Verify blob literal handling:
-  - [ ] Test uppercase: `X'DEADBEEF'`
-  - [ ] Test lowercase: `x'cafebabe'`
-  - [ ] Test in various contexts (SELECT, INSERT, WHERE)
-- [ ] Verify comment handling:
-  - [ ] Confirm `--` comments work
-  - [ ] Confirm `/* */` comments work
-  - [ ] Confirm `#` is NOT treated as comment (unlike MySQL)
-- [ ] Update `PLAN-SQLITE.md` Phase 2 checkboxes to [x]
+- [x] Verify identifier quoting works correctly:
+  - [x] Test double-quotes: `"table_name"`
+  - [x] Test backticks: `` `column_name` ``
+  - [x] Test brackets: `[identifier name]`
+  - [x] Test mixed usage in same query
+- [x] Verify blob literal handling:
+  - [x] Test uppercase: `X'DEADBEEF'`
+  - [x] Test lowercase: `x'cafebabe'`
+  - [x] Test in various contexts (SELECT, INSERT, WHERE)
+- [x] Verify comment handling:
+  - [x] Confirm `--` comments work
+  - [x] Confirm `/* */` comments work
+  - [x] Confirm `#` is NOT treated as comment (unlike MySQL)
+- [x] Update `PLAN-SQLITE.md` Phase 2 checkboxes to [x]
+
+**Results**: All Phase 2 tests passing. Implementation in [pkg/sqlfmt/dialects/sqlite.go](pkg/sqlfmt/dialects/sqlite.go:58) correctly handles:
+
+- Line comments (`--`) and block comments (`/* */`), excludes `#`
+- All three identifier quoting styles: `"double"`, `` `backtick` ``, `[bracket]`
+- String literals with single quotes and blob literals `X'ABCD'` (upper/lowercase)
+- Comprehensive test coverage with 5 dedicated Phase 2 test functions in [sqlite_formatter_test.go](pkg/sqlfmt/sqlite_formatter_test.go:168-307)
 
 ---
 
 ## Phase 2: PostgreSQL Known Issues
 
-### 2.1 UPSERT Formatting Problem 🚧 BLOCKED
+### 2.1 UPSERT Formatting Problem ✅ FIXED
 
-**Issue**: `INSERT ... ON CONFLICT ... DO UPDATE/DO NOTHING` doesn't format correctly
+**Status**: ✅ Resolved (2025-09-30)
 
-**Current Behavior**:
+**Solution**: Implemented context-aware token override in PostgreSQL formatter that distinguishes between UPSERT context (`ON CONFLICT ... DO UPDATE`) and standalone DO blocks based on `previousReservedWord` tracking. Both cases now format correctly without trade-offs.
 
-```sql
-INSERT INTO users (id, name) VALUES (1, 'John')
-ON CONFLICT (id)
-DO
-  UPDATE SET name = 'Jane';
-```
+- [x] UPSERT: `ON CONFLICT (id) DO UPDATE` stays on one line
+- [x] DO blocks: `DO $$ ... $$` creates proper newline
+- [x] Handles `ON CONFLICT ... WHERE ... DO UPDATE` correctly
+- [x] All tests passing
 
-**Expected Behavior**:
-
-```sql
-INSERT INTO users (id, name) VALUES (1, 'John')
-ON CONFLICT (id) DO UPDATE SET name = 'Jane';
-```
-
-**Root Cause**:
-
-- Tokenizer doesn't recognize compound keywords like "DO UPDATE" as single units
-- Context detection between procedural `DO` blocks and UPSERT `DO` clauses fails
-- Requires deeper architectural changes to tokenizer or formatter core
-
-**Options**:
-
-- [ ] **Option A**: Modify tokenizer core to support compound keyword lookahead
-- [ ] **Option B**: Implement two-pass formatting with context awareness
-- [ ] **Option C**: Add special handling in core formatting logic (not just token override)
-- [ ] **Option D**: Accept current behavior and document as known limitation
-
-**Decision**: Mark as known limitation for now; defer to future major refactor
+**Implementation**: [pkg/sqlfmt/dialects/postgresql.go:155-186](pkg/sqlfmt/dialects/postgresql.go:155-186)
 
 ### 2.2 Function Indentation Test Mismatches
 
@@ -505,15 +490,9 @@ ON CONFLICT (id) DO UPDATE SET name = 'Jane';
 
 ## Known Limitations
 
-### PostgreSQL UPSERT Formatting 🚧
+~~### PostgreSQL UPSERT Formatting~~ ✅ FIXED
 
-**Issue**: `ON CONFLICT ... DO UPDATE/DO NOTHING` adds unwanted line breaks
-
-**Workaround**: Manually adjust UPSERT formatting after running formatter
-
-**Long-term Solution**: Requires tokenizer architecture redesign to handle compound keywords
-
-**Status**: Documented limitation, deferred to future major version
+**Status**: ✅ Resolved in Phase 2.1 - See above for details
 
 ---
 

@@ -1,6 +1,6 @@
 -- Multi-CTE queries with RECURSIVE
-with
-  recursive employee_hierarchy as(
+with recursive
+  employee_hierarchy as(
     select
       emp_id,
       name,
@@ -72,7 +72,8 @@ values
     '{"theme":"dark","notifications":true}',
     now(),
     now()
-  ) on conflict(user_id)
+  )
+  on conflict(user_id)
 do
 update
 set
@@ -120,7 +121,8 @@ values
     99.99,
     200,
     now()
-  ) on conflict(sku)
+  )
+  on conflict(sku)
 do
 update
 set

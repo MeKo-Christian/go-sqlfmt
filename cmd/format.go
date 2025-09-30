@@ -88,29 +88,19 @@ func buildConfig(cmd *cobra.Command) *sqlfmt.Config {
 	}
 
 	// Command-line flags override config file settings
-	// We need to detect if flags were explicitly set vs using defaults
+	applyCommandLineFlags(cmd, config)
 
+	if color {
+		config.WithColorConfig(sqlfmt.NewDefaultColorConfig())
+	}
+
+	return config
+}
+
+func applyCommandLineFlags(cmd *cobra.Command, config *sqlfmt.Config) {
 	// Set language (only if explicitly provided via flag)
 	if cmd.Flags().Changed("lang") {
-		switch strings.ToLower(lang) {
-		case "sql", "standard":
-			config.WithLang(sqlfmt.StandardSQL)
-		case "postgresql", "postgres":
-			config.WithLang(sqlfmt.PostgreSQL)
-		case "mysql", "mariadb":
-			config.WithLang(sqlfmt.MySQL)
-		case "pl/sql", "plsql", "oracle":
-			config.WithLang(sqlfmt.PLSQL)
-		case "db2":
-			config.WithLang(sqlfmt.DB2)
-		case "n1ql":
-			config.WithLang(sqlfmt.N1QL)
-		case "sqlite":
-			config.WithLang(sqlfmt.SQLite)
-		default:
-			fmt.Fprintf(os.Stderr, "Warning: unknown language %s, using standard SQL\n", lang)
-			config.WithLang(sqlfmt.StandardSQL)
-		}
+		applyLanguageFlag(config)
 	}
 
 	// Set indentation (only if explicitly provided)
@@ -118,36 +108,60 @@ func buildConfig(cmd *cobra.Command) *sqlfmt.Config {
 		config.WithIndent(indent)
 	}
 
-	// Handle keyword casing - --uppercase flag takes precedence for backward compatibility
-	if cmd.Flags().Changed("uppercase") && uppercase {
-		config.WithKeywordCase(sqlfmt.KeywordCaseUppercase)
-	} else if cmd.Flags().Changed("keyword-case") {
-		// Convert string to KeywordCase type
-		switch strings.ToLower(keywordCase) {
-		case "preserve":
-			config.WithKeywordCase(sqlfmt.KeywordCasePreserve)
-		case "uppercase":
-			config.WithKeywordCase(sqlfmt.KeywordCaseUppercase)
-		case "lowercase":
-			config.WithKeywordCase(sqlfmt.KeywordCaseLowercase)
-		case "dialect":
-			config.WithKeywordCase(sqlfmt.KeywordCaseDialect)
-		default:
-			fmt.Fprintf(os.Stderr, "Warning: unknown keyword-case %s, using preserve\n", keywordCase)
-			config.WithKeywordCase(sqlfmt.KeywordCasePreserve)
-		}
-	}
+	// Handle keyword casing
+	applyKeywordCaseFlags(cmd, config)
 
 	// Set lines between queries (only if explicitly provided)
 	if cmd.Flags().Changed("lines-between") {
 		config.WithLinesBetweenQueries(linesBetween)
 	}
+}
 
-	if color {
-		config.WithColorConfig(sqlfmt.NewDefaultColorConfig())
+func applyLanguageFlag(config *sqlfmt.Config) {
+	switch strings.ToLower(lang) {
+	case "sql", "standard":
+		config.WithLang(sqlfmt.StandardSQL)
+	case "postgresql", "postgres":
+		config.WithLang(sqlfmt.PostgreSQL)
+	case "mysql", "mariadb":
+		config.WithLang(sqlfmt.MySQL)
+	case "pl/sql", "plsql", "oracle":
+		config.WithLang(sqlfmt.PLSQL)
+	case "db2":
+		config.WithLang(sqlfmt.DB2)
+	case "n1ql":
+		config.WithLang(sqlfmt.N1QL)
+	case "sqlite":
+		config.WithLang(sqlfmt.SQLite)
+	default:
+		fmt.Fprintf(os.Stderr, "Warning: unknown language %s, using standard SQL\n", lang)
+		config.WithLang(sqlfmt.StandardSQL)
 	}
+}
 
-	return config
+func applyKeywordCaseFlags(cmd *cobra.Command, config *sqlfmt.Config) {
+	// --uppercase flag takes precedence for backward compatibility
+	if cmd.Flags().Changed("uppercase") && uppercase {
+		config.WithKeywordCase(sqlfmt.KeywordCaseUppercase)
+	} else if cmd.Flags().Changed("keyword-case") {
+		applyKeywordCaseFlag(config)
+	}
+}
+
+func applyKeywordCaseFlag(config *sqlfmt.Config) {
+	switch strings.ToLower(keywordCase) {
+	case "preserve":
+		config.WithKeywordCase(sqlfmt.KeywordCasePreserve)
+	case "uppercase":
+		config.WithKeywordCase(sqlfmt.KeywordCaseUppercase)
+	case "lowercase":
+		config.WithKeywordCase(sqlfmt.KeywordCaseLowercase)
+	case "dialect":
+		config.WithKeywordCase(sqlfmt.KeywordCaseDialect)
+	default:
+		fmt.Fprintf(os.Stderr, "Warning: unknown keyword-case %s, using preserve\n", keywordCase)
+		config.WithKeywordCase(sqlfmt.KeywordCasePreserve)
+	}
 }
 
 func formatStdin(config *sqlfmt.Config) error {

@@ -43,18 +43,38 @@ func init() {
 	rootCmd.AddCommand(prettyPrintCmd)
 
 	// Add flags for pretty-format (same as format but color is always enabled)
-	prettyFormatCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, mysql, pl/sql, db2, n1ql, sqlite)")
+	prettyFormatCmd.Flags().StringVar(&lang, "lang", "sql", "Dialect")
 	prettyFormatCmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	prettyFormatCmd.Flags().BoolVarP(&write, "write", "w", false, "Write result to file instead of stdout")
-	prettyFormatCmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert keywords to uppercase (deprecated, use --keyword-case=uppercase)")
-	prettyFormatCmd.Flags().StringVar(&keywordCase, "keyword-case", "preserve", "Keyword casing (preserve, uppercase, lowercase, dialect)")
+	prettyFormatCmd.Flags().BoolVar(
+		&uppercase,
+		"uppercase",
+		false,
+		"Uppercase keywords (deprecated)",
+	)
+	prettyFormatCmd.Flags().StringVar(
+		&keywordCase,
+		"keyword-case",
+		"preserve",
+		"Keyword case",
+	)
 	prettyFormatCmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
 
 	// Add flags for pretty-print (same as pretty-format but no write option)
-	prettyPrintCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, mysql, pl/sql, db2, n1ql, sqlite)")
+	prettyPrintCmd.Flags().StringVar(&lang, "lang", "sql", "Dialect")
 	prettyPrintCmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
-	prettyPrintCmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert keywords to uppercase (deprecated, use --keyword-case=uppercase)")
-	prettyPrintCmd.Flags().StringVar(&keywordCase, "keyword-case", "preserve", "Keyword casing (preserve, uppercase, lowercase, dialect)")
+	prettyPrintCmd.Flags().BoolVar(
+		&uppercase,
+		"uppercase",
+		false,
+		"Uppercase keywords (deprecated)",
+	)
+	prettyPrintCmd.Flags().StringVar(
+		&keywordCase,
+		"keyword-case",
+		"preserve",
+		"Keyword case",
+	)
 	prettyPrintCmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
 }
 

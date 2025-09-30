@@ -1,5 +1,5 @@
-with
-  recursive employee_hierarchy as(
+with recursive
+  employee_hierarchy as(
     select
       id,
       name,

@@ -929,155 +929,7 @@ func TestPostgreSQLFormatter_PatternMatching(t *testing.T) {
 }
 
 func TestPostgreSQLFormatter_CTEs(t *testing.T) {
-	t.Run("formats simple WITH query", func(t *testing.T) {
-		query := "WITH user_count AS (SELECT COUNT(*) as total FROM users) SELECT total FROM user_count;"
-		exp := Dedent(`
-            WITH
-              user_count AS (
-                SELECT
-                  COUNT(*) as total
-                FROM
-                  users
-              )
-            SELECT
-              total
-            FROM
-              user_count;
-        `)
-		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
-		require.Equal(t, exp, result)
-	})
-
-	t.Run("formats WITH RECURSIVE query", func(t *testing.T) {
-		query := Dedent(`
-            WITH RECURSIVE employee_tree AS (
-                SELECT id, name, manager_id, 1 as level FROM employees WHERE manager_id IS NULL
-                UNION ALL
-                SELECT e.id, e.name, e.manager_id, et.level + 1 
-                FROM employees e JOIN employee_tree et ON e.manager_id = et.id
-            ) SELECT * FROM employee_tree ORDER BY level, name;
-        `)
-		exp := Dedent(`
-            WITH
-              RECURSIVE employee_tree AS (
-                SELECT
-                  id,
-                  name,
-                  manager_id,
-                  1 as level
-                FROM
-                  employees
-                WHERE
-                  manager_id IS NULL
-                UNION ALL
-                SELECT
-                  e.id,
-                  e.name,
-                  e.manager_id,
-                  et.level + 1
-                FROM
-                  employees e
-                  JOIN employee_tree et ON e.manager_id = et.id
-              )
-            SELECT
-              *
-            FROM
-              employee_tree
-            ORDER BY
-              level,
-              name;
-        `)
-		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
-		require.Equal(t, exp, result)
-	})
-
-	t.Run("formats multiple CTEs", func(t *testing.T) {
-		query := Dedent(`
-            WITH active_users AS (SELECT * FROM users WHERE active = true),
-                 recent_orders AS (SELECT * FROM orders WHERE created_at > '2023-01-01')
-            SELECT u.name, o.total FROM active_users u JOIN recent_orders o ON u.id = o.user_id;
-        `)
-		exp := Dedent(`
-            WITH
-              active_users AS (
-                SELECT
-                  *
-                FROM
-                  users
-                WHERE
-                  active = true
-              ),
-              recent_orders AS (
-                SELECT
-                  *
-                FROM
-                  orders
-                WHERE
-                  created_at > '2023-01-01'
-              )
-            SELECT
-              u.name,
-              o.total
-            FROM
-              active_users u
-              JOIN recent_orders o ON u.id = o.user_id;
-        `)
-		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
-		require.Equal(t, exp, result)
-	})
-
-	t.Run("formats complex recursive CTE with unions", func(t *testing.T) {
-		query := Dedent(`
-            WITH RECURSIVE category_hierarchy AS (
-                SELECT id, name, parent_id, 0 as depth, ARRAY[id] as path
-                FROM categories WHERE parent_id IS NULL
-                UNION
-                SELECT c.id, c.name, c.parent_id, ch.depth + 1, ch.path || c.id
-                FROM categories c JOIN category_hierarchy ch ON c.parent_id = ch.id
-                WHERE NOT (c.id = ANY(ch.path))
-            ) SELECT id, name, depth, array_to_string(path, ' > ') as breadcrumb FROM category_hierarchy;
-        `)
-		exp := Dedent(`
-            WITH
-              RECURSIVE category_hierarchy AS (
-                SELECT
-                  id,
-                  name,
-                  parent_id,
-                  0 as depth,
-                  ARRAY [id] as path
-                FROM
-                  categories
-                WHERE
-                  parent_id IS NULL
-                UNION
-                SELECT
-                  c.id,
-                  c.name,
-                  c.parent_id,
-                  ch.depth + 1,
-                  ch.path || c.id
-                FROM
-                  categories c
-                  JOIN category_hierarchy ch ON c.parent_id = ch.id
-                WHERE
-                  NOT (c.id = ANY(ch.path))
-              )
-            SELECT
-              id,
-              name,
-              depth,
-              array_to_string(path, ' > ') as breadcrumb
-            FROM
-              category_hierarchy;
-        `)
-		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
-		require.Equal(t, exp, result)
-	})
+	TestCTEs(t, NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)), PostgreSQL)
 }
 
 func TestPostgreSQLFormatter_RETURNING(t *testing.T) {
@@ -1181,7 +1033,8 @@ func TestPostgreSQLFormatter_UPSERT(t *testing.T) {
             INSERT INTO
               users (id, name, email)
             VALUES
-              (1, 'John', 'john@example.com') ON CONFLICT (id) DO NOTHING;
+              (1, 'John', 'john@example.com')
+              ON CONFLICT (id) DO NOTHING;
         `)
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
 		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
@@ -1196,8 +1049,8 @@ func TestPostgreSQLFormatter_UPSERT(t *testing.T) {
             INSERT INTO
               users (id, name, email, login_count)
             VALUES
-              (1, 'John', 'john@example.com', 1) ON CONFLICT (id) DO
-            UPDATE
+              (1, 'John', 'john@example.com', 1)
+              ON CONFLICT (id) DO UPDATE
             SET
               login_count = users.login_count + 1,
               last_login = NOW();
@@ -1215,8 +1068,8 @@ func TestPostgreSQLFormatter_UPSERT(t *testing.T) {
             INSERT INTO
               products (sku, name, price)
             VALUES
-              ('ABC123', 'Product A', 29.99) ON CONFLICT (sku) DO
-            UPDATE
+              ('ABC123', 'Product A', 29.99)
+              ON CONFLICT (sku) DO UPDATE
             SET
               price = EXCLUDED.price,
               updated_at = NOW()
@@ -1239,10 +1092,10 @@ func TestPostgreSQLFormatter_UPSERT(t *testing.T) {
             INSERT INTO
               stats (date, user_id, views)
             VALUES
-              ('2023-01-01', 1, 5) ON CONFLICT (date, user_id)
+              ('2023-01-01', 1, 5)
+              ON CONFLICT (date, user_id)
             WHERE
-              active = true DO
-            UPDATE
+              active = true DO UPDATE
             SET
               views = stats.views + EXCLUDED.views;
         `)
@@ -1266,8 +1119,8 @@ func TestPostgreSQLFormatter_UPSERT(t *testing.T) {
             INSERT INTO
               inventory (product_id, location_id, quantity, last_updated)
             VALUES
-              (100, 1, 50, NOW()) ON CONFLICT (product_id, location_id) DO
-            UPDATE
+              (100, 1, 50, NOW())
+              ON CONFLICT (product_id, location_id) DO UPDATE
             SET
               quantity = inventory.quantity + EXCLUDED.quantity,
               last_updated = GREATEST(inventory.last_updated, EXCLUDED.last_updated),

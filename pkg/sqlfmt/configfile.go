@@ -93,24 +93,8 @@ func isGitRoot(dir string) bool {
 // ApplyToConfig applies the configuration file settings to a Config struct.
 func (cf *ConfigFile) ApplyToConfig(config *Config) error {
 	if cf.Language != "" {
-		langStr := strings.ToLower(cf.Language)
-		switch langStr {
-		case "sql", "standard":
-			config.Language = StandardSQL
-		case "postgresql", "postgres":
-			config.Language = PostgreSQL
-		case "mysql", "mariadb":
-			config.Language = MySQL
-		case "pl/sql", "plsql", "oracle":
-			config.Language = PLSQL
-		case "db2":
-			config.Language = DB2
-		case "n1ql":
-			config.Language = N1QL
-		case "sqlite":
-			config.Language = SQLite
-		default:
-			return fmt.Errorf("unknown language in config: %s", cf.Language)
+		if err := applyConfigLanguage(cf.Language, config); err != nil {
+			return err
 		}
 	}
 
@@ -119,18 +103,8 @@ func (cf *ConfigFile) ApplyToConfig(config *Config) error {
 	}
 
 	if cf.KeywordCase != "" {
-		kcStr := strings.ToLower(cf.KeywordCase)
-		switch kcStr {
-		case "preserve":
-			config.KeywordCase = KeywordCasePreserve
-		case "uppercase":
-			config.KeywordCase = KeywordCaseUppercase
-		case "lowercase":
-			config.KeywordCase = KeywordCaseLowercase
-		case "dialect":
-			config.KeywordCase = KeywordCaseDialect
-		default:
-			return fmt.Errorf("unknown keyword_case in config: %s", cf.KeywordCase)
+		if err := applyConfigKeywordCase(cf.KeywordCase, config); err != nil {
+			return err
 		}
 	}
 
@@ -138,5 +112,43 @@ func (cf *ConfigFile) ApplyToConfig(config *Config) error {
 		config.LinesBetweenQueries = cf.LinesBetweenQueries
 	}
 
+	return nil
+}
+
+func applyConfigLanguage(langStr string, config *Config) error {
+	switch strings.ToLower(langStr) {
+	case "sql", "standard":
+		config.Language = StandardSQL
+	case "postgresql", "postgres":
+		config.Language = PostgreSQL
+	case "mysql", "mariadb":
+		config.Language = MySQL
+	case "pl/sql", "plsql", "oracle":
+		config.Language = PLSQL
+	case "db2":
+		config.Language = DB2
+	case "n1ql":
+		config.Language = N1QL
+	case "sqlite":
+		config.Language = SQLite
+	default:
+		return fmt.Errorf("unknown language in config: %s", langStr)
+	}
+	return nil
+}
+
+func applyConfigKeywordCase(kcStr string, config *Config) error {
+	switch strings.ToLower(kcStr) {
+	case "preserve":
+		config.KeywordCase = KeywordCasePreserve
+	case "uppercase":
+		config.KeywordCase = KeywordCaseUppercase
+	case "lowercase":
+		config.KeywordCase = KeywordCaseLowercase
+	case "dialect":
+		config.KeywordCase = KeywordCaseDialect
+	default:
+		return fmt.Errorf("unknown keyword_case in config: %s", kcStr)
+	}
 	return nil
 }

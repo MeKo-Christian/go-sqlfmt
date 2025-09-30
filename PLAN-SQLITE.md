@@ -13,13 +13,16 @@
 
 ## Phase 2: Tokenizer Config (baseline)
 
-- [ ] `NewSQLiteTokenizerConfig()` seeded from Standard SQL:
-  - [ ] **Comments**: `-- …` (line) and `/* … */` (block). No `#`. ([sqlite.org][2], [www2.sqlite.org][3])
-  - [ ] **Identifiers**: accept `"double-quoted"` (standard), plus **backticks** and **\[brackets]** for compatibility. Keep as identifiers, not strings. ([O'Reilly Media][4], [Stack Overflow][5])
-  - [ ] **Strings & blobs**: `'single-quoted'` strings; **blob** literals `X'ABCD'`.
-  - [ ] **Numbers**: normal decimal/float; (no native `0b`).
+- [x] `NewSQLiteTokenizerConfig()` seeded from Standard SQL:
+  - [x] **Comments**: `-- …` (line) and `/* … */` (block). No `#`. ([sqlite.org][2], [www2.sqlite.org][3])
+  - [x] **Identifiers**: accept `"double-quoted"` (standard), plus **backticks** and **\[brackets]** for compatibility. Keep as identifiers, not strings. ([O'Reilly Media][4], [Stack Overflow][5])
+  - [x] **Strings & blobs**: `'single-quoted'` strings; **blob** literals `X'ABCD'`.
+  - [x] **Numbers**: normal decimal/float; (no native `0b`).
 
-- [ ] Tests: simple `SELECT` with `"double"`, `` `backtick` ``, `[bracket]`, comments.
+- [x] Tests: simple `SELECT` with `"double"`, `` `backtick` ``, `[bracket]`, comments.
+
+**Verification Date**: 2025-09-30
+**Status**: ✅ Complete - All Phase 2 tests passing. Implementation verified in `pkg/sqlfmt/dialects/sqlite.go` with comprehensive test coverage in `pkg/sqlfmt/sqlite_formatter_test.go`.
 
 ## Phase 3: Placeholders (rich)
 

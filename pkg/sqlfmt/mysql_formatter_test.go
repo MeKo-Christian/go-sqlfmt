@@ -594,7 +594,8 @@ func TestMySQLFormatter_Format(t *testing.T) {
 	// Phase 6: ON DUPLICATE KEY UPDATE Tests
 
 	t.Run("formats basic INSERT with ON DUPLICATE KEY UPDATE", func(t *testing.T) {
-		query := "INSERT INTO users (id, name, email) VALUES (1, 'John', 'john@example.com') ON DUPLICATE KEY UPDATE name = VALUES(name);"
+		query := "INSERT INTO users (id, name, email) VALUES (1, 'John', 'john@example.com') " +
+			"ON DUPLICATE KEY UPDATE name = VALUES(name);"
 		exp := Dedent(`
             INSERT INTO
               users (id, name, email)
@@ -609,7 +610,9 @@ func TestMySQLFormatter_Format(t *testing.T) {
 	})
 
 	t.Run("formats ON DUPLICATE KEY UPDATE with multiple assignments", func(t *testing.T) {
-		query := "INSERT INTO products (id, name, price, stock) VALUES (1, 'Product A', 19.99, 100) ON DUPLICATE KEY UPDATE name = VALUES(name), price = VALUES(price), stock = stock + VALUES(stock), updated_at = NOW();"
+		query := "INSERT INTO products (id, name, price, stock) VALUES (1, 'Product A', 19.99, 100) " +
+			"ON DUPLICATE KEY UPDATE name = VALUES(name), price = VALUES(price), stock = stock + VALUES(stock), " +
+			"updated_at = NOW();"
 		exp := Dedent(`
             INSERT INTO
               products (id, name, price, stock)
@@ -627,7 +630,8 @@ func TestMySQLFormatter_Format(t *testing.T) {
 	})
 
 	t.Run("formats INSERT IGNORE with ON DUPLICATE KEY UPDATE", func(t *testing.T) {
-		query := "INSERT IGNORE INTO users (username, email, status) VALUES ('john123', 'john@example.com', 'active') ON DUPLICATE KEY UPDATE email = VALUES(email), last_login = NOW();"
+		query := "INSERT IGNORE INTO users (username, email, status) VALUES ('john123', 'john@example.com', 'active') " +
+			"ON DUPLICATE KEY UPDATE email = VALUES(email), last_login = NOW();"
 		exp := Dedent(`
             INSERT IGNORE
               INTO users (username, email, status)
@@ -643,7 +647,9 @@ func TestMySQLFormatter_Format(t *testing.T) {
 	})
 
 	t.Run("formats complex ON DUPLICATE KEY UPDATE with expressions", func(t *testing.T) {
-		query := "INSERT INTO inventory (product_id, location_id, quantity) VALUES (100, 1, 50) ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity), last_updated = GREATEST(last_updated, NOW()), modifier = CONCAT('system_', UNIX_TIMESTAMP());"
+		query := "INSERT INTO inventory (product_id, location_id, quantity) VALUES (100, 1, 50) " +
+			"ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity), last_updated = GREATEST(last_updated, NOW()), " +
+			"modifier = CONCAT('system_', UNIX_TIMESTAMP());"
 		exp := Dedent(`
             INSERT INTO
               inventory (product_id, location_id, quantity)
@@ -660,7 +666,9 @@ func TestMySQLFormatter_Format(t *testing.T) {
 	})
 
 	t.Run("formats multiple VALUES with ON DUPLICATE KEY UPDATE", func(t *testing.T) {
-		query := "INSERT INTO user_prefs (user_id, pref_key, pref_value) VALUES (1, 'theme', 'dark'), (2, 'lang', 'en'), (3, 'notify', 'true') ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value), updated_at = NOW();"
+		query := "INSERT INTO user_prefs (user_id, pref_key, pref_value) VALUES (1, 'theme', 'dark'), (2, 'lang', 'en'), (3, 'notify', 'true') " +
+			"ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value), " +
+			"updated_at = NOW();"
 		exp := Dedent(`
             INSERT INTO
               user_prefs (user_id, pref_key, pref_value)
@@ -714,155 +722,7 @@ func TestMySQLFormatter_Format(t *testing.T) {
 
 // Phase 7: CTEs & Window Functions Tests.
 func TestMySQLFormatter_CTEs(t *testing.T) {
-	t.Run("formats simple WITH query", func(t *testing.T) {
-		query := "WITH user_count AS (SELECT COUNT(*) as total FROM users) SELECT total FROM user_count;"
-		exp := Dedent(`
-            WITH
-              user_count AS (
-                SELECT
-                  COUNT(*) as total
-                FROM
-                  users
-              )
-            SELECT
-              total
-            FROM
-              user_count;
-        `)
-		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
-		require.Equal(t, exp, result)
-	})
-
-	t.Run("formats WITH RECURSIVE query", func(t *testing.T) {
-		query := Dedent(`
-            WITH RECURSIVE employee_tree AS (
-                SELECT id, name, manager_id, 1 as level FROM employees WHERE manager_id IS NULL
-                UNION ALL
-                SELECT e.id, e.name, e.manager_id, et.level + 1 
-                FROM employees e JOIN employee_tree et ON e.manager_id = et.id
-            ) SELECT * FROM employee_tree ORDER BY level, name;
-        `)
-		exp := Dedent(`
-            WITH RECURSIVE
-              employee_tree AS (
-                SELECT
-                  id,
-                  name,
-                  manager_id,
-                  1 as level
-                FROM
-                  employees
-                WHERE
-                  manager_id IS NULL
-                UNION ALL
-                SELECT
-                  e.id,
-                  e.name,
-                  e.manager_id,
-                  et.level + 1
-                FROM
-                  employees e
-                  JOIN employee_tree et ON e.manager_id = et.id
-              )
-            SELECT
-              *
-            FROM
-              employee_tree
-            ORDER BY
-              level,
-              name;
-        `)
-		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
-		require.Equal(t, exp, result)
-	})
-
-	t.Run("formats multiple CTEs", func(t *testing.T) {
-		query := Dedent(`
-            WITH active_users AS (SELECT * FROM users WHERE active = true),
-                 recent_orders AS (SELECT * FROM orders WHERE created_at > '2023-01-01')
-            SELECT u.name, o.total FROM active_users u JOIN recent_orders o ON u.id = o.user_id;
-        `)
-		exp := Dedent(`
-            WITH
-              active_users AS (
-                SELECT
-                  *
-                FROM
-                  users
-                WHERE
-                  active = true
-              ),
-              recent_orders AS (
-                SELECT
-                  *
-                FROM
-                  orders
-                WHERE
-                  created_at > '2023-01-01'
-              )
-            SELECT
-              u.name,
-              o.total
-            FROM
-              active_users u
-              JOIN recent_orders o ON u.id = o.user_id;
-        `)
-		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
-		require.Equal(t, exp, result)
-	})
-
-	t.Run("formats complex recursive CTE with unions", func(t *testing.T) {
-		query := Dedent(`
-            WITH RECURSIVE category_hierarchy AS (
-                SELECT id, name, parent_id, 0 as depth, JSON_ARRAY(id) as path
-                FROM categories WHERE parent_id IS NULL
-                UNION
-                SELECT c.id, c.name, c.parent_id, ch.depth + 1, JSON_ARRAY_APPEND(ch.path, '$', c.id)
-                FROM categories c JOIN category_hierarchy ch ON c.parent_id = ch.id
-                WHERE NOT JSON_CONTAINS(ch.path, CAST(c.id AS JSON))
-            ) SELECT id, name, depth, path FROM category_hierarchy;
-        `)
-		exp := Dedent(`
-            WITH RECURSIVE
-              category_hierarchy AS (
-                SELECT
-                  id,
-                  name,
-                  parent_id,
-                  0 as depth,
-                  JSON_ARRAY(id) as path
-                FROM
-                  categories
-                WHERE
-                  parent_id IS NULL
-                UNION
-                SELECT
-                  c.id,
-                  c.name,
-                  c.parent_id,
-                  ch.depth + 1,
-                  JSON_ARRAY_APPEND(ch.path, '$', c.id)
-                FROM
-                  categories c
-                  JOIN category_hierarchy ch ON c.parent_id = ch.id
-                WHERE
-                  NOT JSON_CONTAINS(ch.path, CAST(c.id AS JSON))
-              )
-            SELECT
-              id,
-              name,
-              depth,
-              path
-            FROM
-              category_hierarchy;
-        `)
-		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
-		require.Equal(t, exp, result)
-	})
+	TestCTEs(t, NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)), MySQL)
 }
 
 func TestMySQLFormatter_WindowFunctions(t *testing.T) {
@@ -1190,7 +1050,8 @@ func TestMySQLFormatter_WindowFunctions(t *testing.T) {
 		})
 
 		t.Run("formats complex ALTER TABLE with multiple options", func(t *testing.T) {
-			query := "ALTER TABLE products MODIFY COLUMN price DECIMAL(10,2) NOT NULL, ADD CONSTRAINT chk_price CHECK (price > 0), ALGORITHM=INPLACE, LOCK=SHARED;"
+			query := "ALTER TABLE products MODIFY COLUMN price DECIMAL(10,2) NOT NULL, ADD CONSTRAINT chk_price CHECK (price > 0), " +
+				"ALGORITHM=INPLACE, LOCK=SHARED;"
 			exp := Dedent(`
 				ALTER TABLE
 				  products
@@ -1207,7 +1068,8 @@ func TestMySQLFormatter_WindowFunctions(t *testing.T) {
 		})
 
 		t.Run("formats GENERATED ALWAYS AS VIRTUAL", func(t *testing.T) {
-			query := "CREATE TABLE orders (id INT PRIMARY KEY, subtotal DECIMAL(10,2), tax_rate DECIMAL(3,4), tax_amount DECIMAL(10,2) GENERATED ALWAYS AS (subtotal * tax_rate) VIRTUAL);"
+			query := "CREATE TABLE orders (id INT PRIMARY KEY, subtotal DECIMAL(10,2), tax_rate DECIMAL(3,4), " +
+				"tax_amount DECIMAL(10,2) GENERATED ALWAYS AS (subtotal * tax_rate) VIRTUAL);"
 			exp := Dedent(`
 				CREATE TABLE orders (
 				  id INT PRIMARY KEY,
@@ -1222,7 +1084,8 @@ func TestMySQLFormatter_WindowFunctions(t *testing.T) {
 		})
 
 		t.Run("formats GENERATED ALWAYS AS STORED", func(t *testing.T) {
-			query := "CREATE TABLE orders (id INT PRIMARY KEY, subtotal DECIMAL(10,2), tax_rate DECIMAL(3,4), total_amount DECIMAL(10,2) GENERATED ALWAYS AS (subtotal + (subtotal * tax_rate)) STORED);"
+			query := "CREATE TABLE orders (id INT PRIMARY KEY, subtotal DECIMAL(10,2), tax_rate DECIMAL(3,4), " +
+				"total_amount DECIMAL(10,2) GENERATED ALWAYS AS (subtotal + (subtotal * tax_rate)) STORED);"
 			exp := Dedent(`
 				CREATE TABLE orders (
 				  id INT PRIMARY KEY,
@@ -1237,7 +1100,8 @@ func TestMySQLFormatter_WindowFunctions(t *testing.T) {
 		})
 
 		t.Run("formats complex generated column expressions", func(t *testing.T) {
-			query := "CREATE TABLE products (id INT, name VARCHAR(100), price DECIMAL(10,2), discount DECIMAL(5,2), final_price DECIMAL(10,2) GENERATED ALWAYS AS (CASE WHEN discount > 0 THEN price - (price * discount / 100) ELSE price END) STORED);"
+			query := "CREATE TABLE products (id INT, name VARCHAR(100), price DECIMAL(10,2), discount DECIMAL(5,2), " +
+				"final_price DECIMAL(10,2) GENERATED ALWAYS AS (CASE WHEN discount > 0 THEN price - (price * discount / 100) ELSE price END) STORED);"
 			exp := Dedent(`
 				CREATE TABLE products (
 				  id INT,

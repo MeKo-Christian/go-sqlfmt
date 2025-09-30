@@ -26,7 +26,18 @@ func runDialects(cmd *cobra.Command, args []string) {
 	fmt.Println("Supported SQL dialects:")
 	fmt.Println()
 
-	dialects := []struct {
+	dialects := getSupportedDialects()
+	printDialects(dialects)
+	printUsage()
+}
+
+func getSupportedDialects() []struct {
+	lang        sqlfmt.Language
+	name        string
+	description string
+	aliases     []string
+} {
+	return []struct {
 		lang        sqlfmt.Language
 		name        string
 		description string
@@ -75,7 +86,15 @@ func runDialects(cmd *cobra.Command, args []string) {
 			aliases:     []string{},
 		},
 	}
+}
 
+func printDialects(dialects []struct {
+	lang        sqlfmt.Language
+	name        string
+	description string
+	aliases     []string
+},
+) {
 	for _, dialect := range dialects {
 		fmt.Printf("  %s\n", dialect.name)
 		fmt.Printf("    %s\n", dialect.description)
@@ -84,7 +103,9 @@ func runDialects(cmd *cobra.Command, args []string) {
 		}
 		fmt.Println()
 	}
+}
 
+func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  sqlfmt format --lang=postgresql file.sql")
 	fmt.Println("  sqlfmt format --lang=pl/sql file.sql")

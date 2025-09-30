@@ -310,39 +310,47 @@ WHERE ` + "`status`" + ` = 'active'
 func TestSQLite_Phase3_AllPlaceholderForms(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Test basic ? placeholder
-	query1 := "SELECT * FROM users WHERE id = ?;"
-	result1 := Format(query1, cfg)
-	if !containsString(result1, "= ?") {
-		t.Error("SQLite should preserve ? placeholder")
+	testCases := []struct {
+		name     string
+		query    string
+		expected []string
+	}{
+		{
+			name:     "basic ? placeholder",
+			query:    "SELECT * FROM users WHERE id = ?;",
+			expected: []string{"= ?"},
+		},
+		{
+			name:     "numbered ?NNN placeholders",
+			query:    "SELECT * FROM users WHERE id = ?1 AND name = ?2 AND age > ?10;",
+			expected: []string{"= ?1", "= ?2", "> ?10"},
+		},
+		{
+			name:     "named :name placeholders",
+			query:    "SELECT * FROM users WHERE id = :user_id AND name = :user_name;",
+			expected: []string{"= :user_id", "= :user_name"},
+		},
+		{
+			name:     "named @name placeholders",
+			query:    "SELECT * FROM users WHERE id = @user_id AND name = @user_name;",
+			expected: []string{"= @user_id", "= @user_name"},
+		},
+		{
+			name:     "named $name placeholders",
+			query:    "SELECT * FROM users WHERE id = $user_id AND name = $user_name;",
+			expected: []string{"= $user_id", "= $user_name"},
+		},
 	}
 
-	// Test numbered ?NNN placeholders
-	query2 := "SELECT * FROM users WHERE id = ?1 AND name = ?2 AND age > ?10;"
-	result2 := Format(query2, cfg)
-	if !containsString(result2, "= ?1") || !containsString(result2, "= ?2") || !containsString(result2, "> ?10") {
-		t.Error("SQLite should preserve ?NNN numbered placeholders")
-	}
-
-	// Test named :name placeholders
-	query3 := "SELECT * FROM users WHERE id = :user_id AND name = :user_name;"
-	result3 := Format(query3, cfg)
-	if !containsString(result3, "= :user_id") || !containsString(result3, "= :user_name") {
-		t.Error("SQLite should preserve :name placeholders")
-	}
-
-	// Test named @name placeholders
-	query4 := "SELECT * FROM users WHERE id = @user_id AND name = @user_name;"
-	result4 := Format(query4, cfg)
-	if !containsString(result4, "= @user_id") || !containsString(result4, "= @user_name") {
-		t.Error("SQLite should preserve @name placeholders")
-	}
-
-	// Test named $name placeholders
-	query5 := "SELECT * FROM users WHERE id = $user_id AND name = $user_name;"
-	result5 := Format(query5, cfg)
-	if !containsString(result5, "= $user_id") || !containsString(result5, "= $user_name") {
-		t.Error("SQLite should preserve $name placeholders")
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Format(tc.query, cfg)
+			for _, exp := range tc.expected {
+				if !containsString(result, exp) {
+					t.Errorf("Test %s should contain: %s", tc.name, exp)
+				}
+			}
+		})
 	}
 }
 
@@ -776,117 +784,152 @@ func TestSQLite_Phase4_EdgeCases(t *testing.T) {
 }
 
 // Phase 5: Core Clauses Tests.
-func TestSQLite_Phase5_LimitVariations(t *testing.T) {
+// Phase 5: Core Clauses Tests.
+func TestSQLite_Phase5_LimitStandardOffset(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Test standard LIMIT OFFSET syntax
-	query1 := "SELECT * FROM users LIMIT 10 OFFSET 5;"
-	result1 := Format(query1, cfg)
-	if !containsString(result1, "LIMIT") || !containsString(result1, "10 OFFSET 5") {
+	query := "SELECT * FROM users LIMIT 10 OFFSET 5;"
+	result := Format(query, cfg)
+	if !containsString(result, "LIMIT") || !containsString(result, "10 OFFSET 5") {
 		t.Error("SQLite should format standard LIMIT OFFSET syntax")
 	}
+}
 
-	// Test MySQL-style LIMIT with comma syntax (SQLite also supports this)
-	query2 := "SELECT * FROM users LIMIT 5, 10;"
-	result2 := Format(query2, cfg)
+func TestSQLite_Phase5_LimitCommaSyntax(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := "SELECT * FROM users LIMIT 5, 10;"
+	result := Format(query, cfg)
 	// The formatter should preserve the comma syntax as valid SQLite
-	if !containsString(result2, "LIMIT") || !containsString(result2, "5, 10") {
+	if !containsString(result, "LIMIT") || !containsString(result, "5, 10") {
 		t.Error("SQLite should preserve LIMIT with comma syntax")
 	}
+}
 
-	// Test LIMIT without OFFSET
-	query3 := "SELECT * FROM users LIMIT 20;"
-	result3 := Format(query3, cfg)
-	if !containsString(result3, "LIMIT") || !containsString(result3, "20") {
+func TestSQLite_Phase5_LimitWithoutOffset(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := "SELECT * FROM users LIMIT 20;"
+	result := Format(query, cfg)
+	if !containsString(result, "LIMIT") || !containsString(result, "20") {
 		t.Error("SQLite should format LIMIT without OFFSET")
 	}
+}
 
-	// Test LIMIT with placeholder
-	query4 := "SELECT * FROM users LIMIT ? OFFSET ?;"
-	result4 := Format(query4, cfg)
-	if !containsString(result4, "LIMIT") || !containsString(result4, "? OFFSET ?") {
+func TestSQLite_Phase5_LimitWithPlaceholders(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := "SELECT * FROM users LIMIT ? OFFSET ?;"
+	result := Format(query, cfg)
+	if !containsString(result, "LIMIT") || !containsString(result, "? OFFSET ?") {
 		t.Error("SQLite should format LIMIT with placeholders")
 	}
+}
 
-	// Test LIMIT in complex query
-	query5 := `SELECT name, COUNT(*) as cnt 
+func TestSQLite_Phase5_LimitComplexQuery(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := `SELECT name, COUNT(*) as cnt 
 		FROM users 
 		WHERE active = 1 
 		GROUP BY name 
 		ORDER BY cnt DESC 
 		LIMIT 10;`
-	result5 := Format(query5, cfg)
-	if !containsString(result5, "LIMIT") || !containsString(result5, "10") {
+	result := Format(query, cfg)
+	if !containsString(result, "LIMIT") || !containsString(result, "10") {
 		t.Error("SQLite should format LIMIT in complex queries")
 	}
 }
 
-func TestSQLite_Phase5_UpsertFeatures(t *testing.T) {
+func TestSQLite_Phase5_UpsertInsertOrReplace(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Test INSERT OR REPLACE
-	query1 := "INSERT OR REPLACE INTO users (id, name, email) VALUES (1, 'John', 'john@example.com');"
-	result1 := Format(query1, cfg)
-	if !containsString(result1, "INSERT OR REPLACE") {
+	query := "INSERT OR REPLACE INTO users (id, name, email) VALUES (1, 'John', 'john@example.com');"
+	result := Format(query, cfg)
+	if !containsString(result, "INSERT OR REPLACE") {
 		t.Error("SQLite should format INSERT OR REPLACE correctly")
 	}
+}
 
-	// Test INSERT OR IGNORE
-	query2 := "INSERT OR IGNORE INTO users (id, name, email) VALUES (2, 'Jane', 'jane@example.com');"
-	result2 := Format(query2, cfg)
-	if !containsString(result2, "INSERT OR IGNORE") {
+func TestSQLite_Phase5_UpsertInsertOrIgnore(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := "INSERT OR IGNORE INTO users (id, name, email) VALUES (2, 'Jane', 'jane@example.com');"
+	result := Format(query, cfg)
+	if !containsString(result, "INSERT OR IGNORE") {
 		t.Error("SQLite should format INSERT OR IGNORE correctly")
 	}
+}
 
-	// Test INSERT OR ABORT
-	query3 := "INSERT OR ABORT INTO users (id, name) VALUES (3, 'Bob');"
-	result3 := Format(query3, cfg)
-	if !containsString(result3, "INSERT OR ABORT") {
+func TestSQLite_Phase5_UpsertInsertOrAbort(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := "INSERT OR ABORT INTO users (id, name) VALUES (3, 'Bob');"
+	result := Format(query, cfg)
+	if !containsString(result, "INSERT OR ABORT") {
 		t.Error("SQLite should format INSERT OR ABORT correctly")
 	}
+}
 
-	// Test INSERT OR FAIL
-	query4 := "INSERT OR FAIL INTO users (id, name) VALUES (4, 'Alice');"
-	result4 := Format(query4, cfg)
-	if !containsString(result4, "INSERT OR FAIL") {
+func TestSQLite_Phase5_UpsertInsertOrFail(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := "INSERT OR FAIL INTO users (id, name) VALUES (4, 'Alice');"
+	result := Format(query, cfg)
+	if !containsString(result, "INSERT OR FAIL") {
 		t.Error("SQLite should format INSERT OR FAIL correctly")
 	}
+}
 
-	// Test INSERT OR ROLLBACK
-	query5 := "INSERT OR ROLLBACK INTO users (id, name) VALUES (5, 'Charlie');"
-	result5 := Format(query5, cfg)
-	if !containsString(result5, "INSERT OR ROLLBACK") {
+func TestSQLite_Phase5_UpsertInsertOrRollback(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := "INSERT OR ROLLBACK INTO users (id, name) VALUES (5, 'Charlie');"
+	result := Format(query, cfg)
+	if !containsString(result, "INSERT OR ROLLBACK") {
 		t.Error("SQLite should format INSERT OR ROLLBACK correctly")
 	}
+}
 
-	// Test ON CONFLICT DO NOTHING
-	query6 := "INSERT INTO users (id, name, email) VALUES (1, 'John', 'john@example.com') ON CONFLICT (id) DO NOTHING;"
-	result6 := Format(query6, cfg)
-	if !containsString(result6, "ON CONFLICT") || !containsString(result6, "DO NOTHING") {
+func TestSQLite_Phase5_UpsertOnConflictDoNothing(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := "INSERT INTO users (id, name, email) VALUES (1, 'John', 'john@example.com') ON CONFLICT (id) DO NOTHING;"
+	result := Format(query, cfg)
+	if !containsString(result, "ON CONFLICT") || !containsString(result, "DO NOTHING") {
 		t.Error("SQLite should format ON CONFLICT DO NOTHING correctly")
 	}
+}
 
-	// Test ON CONFLICT DO UPDATE
-	query7 := `INSERT INTO users (id, name, email) VALUES (1, 'John', 'john@example.com') 
+func TestSQLite_Phase5_UpsertOnConflictDoUpdate(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := `INSERT INTO users (id, name, email) VALUES (1, 'John', 'john@example.com') 
 		ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email;`
-	result7 := Format(query7, cfg)
-	if !containsString(result7, "ON CONFLICT") || !containsString(result7, "DO UPDATE") {
+	result := Format(query, cfg)
+	if !containsString(result, "ON CONFLICT") || !containsString(result, "DO UPDATE") {
 		t.Error("SQLite should format ON CONFLICT DO UPDATE correctly")
 	}
+}
 
-	// Test ON CONFLICT with multiple columns
-	query8 := `INSERT INTO user_scores (user_id, game_id, score) VALUES (1, 100, 50) 
+func TestSQLite_Phase5_UpsertOnConflictMultipleColumns(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := `INSERT INTO user_scores (user_id, game_id, score) VALUES (1, 100, 50) 
 		ON CONFLICT (user_id, game_id) DO UPDATE SET score = MAX(score, EXCLUDED.score);`
-	result8 := Format(query8, cfg)
-	if !containsString(result8, "ON CONFLICT") || !containsString(result8, "(user_id, game_id)") {
+	result := Format(query, cfg)
+	if !containsString(result, "ON CONFLICT") || !containsString(result, "(user_id, game_id)") {
 		t.Error("SQLite should format ON CONFLICT with multiple columns")
 	}
+}
 
-	// Test ON CONFLICT with WHERE clause
-	query9 := `INSERT INTO products (sku, name, price) VALUES ('ABC123', 'Product A', 29.99)
+func TestSQLite_Phase5_UpsertOnConflictWithWhere(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	query := `INSERT INTO products (sku, name, price) VALUES ('ABC123', 'Product A', 29.99)
 		ON CONFLICT (sku) DO UPDATE SET price = EXCLUDED.price WHERE EXCLUDED.price < price;`
-	result9 := Format(query9, cfg)
-	if !containsString(result9, "ON CONFLICT") || !containsString(result9, "(sku)") || !containsString(result9, "DO UPDATE") {
+	result := Format(query, cfg)
+	if !containsString(result, "ON CONFLICT") || !containsString(result, "(sku)") || !containsString(result, "DO UPDATE") {
 		t.Error("SQLite should format ON CONFLICT with WHERE clause")
 	}
 }
@@ -993,54 +1036,70 @@ ON CONFLICT (user_id, action, created_at) DO NOTHING;`
 	}
 }
 
-func TestSQLite_Phase5_EdgeCases(t *testing.T) {
+func TestSQLite_Phase5_EdgeCases_NestedUpsert(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test nested UPSERT with complex expressions
-	query1 := `INSERT INTO stats (user_id, metric, value) 
-		VALUES (?, 'login_count', 1) 
-		ON CONFLICT (user_id, metric) 
+	query := `INSERT INTO stats (user_id, metric, value)
+		VALUES (?, 'login_count', 1)
+		ON CONFLICT (user_id, metric)
 		DO UPDATE SET value = value + EXCLUDED.value, updated_at = datetime('now');`
-	result1 := Format(query1, cfg)
-	if !containsString(result1, "ON CONFLICT") || !containsString(result1, "(user_id, metric)") || !containsString(result1, "DO UPDATE") {
+	result := Format(query, cfg)
+	if !containsString(result, "ON CONFLICT") || !containsString(result, "(user_id, metric)") || !containsString(result, "DO UPDATE") {
 		t.Error("SQLite should handle complex UPSERT expressions")
 	}
+}
+
+func TestSQLite_Phase5_EdgeCases_LimitExpressions(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test LIMIT with expressions
-	query2 := "SELECT * FROM users LIMIT (SELECT COUNT(*) FROM users) / 2 OFFSET 10;"
-	result2 := Format(query2, cfg)
-	if !containsString(result2, "LIMIT") || !containsString(result2, "OFFSET 10") {
+	query := "SELECT * FROM users LIMIT (SELECT COUNT(*) FROM users) / 2 OFFSET 10;"
+	result := Format(query, cfg)
+	if !containsString(result, "LIMIT") || !containsString(result, "OFFSET 10") {
 		t.Error("SQLite should handle LIMIT with complex expressions")
 	}
+}
+
+func TestSQLite_Phase5_EdgeCases_InsertOrSubquery(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test INSERT OR with subquery
-	query3 := `INSERT OR IGNORE INTO user_backup 
+	query := `INSERT OR IGNORE INTO user_backup
 		SELECT * FROM users WHERE created_at > datetime('now', '-1 day');`
-	result3 := Format(query3, cfg)
-	if !containsString(result3, "INSERT OR IGNORE") {
+	result := Format(query, cfg)
+	if !containsString(result, "INSERT OR IGNORE") {
 		t.Error("SQLite should handle INSERT OR with subqueries")
 	}
+}
+
+func TestSQLite_Phase5_EdgeCases_OnConflictWhere(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test multiple ON CONFLICT clauses (shouldn't exist but should handle gracefully)
-	query4 := `INSERT INTO complex_table (a, b, c) VALUES (1, 2, 3) 
-		ON CONFLICT (a) DO UPDATE SET b = EXCLUDED.b 
+	query := `INSERT INTO complex_table (a, b, c) VALUES (1, 2, 3)
+		ON CONFLICT (a) DO UPDATE SET b = EXCLUDED.b
 		WHERE EXCLUDED.c > c;`
-	result4 := Format(query4, cfg)
-	if !containsString(result4, "ON CONFLICT") || !containsString(result4, "(a)") {
+	result := Format(query, cfg)
+	if !containsString(result, "ON CONFLICT") || !containsString(result, "(a)") {
 		t.Error("SQLite should handle ON CONFLICT with WHERE conditions")
 	}
+}
+
+func TestSQLite_Phase5_EdgeCases_UpsertPlaceholders(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test UPSERT with placeholders and complex WHERE
-	query5 := `INSERT INTO user_settings (user_id, key, value) 
+	query := `INSERT INTO user_settings (user_id, key, value)
 		VALUES (:user_id, :key, :value)
-		ON CONFLICT (user_id, key) DO UPDATE SET 
-		value = CASE 
-			WHEN :force_update = 1 THEN EXCLUDED.value 
-			WHEN json_valid(EXCLUDED.value) THEN EXCLUDED.value 
-			ELSE value 
+		ON CONFLICT (user_id, key) DO UPDATE SET
+		value = CASE
+			WHEN :force_update = 1 THEN EXCLUDED.value
+			WHEN json_valid(EXCLUDED.value) THEN EXCLUDED.value
+			ELSE value
 		END;`
-	result5 := Format(query5, cfg)
-	if !containsString(result5, "ON CONFLICT") || !containsString(result5, "(user_id, key)") || !containsString(result5, ":force_update") {
+	result := Format(query, cfg)
+	if !containsString(result, "ON CONFLICT") || !containsString(result, "(user_id, key)") || !containsString(result, ":force_update") {
 		t.Error("SQLite should handle complex UPSERT with placeholders and CASE expressions")
 	}
 }
@@ -1594,36 +1653,52 @@ func TestSQLite_Phase7_CreateIndexWithIfNotExists(t *testing.T) {
 	}
 }
 
-func TestSQLite_Phase7_PragmaStatements(t *testing.T) {
+func TestSQLite_Phase7_PragmaStatements_Basic(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test basic PRAGMA statements
-	query1 := "PRAGMA foreign_keys = ON;"
-	result1 := Format(query1, cfg)
-	if !containsString(result1, "PRAGMA") || !containsString(result1, "foreign_keys = ON") {
+	query := "PRAGMA foreign_keys = ON;"
+	result := Format(query, cfg)
+	if !containsString(result, "PRAGMA") || !containsString(result, "foreign_keys = ON") {
 		t.Error("SQLite should format basic PRAGMA statements")
 	}
+}
+
+func TestSQLite_Phase7_PragmaStatements_StringValues(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test PRAGMA with string values
-	query2 := "PRAGMA journal_mode = WAL;"
-	result2 := Format(query2, cfg)
-	if !containsString(result2, "PRAGMA") || !containsString(result2, "journal_mode = WAL") {
+	query := "PRAGMA journal_mode = WAL;"
+	result := Format(query, cfg)
+	if !containsString(result, "PRAGMA") || !containsString(result, "journal_mode = WAL") {
 		t.Error("SQLite should format PRAGMA with string values")
 	}
+}
+
+func TestSQLite_Phase7_PragmaStatements_FunctionCall(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test PRAGMA with function call
-	query3 := "PRAGMA table_info(users);"
-	result3 := Format(query3, cfg)
-	if !containsString(result3, "PRAGMA") || !containsString(result3, "table_info(users)") {
+	query := "PRAGMA table_info(users);"
+	result := Format(query, cfg)
+	if !containsString(result, "PRAGMA") || !containsString(result, "table_info(users)") {
 		t.Error("SQLite should format PRAGMA with function call")
 	}
+}
+
+func TestSQLite_Phase7_PragmaStatements_QuotedTableName(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test PRAGMA with quoted table name
-	query4 := "PRAGMA index_list('my_table');"
-	result4 := Format(query4, cfg)
-	if !containsString(result4, "PRAGMA") || !containsString(result4, "index_list('my_table')") {
+	query := "PRAGMA index_list('my_table');"
+	result := Format(query, cfg)
+	if !containsString(result, "PRAGMA") || !containsString(result, "index_list('my_table')") {
 		t.Error("SQLite should format PRAGMA with quoted parameters")
 	}
+}
+
+func TestSQLite_Phase7_PragmaStatements_Multiple(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test multiple PRAGMA statements
 	queries := []string{
@@ -1840,106 +1915,124 @@ PRAGMA table_xinfo(user_data);`
 	}
 }
 
-func TestSQLite_Phase7_EdgeCases(t *testing.T) {
+func TestSQLite_Phase7_EdgeCases_ComplexGeneratedColumn(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Test edge cases and complex scenarios
-
-	// Generated column with complex expression and parentheses
-	query1 := `CREATE TABLE calculations (
+	// Test generated column with complex expression and parentheses
+	query := `CREATE TABLE calculations (
 		a REAL,
 		b REAL,
 		c REAL,
 		result GENERATED ALWAYS AS (
-			CASE 
-				WHEN b * b - 4 * a * c >= 0 
+			CASE
+				WHEN b * b - 4 * a * c >= 0
 				THEN (-b + sqrt(b * b - 4 * a * c)) / (2 * a)
-				ELSE NULL 
+				ELSE NULL
 			END
 		) STORED
 	);`
-	result1 := Format(query1, cfg)
-	if !containsString(result1, "GENERATED ALWAYS AS") || !containsString(result1, "sqrt(b * b - 4 * a * c)") {
+	result := Format(query, cfg)
+	if !containsString(result, "GENERATED ALWAYS AS") || !containsString(result, "sqrt(b * b - 4 * a * c)") {
 		t.Error("SQLite should handle complex mathematical expressions in generated columns")
 	}
+}
 
-	// Generated column referencing other generated columns (should be formatted but may have runtime limitations)
-	query2 := `CREATE TABLE derived (
+func TestSQLite_Phase7_EdgeCases_GeneratedColumnReferences(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test generated column referencing other generated columns (should be formatted but may have runtime limitations)
+	query := `CREATE TABLE derived (
 		base_value INTEGER,
 		doubled GENERATED ALWAYS AS (base_value * 2) STORED,
 		quadrupled GENERATED ALWAYS AS (doubled * 2) VIRTUAL
 	);`
-	result2 := Format(query2, cfg)
-	if !containsString(result2, "doubled GENERATED ALWAYS AS") || !containsString(result2, "quadrupled GENERATED ALWAYS AS") {
+	result := Format(query, cfg)
+	if !containsString(result, "doubled GENERATED ALWAYS AS") || !containsString(result, "quadrupled GENERATED ALWAYS AS") {
 		t.Error("SQLite should format generated columns that reference other columns")
 	}
+}
 
-	// Multiple CREATE INDEX statements with various options
-	query3 := `CREATE INDEX IF NOT EXISTS idx_complex 
-		ON my_table(col1 COLLATE NOCASE, col2 DESC, col3 ASC) 
+func TestSQLite_Phase7_EdgeCases_ComplexIndex(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test multiple CREATE INDEX statements with various options
+	query := `CREATE INDEX IF NOT EXISTS idx_complex
+		ON my_table(col1 COLLATE NOCASE, col2 DESC, col3 ASC)
 		WHERE col1 IS NOT NULL AND col2 > 0;`
-	result3 := Format(query3, cfg)
-	if !containsString(result3, "COLLATE NOCASE") || !containsString(result3, "col2 DESC") || !containsString(result3, "col1 IS NOT NULL") {
+	result := Format(query, cfg)
+	if !containsString(result, "COLLATE NOCASE") || !containsString(result, "col2 DESC") || !containsString(result, "col1 IS NOT NULL") {
 		t.Error("SQLite should handle complex CREATE INDEX with collation, ordering, and WHERE clause")
 	}
+}
 
-	// PRAGMA statements with complex values
-	query4 := `PRAGMA secure_delete = FAST;
+func TestSQLite_Phase7_EdgeCases_PragmaComplexValues(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test PRAGMA statements with complex values
+	query := `PRAGMA secure_delete = FAST;
 		PRAGMA journal_size_limit = 67108864;
 		PRAGMA compile_options;`
-	result4 := Format(query4, cfg)
-	if !containsString(result4, "secure_delete = FAST") || !containsString(result4, "journal_size_limit = 67108864") || !containsString(result4, "compile_options") {
+	result := Format(query, cfg)
+	if !containsString(result, "secure_delete = FAST") || !containsString(result, "journal_size_limit = 67108864") || !containsString(result, "compile_options") {
 		t.Error("SQLite should handle various PRAGMA statement formats")
 	}
 }
 
 // Phase 8: Triggers & Views Tests.
-func TestSQLite_Phase8_CreateTriggerBasic(t *testing.T) {
+func TestSQLite_Phase8_CreateTriggerBeforeInsert(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test basic BEFORE INSERT trigger
-	query1 := `CREATE TRIGGER before_user_insert 
-		BEFORE INSERT ON users 
-		BEGIN 
+	query := `CREATE TRIGGER before_user_insert
+		BEFORE INSERT ON users
+		BEGIN
 			UPDATE stats SET insert_count = insert_count + 1;
 		END;`
-	result1 := Format(query1, cfg)
-	if !containsString(result1, "CREATE TRIGGER") {
+	result := Format(query, cfg)
+	if !containsString(result, "CREATE TRIGGER") {
 		t.Error("SQLite should format CREATE TRIGGER statement")
 	}
-	if !containsString(result1, "BEFORE") || !containsString(result1, "INSERT") {
+	if !containsString(result, "BEFORE") || !containsString(result, "INSERT") {
 		t.Error("SQLite should format BEFORE INSERT trigger type")
 	}
-	if !containsString(result1, "BEGIN") || !containsString(result1, "END") {
+	if !containsString(result, "BEGIN") || !containsString(result, "END") {
 		t.Error("SQLite should format BEGIN/END trigger body blocks")
 	}
+}
+
+func TestSQLite_Phase8_CreateTriggerAfterUpdate(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test AFTER UPDATE trigger
-	query2 := `CREATE TRIGGER after_user_update 
+	query := `CREATE TRIGGER after_user_update
 		AFTER UPDATE ON users FOR EACH ROW
 		BEGIN
-			INSERT INTO audit_log (table_name, operation, old_id, new_id) 
+			INSERT INTO audit_log (table_name, operation, old_id, new_id)
 			VALUES ('users', 'UPDATE', OLD.id, NEW.id);
 		END;`
-	result2 := Format(query2, cfg)
-	if !containsString(result2, "AFTER") || !containsString(result2, "UPDATE") {
+	result := Format(query, cfg)
+	if !containsString(result, "AFTER") || !containsString(result, "UPDATE") {
 		t.Error("SQLite should format AFTER UPDATE trigger type")
 	}
-	if !containsString(result2, "FOR EACH ROW") {
+	if !containsString(result, "FOR EACH ROW") {
 		t.Error("SQLite should format FOR EACH ROW trigger scope")
 	}
-	if !containsString(result2, "OLD.id") || !containsString(result2, "NEW.id") {
+	if !containsString(result, "OLD.id") || !containsString(result, "NEW.id") {
 		t.Error("SQLite should preserve OLD/NEW references in trigger body")
 	}
+}
+
+func TestSQLite_Phase8_CreateTriggerBeforeDelete(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test BEFORE DELETE trigger
-	query3 := `CREATE TRIGGER before_user_delete 
+	query := `CREATE TRIGGER before_user_delete
 		BEFORE DELETE ON users FOR EACH ROW
 		BEGIN
 			INSERT INTO deleted_users SELECT * FROM users WHERE id = OLD.id;
 		END;`
-	result3 := Format(query3, cfg)
-	if !containsString(result3, "BEFORE") || !containsString(result3, "DELETE") {
+	result := Format(query, cfg)
+	if !containsString(result, "BEFORE") || !containsString(result, "DELETE") {
 		t.Error("SQLite should format BEFORE DELETE trigger type")
 	}
 }
@@ -2230,16 +2323,16 @@ func TestSQLite_Phase8_CreateViewWithWindowFunctions(t *testing.T) {
 	}
 }
 
-func TestSQLite_Phase8_IntegratedExample(t *testing.T) {
+func TestSQLite_Phase8_IntegratedExample_View(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Test comprehensive example combining triggers and views with all SQLite features
+	// Test comprehensive view creation with CTE, JSON operators, and window functions
 	query := `-- Phase 8: Triggers & Views comprehensive test
 
 -- Create a view with CTE, JSON operators, and window functions
 CREATE VIEW IF NOT EXISTS user_activity_summary AS
 	WITH recent_activities AS (
-		SELECT 
+		SELECT
 			user_id,
 			action_type,
 			json_extract(metadata, '$.source') as source,
@@ -2249,7 +2342,7 @@ CREATE VIEW IF NOT EXISTS user_activity_summary AS
 		WHERE created_at > datetime('now', '-7 days')
 	),
 	activity_stats AS (
-		SELECT 
+		SELECT
 			user_id,
 			COUNT(*) as total_actions,
 			COUNT(DISTINCT source) as unique_sources,
@@ -2258,7 +2351,7 @@ CREATE VIEW IF NOT EXISTS user_activity_summary AS
 		FROM recent_activities
 		GROUP BY user_id
 	)
-	SELECT 
+	SELECT
 		u.id,
 		u.name,
 		u.email,
@@ -2266,15 +2359,50 @@ CREATE VIEW IF NOT EXISTS user_activity_summary AS
 		as_stats.unique_sources,
 		as_stats.last_activity,
 		as_stats.activity_rank,
-		CASE 
+		CASE
 			WHEN as_stats.total_actions > 100 THEN 'Very Active'
 			WHEN as_stats.total_actions > 50 THEN 'Active'
 			ELSE 'Low Activity'
 		END as activity_level
 	FROM users u
-	LEFT JOIN activity_stats as_stats ON u.id = as_stats.user_id;
+	LEFT JOIN activity_stats as_stats ON u.id = as_stats.user_id;`
 
--- Create a trigger that logs changes with JSON metadata and uses placeholders  
+	result := Format(query, cfg)
+
+	// Test comprehensive integration of view features
+	expectedElements := []string{
+		"-- Phase 8: Triggers & Views comprehensive test",
+		"CREATE VIEW",
+		"IF NOT EXISTS",
+		"user_activity_summary",
+		"WITH",
+		"recent_activities",
+		"activity_stats",
+		"json_extract", // JSON operators
+		"'$.source'",
+		"datetime", // Date functions
+		"'-7 days'",
+		"ROW_NUMBER", // Window functions
+		"OVER",
+		"COUNT(*)", // Window ordering
+		"DESC",
+		"GROUP BY", // Aggregation
+		"user_id",
+		"LEFT JOIN", // JOINs
+	}
+
+	for _, element := range expectedElements {
+		if !containsString(result, element) {
+			t.Errorf("Phase 8 integrated view example should contain: %s\nFull result:\n%s", element, result)
+		}
+	}
+}
+
+func TestSQLite_Phase8_IntegratedExample_Trigger(t *testing.T) {
+	cfg := &Config{Language: SQLite, Indent: "  "}
+
+	// Test comprehensive trigger creation with JSON metadata and placeholders
+	query := `-- Create a trigger that logs changes with JSON metadata and uses placeholders
 CREATE TRIGGER IF NOT EXISTS user_change_logger
 	AFTER UPDATE ON users FOR EACH ROW
 	WHEN NEW.email != OLD.email OR NEW.name != OLD.name
@@ -2299,28 +2427,28 @@ CREATE TRIGGER IF NOT EXISTS user_change_logger
 			),
 			json_object(
 				'email', NEW.email,
-				'name', NEW.name,  
+				'name', NEW.name,
 				'updated_at', NEW.updated_at
 			),
 			json_object(
 				'email_changed', NEW.email != OLD.email,
 				'name_changed', NEW.name != OLD.name,
-				'change_summary', 
-				CASE 
-					WHEN NEW.email != OLD.email AND NEW.name != OLD.name 
+				'change_summary',
+				CASE
+					WHEN NEW.email != OLD.email AND NEW.name != OLD.name
 					THEN 'Both email and name changed'
-					WHEN NEW.email != OLD.email 
+					WHEN NEW.email != OLD.email
 					THEN 'Email changed from ' || OLD.email || ' to ' || NEW.email
 					ELSE 'Name changed from ' || OLD.name || ' to ' || NEW.name
 				END
 			),
 			datetime('now')
 		);
-		
+
 		-- Update activity summary
 		INSERT OR REPLACE INTO user_activity_summary_cache (
-			user_id, 
-			last_change_type, 
+			user_id,
+			last_change_type,
 			change_count
 		) VALUES (
 			NEW.id,
@@ -2331,26 +2459,8 @@ CREATE TRIGGER IF NOT EXISTS user_change_logger
 
 	result := Format(query, cfg)
 
-	// Test comprehensive integration of all features
+	// Test comprehensive integration of trigger features
 	expectedElements := []string{
-		"-- Phase 8: Triggers & Views comprehensive test",
-		"CREATE VIEW",
-		"IF NOT EXISTS",
-		"user_activity_summary",
-		"WITH",
-		"recent_activities",
-		"activity_stats",
-		"json_extract", // JSON operators
-		"'$.source'",
-		"datetime", // Date functions
-		"'-7 days'",
-		"ROW_NUMBER", // Window functions
-		"OVER",
-		"COUNT(*)", // Window ordering
-		"DESC",
-		"GROUP BY", // Aggregation
-		"user_id",
-		"LEFT JOIN", // JOINs
 		"CREATE TRIGGER",
 		"user_change_logger",
 		"AFTER",
@@ -2376,7 +2486,7 @@ CREATE TRIGGER IF NOT EXISTS user_change_logger
 
 	for _, element := range expectedElements {
 		if !containsString(result, element) {
-			t.Errorf("Phase 8 integrated example should contain: %s\nFull result:\n%s", element, result)
+			t.Errorf("Phase 8 integrated trigger example should contain: %s\nFull result:\n%s", element, result)
 		}
 	}
 }

@@ -127,39 +127,76 @@ func (msf *MySQLFormatter) tokenOverride(
 ) types.Token {
 	// Phase 9: Handle DELIMITER statements as pass-through
 	if tok.Type == types.TokenTypeReserved && tok.Value == "DELIMITER" {
-		// Treat DELIMITER as a special pass-through token that shouldn't be formatted
-		return types.Token{
-			Type:  types.TokenTypeLineComment, // Use comment type to preserve formatting
-			Value: tok.Value,
-			Key:   tok.Key,
-		}
+		return msf.handleDelimiterToken(tok)
 	}
 
 	// Phase 9: Handle stored routine specific keywords
 	if tok.Type == types.TokenTypeReserved {
-		switch tok.Value {
-		case "DETERMINISTIC", "NOT DETERMINISTIC":
-			// Keep these as reserved words in routine context
-			return tok
-		case "READS SQL DATA", "MODIFIES SQL DATA", "NO SQL", "CONTAINS SQL":
-			// Keep as reserved for routine characteristics
-			return tok
-		case "SQL SECURITY":
-			// Keep as reserved for security specification
-			return tok
-		case "DEFINER", "INVOKER":
-			// These follow SQL SECURITY
-			if previousReservedWord.Value == "SQL SECURITY" {
-				return types.Token{
-					Type:  types.TokenTypeWord,
-					Value: strings.ToLower(tok.Value),
-					Key:   tok.Key,
-				}
-			}
-			return tok
+		if result := msf.handleStoredRoutineKeywords(tok, previousReservedWord); !result.Empty() {
+			return result
 		}
 	}
 
+	// Phase 6: Handle VALUES as function in ON DUPLICATE KEY UPDATE context
+	if result := msf.handleValuesInUpsert(tok, previousReservedWord); !result.Empty() {
+		return result
+	}
+
+	// Phase 8: Handle GENERATED ALWAYS AS sequence formatting
+	if result := msf.handleGeneratedAlwaysAs(tok, previousReservedWord); !result.Empty() {
+		return result
+	}
+
+	// Phase 8: Handle table options in DDL statements
+	if tok.Type == types.TokenTypeReserved {
+		if result := msf.handleTableOptions(tok, previousReservedWord); !result.Empty() {
+			return result
+		}
+	}
+
+	// Phase 4: Handle MySQL-specific operators
+	if result := msf.handleMySQLOperators(tok); !result.Empty() {
+		return result
+	}
+
+	return tok
+}
+
+func (msf *MySQLFormatter) handleDelimiterToken(tok types.Token) types.Token {
+	// Treat DELIMITER as a special pass-through token that shouldn't be formatted
+	return types.Token{
+		Type:  types.TokenTypeLineComment, // Use comment type to preserve formatting
+		Value: tok.Value,
+		Key:   tok.Key,
+	}
+}
+
+func (msf *MySQLFormatter) handleStoredRoutineKeywords(tok types.Token, previousReservedWord types.Token) types.Token {
+	switch tok.Value {
+	case "DETERMINISTIC", "NOT DETERMINISTIC":
+		// Keep these as reserved words in routine context
+		return tok
+	case "READS SQL DATA", "MODIFIES SQL DATA", "NO SQL", "CONTAINS SQL":
+		// Keep as reserved for routine characteristics
+		return tok
+	case "SQL SECURITY":
+		// Keep as reserved for security specification
+		return tok
+	case "DEFINER", "INVOKER":
+		// These follow SQL SECURITY
+		if previousReservedWord.Value == "SQL SECURITY" {
+			return types.Token{
+				Type:  types.TokenTypeWord,
+				Value: strings.ToLower(tok.Value),
+				Key:   tok.Key,
+			}
+		}
+		return tok
+	}
+	return types.Token{}
+}
+
+func (msf *MySQLFormatter) handleValuesInUpsert(tok types.Token, previousReservedWord types.Token) types.Token {
 	// Phase 6: Handle VALUES as function in ON DUPLICATE KEY UPDATE context
 	if tok.Type == types.TokenTypeReservedTopLevel && tok.Value == "VALUES" {
 		// If the previous reserved word is "ON DUPLICATE KEY UPDATE", treat VALUES as a word/function
@@ -171,7 +208,10 @@ func (msf *MySQLFormatter) tokenOverride(
 			}
 		}
 	}
+	return types.Token{}
+}
 
+func (msf *MySQLFormatter) handleGeneratedAlwaysAs(tok types.Token, previousReservedWord types.Token) types.Token {
 	// Phase 8: Handle GENERATED ALWAYS AS sequence formatting
 	if tok.Type == types.TokenTypeReserved && tok.Value == "AS" {
 		// If previous reserved word is "GENERATED ALWAYS", keep AS as a normal reserved word
@@ -179,36 +219,39 @@ func (msf *MySQLFormatter) tokenOverride(
 			return tok
 		}
 	}
+	return types.Token{}
+}
 
-	// Phase 8: Handle table options in DDL statements
-	if tok.Type == types.TokenTypeReserved {
-		switch tok.Value {
-		case "ALGORITHM", "LOCK":
-			// These should be treated as regular reserved words in DDL context
-			return tok
-		case "INSTANT", "INPLACE", "COPY", "NONE", "SHARED", "EXCLUSIVE":
-			// These are option values that should be formatted as words when following their keywords
-			if previousReservedWord.Value == "ALGORITHM" || previousReservedWord.Value == "LOCK" {
-				return types.Token{
-					Type:  types.TokenTypeWord,
-					Value: strings.ToLower(tok.Value),
-					Key:   tok.Key,
-				}
+func (msf *MySQLFormatter) handleTableOptions(tok types.Token, previousReservedWord types.Token) types.Token {
+	switch tok.Value {
+	case "ALGORITHM", "LOCK":
+		// These should be treated as regular reserved words in DDL context
+		return tok
+	case "INSTANT", "INPLACE", "COPY", "NONE", "SHARED", "EXCLUSIVE":
+		// These are option values that should be formatted as words when following their keywords
+		if previousReservedWord.Value == "ALGORITHM" || previousReservedWord.Value == "LOCK" {
+			return types.Token{
+				Type:  types.TokenTypeWord,
+				Value: strings.ToLower(tok.Value),
+				Key:   tok.Key,
 			}
-			return tok
-		case "VIRTUAL", "STORED":
-			// These are generated column storage options
-			if previousReservedWord.Value == "GENERATED ALWAYS AS" {
-				return types.Token{
-					Type:  types.TokenTypeWord,
-					Value: strings.ToLower(tok.Value),
-					Key:   tok.Key,
-				}
-			}
-			return tok
 		}
+		return tok
+	case "VIRTUAL", "STORED":
+		// These are generated column storage options
+		if previousReservedWord.Value == "GENERATED ALWAYS AS" {
+			return types.Token{
+				Type:  types.TokenTypeWord,
+				Value: strings.ToLower(tok.Value),
+				Key:   tok.Key,
+			}
+		}
+		return tok
 	}
+	return types.Token{}
+}
 
+func (msf *MySQLFormatter) handleMySQLOperators(tok types.Token) types.Token {
 	// Phase 4: Handle MySQL-specific operators
 	if tok.Type == types.TokenTypeOperator {
 		switch tok.Value {
@@ -227,6 +270,5 @@ func (msf *MySQLFormatter) tokenOverride(
 			return tok
 		}
 	}
-
-	return tok
+	return types.Token{}
 }

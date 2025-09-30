@@ -180,3 +180,216 @@ func TestTokenizerDotPrecedence(t *testing.T) {
 	normalToken := tokenizer.getReservedWordToken("FROM", types.Token{})
 	require.False(t, normalToken.Empty(), "FROM should normally be treated as reserved")
 }
+
+func TestTokenizerCompoundKeywords(t *testing.T) {
+	// Test that compound keywords are matched before their component words
+	cfg := &TokenizerConfig{
+		ReservedWords: []string{
+			"DO UPDATE", "DO NOTHING", "ON CONFLICT",
+			"ORDER BY", "GROUP BY", "UNION ALL",
+			"DO", "ON", "ORDER", "GROUP", "UNION",
+		},
+		ReservedTopLevelWords:         []string{"SELECT", "UPDATE"},
+		ReservedNewlineWords:          []string{"AND", "OR"},
+		ReservedTopLevelWordsNoIndent: []string{},
+		StringTypes:                   []string{"''"},
+		OpenParens:                    []string{"("},
+		CloseParens:                   []string{")"},
+		LineCommentTypes:              []string{"--"},
+		SpecialWordChars:              []string{},
+	}
+
+	tokenizer := newTokenizer(cfg)
+
+	tests := []struct {
+		name          string
+		input         string
+		expectedValue string
+		expectedType  types.TokenType
+		description   string
+	}{
+		{
+			name:          "DO UPDATE compound",
+			input:         "DO UPDATE SET name = 'test'",
+			expectedValue: "DO UPDATE",
+			expectedType:  types.TokenTypeReserved,
+			description:   "Should match 'DO UPDATE' as single token, not 'DO' alone",
+		},
+		{
+			name:          "DO NOTHING compound",
+			input:         "DO NOTHING;",
+			expectedValue: "DO NOTHING",
+			expectedType:  types.TokenTypeReserved,
+			description:   "Should match 'DO NOTHING' as single token, not 'DO' alone",
+		},
+		{
+			name:          "ON CONFLICT compound",
+			input:         "ON CONFLICT (id)",
+			expectedValue: "ON CONFLICT",
+			expectedType:  types.TokenTypeReserved,
+			description:   "Should match 'ON CONFLICT' as single token, not 'ON' alone",
+		},
+		{
+			name:          "ORDER BY compound",
+			input:         "ORDER BY name",
+			expectedValue: "ORDER BY",
+			expectedType:  types.TokenTypeReserved,
+			description:   "Should match 'ORDER BY' as single token",
+		},
+		{
+			name:          "GROUP BY compound",
+			input:         "GROUP BY id",
+			expectedValue: "GROUP BY",
+			expectedType:  types.TokenTypeReserved,
+			description:   "Should match 'GROUP BY' as single token",
+		},
+		{
+			name:          "UNION ALL compound",
+			input:         "UNION ALL SELECT",
+			expectedValue: "UNION ALL",
+			expectedType:  types.TokenTypeReserved,
+			description:   "Should match 'UNION ALL' as single token",
+		},
+		{
+			name:          "DO UPDATE with extra spaces",
+			input:         "DO  UPDATE SET",
+			expectedValue: "DO  UPDATE",
+			expectedType:  types.TokenTypeReserved,
+			description:   "Should match 'DO UPDATE' even with multiple spaces",
+		},
+		{
+			name:          "DO UPDATE with tab",
+			input:         "DO\tUPDATE SET",
+			expectedValue: "DO\tUPDATE",
+			expectedType:  types.TokenTypeReserved,
+			description:   "Should match 'DO UPDATE' even with tab character",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			token := tokenizer.getReservedWordToken(tt.input, types.Token{})
+			require.False(t, token.Empty(), "Token should not be empty for: %s", tt.description)
+			require.Equal(t, tt.expectedType, token.Type, "Token type mismatch for: %s", tt.description)
+			require.Equal(t, tt.expectedValue, token.Value, "Token value mismatch for: %s\nExpected: %q\nGot: %q",
+				tt.description, tt.expectedValue, token.Value)
+		})
+	}
+}
+
+func TestTokenizerCompoundKeywordPriority(t *testing.T) {
+	// Test that longer compound keywords are matched before shorter ones
+	cfg := &TokenizerConfig{
+		ReservedWords: []string{
+			"DO UPDATE", "DO NOTHING", "DO",
+			"LEFT OUTER JOIN", "LEFT JOIN", "LEFT",
+			"ORDER BY", "ORDER",
+		},
+		ReservedTopLevelWords:         []string{},
+		ReservedNewlineWords:          []string{},
+		ReservedTopLevelWordsNoIndent: []string{},
+		StringTypes:                   []string{"''"},
+		OpenParens:                    []string{"("},
+		CloseParens:                   []string{")"},
+		LineCommentTypes:              []string{"--"},
+		SpecialWordChars:              []string{},
+	}
+
+	tokenizer := newTokenizer(cfg)
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Longest match: LEFT OUTER JOIN",
+			input:    "LEFT OUTER JOIN",
+			expected: "LEFT OUTER JOIN",
+		},
+		{
+			name:     "Medium match: LEFT JOIN",
+			input:    "LEFT JOIN",
+			expected: "LEFT JOIN",
+		},
+		{
+			name:     "Short match: LEFT alone",
+			input:    "LEFT LATERAL",
+			expected: "LEFT",
+		},
+		{
+			name:     "DO UPDATE before DO",
+			input:    "DO UPDATE",
+			expected: "DO UPDATE",
+		},
+		{
+			name:     "DO NOTHING before DO",
+			input:    "DO NOTHING",
+			expected: "DO NOTHING",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			token := tokenizer.getReservedWordToken(tt.input, types.Token{})
+			require.False(t, token.Empty(), "Expected token for: %s", tt.input)
+			require.Equal(t, tt.expected, token.Value, "Expected longest match. Input: %q", tt.input)
+		})
+	}
+}
+
+func TestTokenizerFullUpsertQuery(t *testing.T) {
+	// Test full UPSERT query tokenization
+	cfg := &TokenizerConfig{
+		ReservedWords: []string{
+			"DO UPDATE", "DO NOTHING", "ON CONFLICT", "DO",
+			"SET", "WHERE", "VALUES",
+		},
+		ReservedTopLevelWords:         []string{"INSERT INTO", "INSERT", "UPDATE"},
+		ReservedNewlineWords:          []string{"AND", "OR"},
+		ReservedTopLevelWordsNoIndent: []string{},
+		StringTypes:                   []string{"''"},
+		OpenParens:                    []string{"("},
+		CloseParens:                   []string{")"},
+		IndexedPlaceholderTypes:       []string{"?"},
+		LineCommentTypes:              []string{"--"},
+		SpecialWordChars:              []string{},
+	}
+
+	tokenizer := newTokenizer(cfg)
+
+	query := "INSERT INTO users (id, name) VALUES (1, 'John') ON CONFLICT (id) DO UPDATE SET name = 'Jane'"
+	tokens := tokenizer.tokenize(query)
+
+	// Find the relevant tokens
+	var foundOnConflict, foundDoUpdate bool
+	for i, tok := range tokens {
+		if tok.Type == types.TokenTypeReserved {
+			if tok.Value == "ON CONFLICT" {
+				foundOnConflict = true
+				t.Logf("Found ON CONFLICT at index %d", i)
+			}
+			if tok.Value == "DO UPDATE" {
+				foundDoUpdate = true
+				t.Logf("Found DO UPDATE at index %d", i)
+			}
+			// Make sure we don't have standalone "DO" before "UPDATE"
+			if tok.Value == "DO" {
+				// Check if next non-whitespace token is UPDATE
+				for j := i + 1; j < len(tokens); j++ {
+					if tokens[j].Type == types.TokenTypeWhitespace {
+						continue
+					}
+					if tokens[j].Value == "UPDATE" {
+						t.Errorf("Found standalone 'DO' token at index %d followed by 'UPDATE' at %d. "+
+							"Should be 'DO UPDATE' compound keyword.", i, j)
+					}
+					break
+				}
+			}
+		}
+	}
+
+	require.True(t, foundOnConflict, "Should find 'ON CONFLICT' compound keyword in tokens")
+	require.True(t, foundDoUpdate, "Should find 'DO UPDATE' compound keyword in tokens")
+}
