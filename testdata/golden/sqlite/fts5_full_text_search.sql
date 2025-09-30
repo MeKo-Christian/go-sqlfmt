@@ -1,0 +1,34 @@
+CREATE VIRTUAL TABLE articles_fts USING fts5(
+  title,
+  content,
+  author,
+  category,
+  tokenize = 'porter ascii'
+);
+
+INSERT INTO
+  articles_fts(title, content, author, category)
+SELECT
+  title,
+  content,
+  author,
+  category
+FROM
+  articles;
+
+SELECT
+  id,
+  title,
+  author,
+  category,
+  highlight(articles_fts, 0, '<mark>', '</mark>') AS highlighted_title,
+  highlight(articles_fts, 1, '<mark>', '</mark>') AS highlighted_content,
+  snippet(articles_fts, 1, '<mark>', '</mark>', '...', 50) AS content_snippet,
+  bm25(articles_fts) AS search_score
+FROM
+  articles
+  JOIN articles_fts ON articles.id = articles_fts.rowid
+WHERE
+  articles_fts MATCH 'database OR performance'
+ORDER BY
+  bm25(articles_fts);

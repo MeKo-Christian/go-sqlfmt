@@ -1,0 +1,1 @@
+PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA cache_size=10000; PRAGMA temp_store=MEMORY; PRAGMA mmap_size=268435456; PRAGMA auto_vacuum=INCREMENTAL; PRAGMA automatic_index=TRUE; PRAGMA busy_timeout=5000;
