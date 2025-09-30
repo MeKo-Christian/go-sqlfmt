@@ -79,7 +79,9 @@ func TestSQLite_Phase11_StressTestLargeInputs(t *testing.T) {
 				if i > 0 {
 					builder.WriteString(",\n")
 				}
-				builder.WriteString(fmt.Sprintf("  CASE WHEN n %% %d = 0 THEN 'multiple_of_%d' ELSE 'other' END AS col%d", i+2, i+2, i))
+				builder.WriteString(fmt.Sprintf("  CASE WHEN n %% %d = 0 THEN 'multiple_of_%d' "+
+					"ELSE 'other' END AS col%d",
+					i+2, i+2, i))
 			}
 
 			builder.WriteString("\nFROM large_cte\nORDER BY n;")

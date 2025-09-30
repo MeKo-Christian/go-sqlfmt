@@ -14,150 +14,27 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ---
 
-## Phase 1: Code Quality & Immediate Fixes
+## Phase 1: Testing Infrastructure Enhancements
 
-### 1.1 Format & Lint Issues ⚠️ URGENT
+### 1.1 Performance & Stress Testing
 
-**Status**: Blocking CI/CD
+- [x] Add benchmark tests in `format_benchmark_test.go`:
+  - [x] Small queries (< 100 chars)
+  - [x] Medium queries (100-1000 chars)
+  - [x] Large queries (1000-10000 chars)
+  - [x] Very large queries (> 10000 chars)
+  - [x] Deeply nested queries (10+ subqueries)
+- [x] Add memory usage tests:
+  - [x] Profile memory allocation patterns
+  - [x] Test for memory leaks with repeated formatting
+  - [x] Test concurrent formatting operations
+- [x] Add fuzz testing (expand existing `sqlite_fuzz_test.go`):
+  - [x] Add MySQL fuzz tests
+  - [x] Add PostgreSQL fuzz tests
+  - [x] Test malformed SQL handling
+  - [x] Test edge cases and corner cases
 
-- [x] Run `just fmt` to fix formatting violations
-- [x] Run `just lint` to verify no remaining issues
-- [x] Commit formatting fixes
-
-### 1.2 SQLite Phase 2 Tokenizer Verification ✅
-
-**Status**: ✅ Complete (2025-09-30)
-
-- [x] Verify identifier quoting works correctly:
-  - [x] Test double-quotes: `"table_name"`
-  - [x] Test backticks: `` `column_name` ``
-  - [x] Test brackets: `[identifier name]`
-  - [x] Test mixed usage in same query
-- [x] Verify blob literal handling:
-  - [x] Test uppercase: `X'DEADBEEF'`
-  - [x] Test lowercase: `x'cafebabe'`
-  - [x] Test in various contexts (SELECT, INSERT, WHERE)
-- [x] Verify comment handling:
-  - [x] Confirm `--` comments work
-  - [x] Confirm `/* */` comments work
-  - [x] Confirm `#` is NOT treated as comment (unlike MySQL)
-- [x] Update `PLAN-SQLITE.md` Phase 2 checkboxes to [x]
-
-**Results**: All Phase 2 tests passing. Implementation in [pkg/sqlfmt/dialects/sqlite.go](pkg/sqlfmt/dialects/sqlite.go:58) correctly handles:
-
-- Line comments (`--`) and block comments (`/* */`), excludes `#`
-- All three identifier quoting styles: `"double"`, `` `backtick` ``, `[bracket]`
-- String literals with single quotes and blob literals `X'ABCD'` (upper/lowercase)
-- Comprehensive test coverage with 5 dedicated Phase 2 test functions in [sqlite_formatter_test.go](pkg/sqlfmt/sqlite_formatter_test.go:168-307)
-
----
-
-## Phase 2: PostgreSQL Known Issues
-
-### 2.1 UPSERT Formatting Problem ✅ FIXED
-
-**Status**: ✅ Resolved (2025-09-30)
-
-**Solution**: Implemented context-aware token override in PostgreSQL formatter that distinguishes between UPSERT context (`ON CONFLICT ... DO UPDATE`) and standalone DO blocks based on `previousReservedWord` tracking. Both cases now format correctly without trade-offs.
-
-- [x] UPSERT: `ON CONFLICT (id) DO UPDATE` stays on one line
-- [x] DO blocks: `DO $$ ... $$` creates proper newline
-- [x] Handles `ON CONFLICT ... WHERE ... DO UPDATE` correctly
-- [x] All tests passing
-
-**Implementation**: [pkg/sqlfmt/dialects/postgresql.go:155-186](pkg/sqlfmt/dialects/postgresql.go:155-186)
-
-### 2.2 Function Indentation Test Mismatches
-
-**Issue**: Some PostgreSQL function definition tests fail due to indentation expectations
-
-**Tasks**:
-
-- [ ] Review failing test cases in `postgresql_formatter_test.go`
-- [ ] Determine if issue is:
-  - [ ] Test expectations need updating to match actual (correct) behavior
-  - [ ] Code needs fixing to match test expectations
-- [ ] Update tests or code accordingly
-- [ ] Document decision in commit message
-
----
-
-## Phase 3: Configuration File System Documentation
-
-### 3.1 Document New Config File Feature
-
-**Status**: Code implemented (`configfile.go`, `example.sqlfmt.yaml`) but not documented
-
-- [ ] Update `docs/configuration.md`:
-  - [ ] Add "Configuration Files" section
-  - [ ] Document supported file names: `.sqlfmtrc`, `.sqlfmt.yaml`, `.sqlfmt.yml`, `sqlfmt.yaml`, `sqlfmt.yml`
-  - [ ] Document search order:
-    1. Current directory (and parents up to git root)
-    2. User home directory
-  - [ ] Document configuration precedence: CLI flags > config file > defaults
-  - [ ] Add YAML configuration examples
-  - [ ] Document all config options: `language`, `indent`, `keyword_case`, `lines_between_queries`
-- [ ] Update `docs/cli-usage.md`:
-  - [ ] Add section on config file usage
-  - [ ] Show example of project-specific config
-  - [ ] Show example of user-wide config
-- [ ] Update `README.md`:
-  - [ ] Add config file mention in "Quick Start"
-  - [ ] Link to configuration documentation
-- [ ] Consider adding `sqlfmt init` command to generate example config
-
-### 3.2 Config File Testing
-
-- [ ] Add tests for config file loading in `configfile_test.go`:
-  - [ ] Test loading from current directory
-  - [ ] Test loading from parent directories
-  - [ ] Test loading from home directory
-  - [ ] Test search order precedence
-  - [ ] Test YAML parsing for all options
-  - [ ] Test error handling for invalid YAML
-  - [ ] Test error handling for unknown options
-
----
-
-## Phase 4: Testing Infrastructure Enhancements
-
-### 4.1 Real-World Scenario Tests
-
-**Status**: PostgreSQL Phase 13 partially complete
-
-- [ ] Create `testdata/scenarios/` directory structure:
-  - [ ] `migrations/` - Database migration scripts
-  - [ ] `procedures/` - Stored procedures and functions
-  - [ ] `analytics/` - Complex analytical queries
-  - [ ] `mixed/` - Combined DDL and DML operations
-- [ ] Add real-world test cases:
-  - [ ] Migration scripts with multi-step changes
-  - [ ] Production-style stored procedures with error handling
-  - [ ] Complex window function queries
-  - [ ] Large UNION/EXCEPT/INTERSECT queries
-  - [ ] Deeply nested CTEs (3+ levels)
-  - [ ] Mixed DDL/DML transactions
-- [ ] Create `scenario_test.go` to test these cases
-
-### 4.2 Performance & Stress Testing
-
-- [ ] Add benchmark tests in `format_benchmark_test.go`:
-  - [ ] Small queries (< 100 chars)
-  - [ ] Medium queries (100-1000 chars)
-  - [ ] Large queries (1000-10000 chars)
-  - [ ] Very large queries (> 10000 chars)
-  - [ ] Deeply nested queries (10+ subqueries)
-- [ ] Add memory usage tests:
-  - [ ] Profile memory allocation patterns
-  - [ ] Test for memory leaks with repeated formatting
-  - [ ] Test concurrent formatting operations
-- [ ] Add fuzz testing (expand existing `sqlite_fuzz_test.go`):
-  - [ ] Add MySQL fuzz tests
-  - [ ] Add PostgreSQL fuzz tests
-  - [ ] Test malformed SQL handling
-  - [ ] Test edge cases and corner cases
-
-### 4.3 Dialect-Specific Golden File Expansion
+### 1.2 Dialect-Specific Golden File Expansion
 
 - [ ] Add more PostgreSQL golden files:
   - [ ] Complex window functions with frames
@@ -177,9 +54,9 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ---
 
-## Phase 5: Cross-Dialect Features
+## Phase 2: Cross-Dialect Features
 
-### 5.1 Dialect Auto-Detection
+### 2.1 Dialect Auto-Detection
 
 **Goal**: Automatically detect SQL dialect from file or content
 
@@ -198,7 +75,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
 - [ ] Add tests for detection accuracy
 - [ ] Document detection logic and limitations
 
-### 5.2 Multi-Dialect Support
+### 2.2 Multi-Dialect Support
 
 **Goal**: Handle projects with multiple SQL dialects
 
@@ -209,9 +86,9 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ---
 
-## Phase 6: Advanced Formatting Options
+## Phase 3: Advanced Formatting Options
 
-### 6.1 Alignment Options
+### 3.1 Alignment Options
 
 - [ ] Add vertical alignment configuration:
   - [ ] Column name alignment in SELECT
@@ -225,7 +102,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
 - [ ] Add tests for alignment options
 - [ ] Document in configuration guide
 
-### 6.2 Line Length Limits
+### 3.2 Line Length Limits
 
 - [ ] Add `MaxLineLength int` configuration option
 - [ ] Implement line breaking logic:
@@ -236,7 +113,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
 - [ ] Add tests for line length enforcement
 - [ ] Document behavior and limitations
 
-### 6.3 Comment Handling Improvements
+### 3.3 Comment Handling Improvements
 
 - [ ] Improve inline comment positioning:
   - [ ] Keep inline comments on same line when possible
@@ -249,9 +126,9 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ---
 
-## Phase 7: CLI Enhancements
+## Phase 4: CLI Enhancements
 
-### 7.1 Watch Mode
+### 4.1 Watch Mode
 
 - [ ] Implement file watcher using `fsnotify`
 - [ ] Add `sqlfmt watch [path]` command
@@ -262,7 +139,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
 - [ ] Add tests for watch functionality
 - [ ] Document watch mode usage
 
-### 7.2 Directory & Git Integration
+### 4.2 Directory & Git Integration
 
 - [ ] Add `sqlfmt format --recursive` for directory trees
 - [ ] Add `sqlfmt format --git-diff` to format only changed files
@@ -272,7 +149,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Installation command: `sqlfmt install-hook`
   - [ ] Document hook installation
 
-### 7.3 Validation Improvements
+### 4.3 Validation Improvements
 
 - [ ] Enhance `sqlfmt validate` command:
   - [ ] Exit code: 0 (all valid), 1 (some invalid)
@@ -283,9 +160,9 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ---
 
-## Phase 8: Library API Improvements
+## Phase 5: Library API Improvements
 
-### 8.1 Streaming API
+### 5.1 Streaming API
 
 - [ ] Add streaming format functions:
   ```go
@@ -296,7 +173,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
 - [ ] Add streaming tests
 - [ ] Document streaming API
 
-### 8.2 Parse Tree Access
+### 5.2 Parse Tree Access
 
 - [ ] Expose parsed SQL structure:
   ```go
@@ -312,7 +189,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Extract column references
 - [ ] Document parse tree structure
 
-### 8.3 Custom Formatter Plugin System
+### 5.3 Custom Formatter Plugin System
 
 - [ ] Define plugin interface:
   ```go
@@ -328,9 +205,9 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ---
 
-## Phase 9: Advanced SQL Features
+## Phase 6: Advanced SQL Features
 
-### 9.1 Enhanced Stored Procedure Support
+### 6.1 Enhanced Stored Procedure Support
 
 - [ ] PostgreSQL PL/pgSQL improvements:
   - [ ] Better block indentation (BEGIN/END, IF/ELSE, LOOP)
@@ -344,7 +221,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Multi-statement trigger bodies
   - [ ] BEFORE/AFTER/INSTEAD OF formatting
 
-### 9.2 Complete DDL Support
+### 6.2 Complete DDL Support
 
 - [ ] Full CREATE TABLE support:
   - [ ] All constraint types
@@ -360,7 +237,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Multi-column changes
   - [ ] Constraint modifications
 
-### 9.3 Extended Comment Support
+### 6.3 Extended Comment Support
 
 - [ ] Structured comments for documentation:
   ```sql
@@ -377,9 +254,9 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ---
 
-## Phase 10: Documentation & Polish
+## Phase 7: Documentation & Polish
 
-### 10.1 Comprehensive Documentation
+### 7.1 Comprehensive Documentation
 
 - [ ] Create dialect comparison guide:
   - [ ] Feature matrix across all dialects
@@ -389,13 +266,8 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Common formatting issues
   - [ ] Performance tips
   - [ ] Known limitations
-- [ ] Create video tutorials:
-  - [ ] Getting started
-  - [ ] CLI usage
-  - [ ] Library integration
-  - [ ] Advanced features
 
-### 10.2 Editor Integrations
+### 7.2 Editor Integrations
 
 - [ ] VSCode extension:
   - [ ] Format on save
@@ -411,7 +283,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Interactive formatting
   - [ ] Configuration options
 
-### 10.3 Examples & Demos
+### 7.3 Examples & Demos
 
 - [ ] Create example projects:
   - [ ] PostgreSQL application
@@ -425,35 +297,25 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ## Priority Matrix
 
-### 🔴 High Priority (Immediate - Next 1-2 Weeks)
-
-1. **Fix formatting issues** (Phase 1.1) - Blocks CI/CD
-2. **SQLite Phase 2 verification** (Phase 1.2) - Complete existing work
-3. **Config file documentation** (Phase 3.1) - Feature is implemented but undocumented
-4. **PostgreSQL function tests** (Phase 2.2) - Fix test failures
-
 ### 🟡 Medium Priority (Next 2-4 Weeks)
 
-1. **Dialect auto-detection** (Phase 5.1) - High user value
-2. **Watch mode** (Phase 7.1) - Developer workflow improvement
-3. **Real-world scenario tests** (Phase 4.1) - Quality assurance
-4. **Performance benchmarks** (Phase 4.2) - Ensure scalability
-5. **Directory & Git integration** (Phase 7.2) - CI/CD integration
+1. **Dialect auto-detection** (Phase 2.1) - High user value
+2. **Watch mode** (Phase 4.1) - Developer workflow improvement
+3. ~~**Performance benchmarks** (Phase 1.1) - Ensure scalability~~ ✅ **COMPLETED**
+4. **Directory & Git integration** (Phase 4.2) - CI/CD integration
 
 ### 🟢 Low Priority (Future 1-3 Months)
 
-1. **Advanced alignment options** (Phase 6.1) - Nice-to-have
-2. **Streaming API** (Phase 8.1) - Large file handling
-3. **Line length limits** (Phase 6.2) - Style preference
-4. **Enhanced DDL support** (Phase 9.2) - Edge cases
-5. **Editor integrations** (Phase 10.2) - Ecosystem expansion
+1. **Advanced alignment options** (Phase 3.1) - Nice-to-have
+2. **Streaming API** (Phase 5.1) - Large file handling
+3. **Line length limits** (Phase 3.2) - Style preference
+4. **Enhanced DDL support** (Phase 6.2) - Edge cases
+5. **Editor integrations** (Phase 7.2) - Ecosystem expansion
 
 ### ⚪ On Hold / Future
 
-1. **PostgreSQL UPSERT formatting** (Phase 2.1) - Requires tokenizer redesign
-2. **Plugin system** (Phase 8.3) - Complex feature, low demand
-3. **Documentation generation** (Phase 9.3) - Advanced use case
-4. **Video tutorials** (Phase 10.1) - Resource intensive
+1. **Plugin system** (Phase 5.3) - Complex feature, low demand
+2. **Documentation generation** (Phase 6.3) - Advanced use case
 
 ---
 
@@ -488,39 +350,14 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ---
 
-## Known Limitations
-
-~~### PostgreSQL UPSERT Formatting~~ ✅ FIXED
-
-**Status**: ✅ Resolved in Phase 2.1 - See above for details
-
----
-
 ## Timeline Estimate
 
-- **Phase 1 (Code Quality)**: 1-2 days
-- **Phase 2 (PostgreSQL Issues)**: 2-3 days
-- **Phase 3 (Config Documentation)**: 2-3 days
-- **Phase 4 (Testing)**: 1-2 weeks
-- **Phase 5 (Cross-Dialect)**: 1 week
-- **Phase 6 (Advanced Formatting)**: 2 weeks
-- **Phase 7 (CLI Enhancements)**: 2 weeks
-- **Phase 8 (Library API)**: 1-2 weeks
-- **Phase 9 (Advanced SQL)**: 2-3 weeks
-- **Phase 10 (Documentation & Polish)**: 1-2 weeks
+- **Phase 1 (Testing)**: 1-2 weeks
+- **Phase 2 (Cross-Dialect)**: 1 week
+- **Phase 3 (Advanced Formatting)**: 2 weeks
+- **Phase 4 (CLI Enhancements)**: 2 weeks
+- **Phase 5 (Library API)**: 1-2 weeks
+- **Phase 6 (Advanced SQL)**: 2-3 weeks
+- **Phase 7 (Documentation & Polish)**: 1-2 weeks
 
 **Total Estimated Time**: 10-14 weeks for complete implementation
-
----
-
-## Next Steps
-
-1. Run `just fmt` to fix immediate formatting issues
-2. Verify SQLite Phase 2 implementation
-3. Document configuration file system
-4. Fix PostgreSQL function indentation tests
-5. Begin real-world testing scenarios
-
-**Created**: 2025-09-30
-**Status**: Active Development
-**Last Updated**: 2025-09-30

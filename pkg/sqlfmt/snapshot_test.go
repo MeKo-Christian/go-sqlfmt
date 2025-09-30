@@ -118,31 +118,54 @@ func TestSnapshotFormatting_MySQL(t *testing.T) {
 	})
 
 	t.Run("ON DUPLICATE KEY UPDATE", func(t *testing.T) {
-		query := "INSERT INTO products (id, name, price) VALUES (1, 'Product A', 19.99) ON DUPLICATE KEY UPDATE name = VALUES(name), price = VALUES(price), updated_at = NOW();"
+		query := "INSERT INTO products (id, name, price) VALUES (1, 'Product A', 19.99) " +
+			"ON DUPLICATE KEY UPDATE name = VALUES(name), price = VALUES(price), " +
+			"updated_at = NOW();"
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("CTE with window function", func(t *testing.T) {
-		query := "WITH sales_data AS (SELECT product_id, amount, ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY amount DESC) as rank FROM sales) SELECT * FROM sales_data WHERE rank <= 3;"
+		query := `WITH sales_data AS (
+				SELECT product_id, amount, ROW_NUMBER() OVER (
+					PARTITION BY product_id ORDER BY amount DESC
+				) as rank FROM sales
+			)
+			SELECT * FROM sales_data WHERE rank <= 3;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("DDL with generated columns", func(t *testing.T) {
-		query := "CREATE TABLE orders (id INT PRIMARY KEY, subtotal DECIMAL(10,2), tax_rate DECIMAL(3,4), total DECIMAL(10,2) GENERATED ALWAYS AS (subtotal + (subtotal * tax_rate)) STORED);"
+		query := `CREATE TABLE orders (
+			id INT PRIMARY KEY,
+			subtotal DECIMAL(10,2),
+			tax_rate DECIMAL(3,4),
+			total DECIMAL(10,2) GENERATED ALWAYS AS (
+				subtotal + (subtotal * tax_rate)
+			) STORED
+		);`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("stored procedure", func(t *testing.T) {
-		query := "CREATE PROCEDURE GetUserStats(IN user_id INT) BEGIN SELECT COUNT(*) as orders, SUM(total) as revenue FROM orders WHERE customer_id = user_id; END;"
+		query := `CREATE PROCEDURE GetUserStats(IN user_id INT)
+			BEGIN
+				SELECT COUNT(*) as orders,
+					   SUM(total) as revenue
+				FROM orders WHERE customer_id = user_id;
+			END;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("MySQL comments and backticks", func(t *testing.T) {
-		query := "SELECT /*! SQL_CALC_FOUND_ROWS */ `user_id`, # hash comment\n\"full_name\" FROM `user_table` -- standard comment\nWHERE `active` = TRUE;"
+		query := `SELECT /*! SQL_CALC_FOUND_ROWS */
+					   ` + "`user_id`" + `,
+					   # hash comment
+					   "full_name" FROM ` + "`user_table`" + ` -- standard comment
+					   WHERE ` + "`active`" + ` = TRUE;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
@@ -163,7 +186,9 @@ func TestSnapshotFormatting_SQLite(t *testing.T) {
 	})
 
 	t.Run("all placeholder styles", func(t *testing.T) {
-		query := "SELECT * FROM users WHERE id = ? AND name = :name AND email = @email AND status = $status AND created_at > ?2;"
+		query := `SELECT * FROM users WHERE id = ? AND name = :name
+					   AND email = @email
+					   AND status = $status AND created_at > ?2;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
@@ -179,37 +204,50 @@ func TestSnapshotFormatting_SQLite(t *testing.T) {
 	})
 
 	t.Run("UPSERT with ON CONFLICT", func(t *testing.T) {
-		query := "INSERT INTO products (id, name, price) VALUES (1, 'Product A', 19.99) ON CONFLICT(id) DO UPDATE SET name = excluded.name, price = excluded.price;"
+		query := `INSERT INTO products (id, name, price) VALUES (1, 'Product A', 19.99)
+			ON CONFLICT(id) DO UPDATE SET name = excluded.name,
+			price = excluded.price;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("INSERT OR REPLACE", func(t *testing.T) {
-		query := "INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES ('user:123', '{\"name\":\"John\"}', datetime('now', '+1 day'));"
+		query := `INSERT OR REPLACE INTO cache (key, value, expires_at)
+			VALUES ('user:123', '{"name":"John"}',
+			datetime('now', '+1 day'));`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("CTE with RECURSIVE", func(t *testing.T) {
-		query := "WITH RECURSIVE factorial(n, fact) AS (SELECT 1, 1 UNION ALL SELECT n+1, (n+1)*fact FROM factorial WHERE n < 10) SELECT * FROM factorial;"
+		query := `WITH RECURSIVE factorial(n, fact) AS (SELECT 1, 1 UNION ALL
+			SELECT n+1, (n+1)*fact FROM factorial WHERE n < 10)
+			SELECT * FROM factorial;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("window functions", func(t *testing.T) {
-		query := "SELECT employee_id, department, salary, ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) as rank FROM employees;"
+		query := `SELECT employee_id, department, salary,
+			ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC)
+			as rank FROM employees;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("CTE with window functions", func(t *testing.T) {
-		query := "WITH sales_data AS (SELECT product_id, amount, ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY amount DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as rank FROM sales) SELECT * FROM sales_data WHERE rank <= 3;"
+		query := `WITH sales_data AS (SELECT product_id, amount,
+			ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY amount DESC
+			ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as rank
+			FROM sales) SELECT * FROM sales_data WHERE rank <= 3;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("DDL with generated columns", func(t *testing.T) {
-		query := "CREATE TABLE orders (id INTEGER PRIMARY KEY, subtotal REAL, tax_rate REAL DEFAULT 0.08, total REAL GENERATED ALWAYS AS (subtotal + (subtotal * tax_rate)) STORED) STRICT;"
+		query := `CREATE TABLE orders (id INTEGER PRIMARY KEY, subtotal REAL,
+			tax_rate REAL DEFAULT 0.08, total REAL GENERATED ALWAYS AS (
+			subtotal + (subtotal * tax_rate)) STORED) STRICT;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
@@ -227,31 +265,40 @@ func TestSnapshotFormatting_SQLite(t *testing.T) {
 	})
 
 	t.Run("CREATE TRIGGER", func(t *testing.T) {
-		query := "CREATE TRIGGER update_modified_time AFTER UPDATE ON users FOR EACH ROW BEGIN UPDATE users SET modified_at = datetime('now') WHERE id = NEW.id; END;"
+		query := `CREATE TRIGGER update_modified_time AFTER UPDATE ON users FOR EACH ROW
+			BEGIN UPDATE users SET modified_at = datetime('now')
+			WHERE id = NEW.id; END;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("CREATE VIEW with CTE", func(t *testing.T) {
-		query := "CREATE VIEW active_users_summary AS WITH user_stats AS (SELECT user_id, COUNT(*) as order_count FROM orders GROUP BY user_id) SELECT u.name, us.order_count FROM users u JOIN user_stats us ON u.id = us.user_id WHERE u.active = 1;"
+		query := `CREATE VIEW active_users_summary AS WITH user_stats AS (
+			SELECT user_id, COUNT(*) as order_count FROM orders GROUP BY user_id)
+			SELECT u.name, us.order_count FROM users u JOIN user_stats us
+			ON u.id = us.user_id WHERE u.active = 1;`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("identifier quoting styles", func(t *testing.T) {
-		query := "SELECT \"double_quoted\", `backtick_quoted`, [bracket_quoted] FROM \"table name\" WHERE `field name` = 'value';"
+		query := `SELECT "double_quoted", ` + "`backtick_quoted`" + `,
+			[bracket_quoted] FROM "table name" WHERE ` + "`field name`" + ` = 'value';`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("blob literals and concatenation", func(t *testing.T) {
-		query := "SELECT name || ' - ' || description as full_name, X'DEADBEEF' as binary_data FROM products WHERE data = X'48656C6C6F';"
+		query := `SELECT name || ' - ' || description as full_name,
+			X'DEADBEEF' as binary_data FROM products
+			WHERE data = X'48656C6C6F';`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})
 
 	t.Run("NULL handling", func(t *testing.T) {
-		query := "SELECT * FROM users WHERE email IS NOT NULL AND status IS DISTINCT FROM 'deleted' AND name IS NOT DISTINCT FROM 'admin';"
+		query := `SELECT * FROM users WHERE email IS NOT NULL AND
+			status IS DISTINCT FROM 'deleted' AND name IS NOT DISTINCT FROM 'admin';`
 		result := formatter.Format(query)
 		snaps.MatchSnapshot(t, result)
 	})

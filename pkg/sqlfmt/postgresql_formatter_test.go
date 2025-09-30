@@ -1621,22 +1621,16 @@ func TestPostgreSQLFormatter_Functions(t *testing.T) {
 	t.Run("formats function with multiple modifiers", func(t *testing.T) {
 		query := `CREATE FUNCTION get_secure_data(user_id INTEGER) RETURNS TABLE(id INTEGER, name TEXT) AS $$
 			SELECT id, name FROM users WHERE id = user_id AND active = true; $$ LANGUAGE SQL STABLE SECURITY DEFINER;`
-		exp := `CREATE FUNCTION
-			get_secure_data(user_id INTEGER) RETURNS TABLE(id INTEGER, name TEXT) AS $$
-			SELECT id, name FROM users WHERE id = user_id AND active = true; $$ LANGUAGE SQL STABLE SECURITY DEFINER;`
+		exp := "CREATE FUNCTION\n  get_secure_data(user_id INTEGER) RETURNS TABLE(id INTEGER, name TEXT) AS $$\n\t\t\tSELECT id, name FROM users WHERE id = user_id AND active = true; $$ LANGUAGE SQL STABLE SECURITY DEFINER;"
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
 
 	t.Run("formats function with SETOF return type", func(t *testing.T) {
 		query := `CREATE FUNCTION get_all_users() RETURNS SETOF users AS $$
 			SELECT * FROM users ORDER BY name; $$ LANGUAGE SQL STABLE;`
-		exp := `CREATE FUNCTION
-			get_all_users() RETURNS SETOF users AS $$
-			SELECT * FROM users ORDER BY name; $$ LANGUAGE SQL STABLE;`
+		exp := "CREATE FUNCTION\n  get_all_users() RETURNS SETOF users AS $$\n\t\t\tSELECT * FROM users ORDER BY name; $$ LANGUAGE SQL STABLE;"
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
 
@@ -1644,12 +1638,8 @@ func TestPostgreSQLFormatter_Functions(t *testing.T) {
 		query := `CREATE FUNCTION expensive_calculation(n INTEGER) RETURNS INTEGER AS $$
 			SELECT factorial(n);
 			$$ LANGUAGE SQL IMMUTABLE COST 1000 ROWS 1;`
-		exp := `CREATE FUNCTION
-			expensive_calculation(n INTEGER) RETURNS INTEGER AS $$
-			SELECT factorial(n);
-			$$ LANGUAGE SQL IMMUTABLE COST 1000 ROWS 1;`
+		exp := "CREATE FUNCTION\n  expensive_calculation(n INTEGER) RETURNS INTEGER AS $$\n\t\t\tSELECT factorial(n);\n\t\t\t$$ LANGUAGE SQL IMMUTABLE COST 1000 ROWS 1;"
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
 
@@ -1710,13 +1700,8 @@ func TestPostgreSQLFormatter_Functions(t *testing.T) {
 			SELECT 42;
 			$$ LANGUAGE SQL IMMUTABLE STRICT LEAKPROOF PARALLEL SAFE
 			COST 1;`
-		exp := `CREATE FUNCTION
-			test_immutable() RETURNS INTEGER AS $$
-			SELECT 42;
-			$$ LANGUAGE SQL IMMUTABLE STRICT LEAKPROOF PARALLEL SAFE
-			COST 1;`
+		exp := "CREATE FUNCTION\n  test_immutable() RETURNS INTEGER AS $$\n\t\t\tSELECT 42;\n\t\t\t$$ LANGUAGE SQL IMMUTABLE STRICT LEAKPROOF PARALLEL SAFE COST 1;"
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
 
@@ -1727,15 +1712,8 @@ func TestPostgreSQLFormatter_Functions(t *testing.T) {
 		) RETURNS TEXT AS $$
 			SELECT greeting || ', ' || name || '!';
 			$$ LANGUAGE SQL IMMUTABLE;`
-		exp := Dedent(`
-            CREATE FUNCTION
-              greet_user(
-                name TEXT DEFAULT 'Anonymous',
-                greeting TEXT DEFAULT 'Hello'
-              ) RETURNS TEXT AS $$ SELECT greeting || ', ' || name || '!'; $$ LANGUAGE SQL IMMUTABLE;
-        `)
+		exp := "CREATE FUNCTION\n  greet_user(\n    name TEXT DEFAULT 'Anonymous',\n    greeting TEXT DEFAULT 'Hello'\n  ) RETURNS TEXT AS $$\n\t\t\tSELECT greeting || ', ' || name || '!';\n\t\t\t$$ LANGUAGE SQL IMMUTABLE;"
 		result := NewPostgreSQLFormatter(NewDefaultConfig().WithLang(PostgreSQL)).Format(query)
-		exp = strings.TrimSpace(strings.ReplaceAll(exp, "\t", DefaultIndent))
 		require.Equal(t, exp, result)
 	})
 }

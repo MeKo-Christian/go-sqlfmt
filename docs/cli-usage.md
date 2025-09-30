@@ -77,6 +77,103 @@ sqlfmt validate --help
 
 **Note**: The `pretty-format` and `pretty-print` commands automatically enable color formatting. Use `pretty-print` when you only want stdout output, and `pretty-format` when you need the `--write` option.
 
+## Configuration Files
+
+sqlfmt supports configuration files to set default options without specifying them on every command. This is especially useful for maintaining consistent formatting across a project or for personal preferences.
+
+### Creating a Configuration File
+
+Configuration files use YAML format and can be named:
+
+- `.sqlfmtrc`
+- `.sqlfmt.yaml`
+- `.sqlfmt.yml`
+- `sqlfmt.yaml`
+- `sqlfmt.yml`
+
+### Project-Specific Configuration
+
+Place a `.sqlfmt.yaml` file in your project root to set project-wide defaults:
+
+```yaml
+# .sqlfmt.yaml
+language: postgresql
+keyword_case: lowercase
+indent: "  "
+lines_between_queries: 1
+```
+
+Now all commands in this directory will use these settings:
+
+```bash
+# Uses postgresql dialect from config
+sqlfmt format query.sql
+
+# Still uses config settings, but overrides language
+sqlfmt format --lang=mysql query.sql
+```
+
+### User-Wide Configuration
+
+Place a `.sqlfmtrc` in your home directory for personal defaults:
+
+```yaml
+# ~/.sqlfmtrc
+language: sql
+keyword_case: preserve
+indent: "    "
+lines_between_queries: 2
+```
+
+### Configuration File Search
+
+sqlfmt searches for configuration files in this order:
+
+1. Current directory (and parent directories up to git root)
+2. User home directory
+
+The first config file found is used. CLI flags always override config file settings.
+
+### Example Workflows
+
+**PostgreSQL project with team standards:**
+
+```bash
+# Create project config
+cat > .sqlfmt.yaml << EOF
+language: postgresql
+keyword_case: lowercase
+indent: "  "
+lines_between_queries: 1
+EOF
+
+# Everyone on the team gets consistent formatting
+sqlfmt format migrations/*.sql --write
+```
+
+**Personal preferences for all SQL files:**
+
+```bash
+# Create user config
+cat > ~/.sqlfmtrc << EOF
+language: sql
+keyword_case: uppercase
+indent: "\t"
+EOF
+
+# Apply to any SQL file
+sqlfmt format ~/queries/report.sql
+```
+
+**Override config for specific dialects:**
+
+```bash
+# Project config uses PostgreSQL, but override for MySQL file
+sqlfmt format --lang=mysql legacy_mysql_schema.sql
+```
+
+See the [Configuration Guide](configuration.md#configuration-files) for complete details on configuration options.
+
 ## Dialect-Specific Usage
 
 ### PostgreSQL

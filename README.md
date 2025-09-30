@@ -35,6 +35,10 @@ sqlfmt pretty-format query.sql
 
 # Format for specific dialect
 sqlfmt format --lang=postgresql query.sql
+
+# Use a configuration file for persistent settings
+echo "language: postgresql\nkeyword_case: lowercase" > .sqlfmt.yaml
+sqlfmt format query.sql  # Uses settings from .sqlfmt.yaml
 ```
 
 **Library**:
@@ -91,6 +95,7 @@ WHERE
 
 - **Multiple SQL Dialects** - Support for 7 major SQL variants
 - **Colored Output** - ANSI color formatting for terminal display
+- **Configuration Files** - Project-wide and user-wide settings with `.sqlfmt.yaml` files
 - **Flexible Configuration** - Customizable indentation, keywords, and formatting rules
 - **Parameter Replacement** - Named and indexed placeholder substitution
 - **Comprehensive Testing** - Multi-level testing with golden files and snapshots

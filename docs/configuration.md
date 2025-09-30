@@ -547,44 +547,184 @@ if err := validateConfig(cfg); err != nil {
 5. **Reuse configurations**: Create shared configurations for consistency
 6. **Test with real queries**: Validate configuration with your actual SQL queries
 
-## CLI Configuration File
+## Configuration Files
 
-While go-sqlfmt doesn't currently support configuration files, you can create shell aliases or scripts:
+go-sqlfmt supports configuration files for persistent settings across your project or user environment. Configuration files use YAML format and are automatically discovered and loaded by the CLI.
+
+### Supported File Names
+
+The following configuration file names are recognized (in order of precedence):
+
+- `.sqlfmtrc`
+- `.sqlfmt.yaml`
+- `.sqlfmt.yml`
+- `sqlfmt.yaml`
+- `sqlfmt.yml`
+
+### Search Order
+
+go-sqlfmt searches for configuration files in the following order:
+
+1. **Current directory and parent directories** - Searches upward from the current working directory until reaching the git root (if in a git repository)
+2. **User home directory** - Falls back to `~/.sqlfmtrc`, `~/.sqlfmt.yaml`, or `~/.sqlfmt.yml`
+
+The first configuration file found is used. This allows for project-specific configurations that override user-wide defaults.
+
+### Configuration Precedence
+
+Settings are applied in the following order (later sources override earlier ones):
+
+1. **Default values** - Built-in defaults
+2. **Configuration file** - Settings from discovered config file
+3. **CLI flags** - Command-line arguments (highest priority)
+
+### Configuration Options
+
+All configuration options can be specified in YAML format:
+
+```yaml
+# SQL dialect to use by default
+language: postgresql
+
+# Keyword casing options
+# Options: preserve, uppercase, lowercase, dialect
+keyword_case: lowercase
+
+# Indentation string (spaces or tabs)
+indent: "    "
+
+# Number of lines between separate queries
+lines_between_queries: 1
+```
+
+#### Available Options
+
+**`language`** (string)
+
+The SQL dialect to use for formatting. Valid values:
+
+- `sql` or `standard` - Standard SQL (ANSI SQL)
+- `postgresql` or `postgres` - PostgreSQL dialect
+- `mysql` or `mariadb` - MySQL dialect
+- `sqlite` - SQLite dialect
+- `pl/sql`, `plsql`, or `oracle` - Oracle PL/SQL dialect
+- `db2` - IBM DB2 dialect
+- `n1ql` - Couchbase N1QL dialect
+
+**`keyword_case`** (string)
+
+How to format SQL keywords. Valid values:
+
+- `preserve` - Keep original casing (default)
+- `uppercase` - Convert to UPPERCASE
+- `lowercase` - Convert to lowercase
+- `dialect` - Use dialect-specific casing
+
+**`indent`** (string)
+
+The indentation string to use. Examples:
+
+- `"  "` - 2 spaces (default)
+- `"    "` - 4 spaces
+- `"\t"` - Tab character
+
+**`lines_between_queries`** (integer)
+
+Number of blank lines to insert between separate SQL queries. Default: `2`
+
+### Example Configuration Files
+
+#### Project-Specific Configuration
+
+Place a `.sqlfmt.yaml` file in your project root:
+
+```yaml
+# .sqlfmt.yaml - PostgreSQL project
+language: postgresql
+keyword_case: lowercase
+indent: "  "
+lines_between_queries: 1
+```
+
+```yaml
+# .sqlfmt.yaml - MySQL project
+language: mysql
+keyword_case: uppercase
+indent: "    "
+lines_between_queries: 2
+```
+
+#### User-Wide Configuration
+
+Place a `.sqlfmtrc` file in your home directory for personal defaults:
+
+```yaml
+# ~/.sqlfmtrc
+language: sql
+keyword_case: preserve
+indent: "  "
+lines_between_queries: 2
+```
+
+### Using Configuration Files with CLI
+
+When you run CLI commands, the configuration file is automatically loaded:
+
+```bash
+# Uses settings from .sqlfmt.yaml if present
+sqlfmt format query.sql
+
+# CLI flags override config file settings
+sqlfmt format --lang=mysql query.sql
+
+# Still uses indent and keyword_case from config file,
+# but overrides language to mysql
+```
+
+### Verifying Configuration
+
+To see which configuration is being used, you can check the formatted output or use CLI flags to override specific settings:
+
+```bash
+# Format with config file settings
+sqlfmt format query.sql
+
+# Override specific settings
+sqlfmt format --keyword-case=uppercase query.sql
+```
+
+### Multi-Dialect Projects
+
+For projects using multiple SQL dialects, you can:
+
+1. Create a base configuration in your home directory
+2. Override with project-specific settings in subdirectories
+3. Use CLI flags for file-specific formatting
+
+Example project structure:
+
+```
+myproject/
+├── .sqlfmt.yaml           # Default: PostgreSQL
+├── mysql/
+│   ├── .sqlfmt.yaml       # Override: MySQL
+│   └── schema.sql
+└── postgresql/
+    └── migrations.sql     # Uses root config
+```
+
+### Shell Aliases (Alternative Approach)
+
+If you prefer shell aliases over configuration files:
 
 ```bash
 # ~/.bashrc or ~/.zshrc
-alias sqlfmt-pg='sqlfmt format --lang=postgresql --indent="  " --uppercase'
+alias sqlfmt-pg='sqlfmt format --lang=postgresql --indent="  " --keyword-case=lowercase'
 alias sqlfmt-mysql='sqlfmt format --lang=mysql --indent="\t"'
 
 # Usage
 sqlfmt-pg query.sql
 sqlfmt-mysql query.sql
-```
-
-Or create a wrapper script:
-
-```bash
-#!/bin/bash
-# sqlfmt-wrapper.sh
-
-LANG=${SQLFMT_LANG:-sql}
-INDENT=${SQLFMT_INDENT:-"  "}
-UPPERCASE=${SQLFMT_UPPERCASE:-false}
-
-sqlfmt format \
-  --lang="$LANG" \
-  --indent="$INDENT" \
-  $([ "$UPPERCASE" = "true" ] && echo "--uppercase") \
-  "$@"
-```
-
-```bash
-# Environment-based configuration
-export SQLFMT_LANG=postgresql
-export SQLFMT_INDENT="    "
-export SQLFMT_UPPERCASE=true
-
-./sqlfmt-wrapper.sh query.sql
 ```
 
 This comprehensive configuration system allows you to customize go-sqlfmt for your specific needs and SQL dialects.

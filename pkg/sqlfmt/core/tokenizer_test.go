@@ -338,6 +338,21 @@ func TestTokenizerCompoundKeywordPriority(t *testing.T) {
 	}
 }
 
+func checkStandaloneDoToken(t *testing.T, tokens []types.Token, doIndex int) {
+	t.Helper()
+	// Check if next non-whitespace token is UPDATE
+	for j := doIndex + 1; j < len(tokens); j++ {
+		if tokens[j].Type == types.TokenTypeWhitespace {
+			continue
+		}
+		if tokens[j].Value == "UPDATE" {
+			t.Errorf("Found standalone 'DO' token at index %d followed by 'UPDATE' at %d. "+
+				"Should be 'DO UPDATE' compound keyword.", doIndex, j)
+		}
+		break
+	}
+}
+
 func TestTokenizerFullUpsertQuery(t *testing.T) {
 	// Test full UPSERT query tokenization
 	cfg := &TokenizerConfig{
@@ -364,29 +379,22 @@ func TestTokenizerFullUpsertQuery(t *testing.T) {
 	// Find the relevant tokens
 	var foundOnConflict, foundDoUpdate bool
 	for i, tok := range tokens {
-		if tok.Type == types.TokenTypeReserved {
-			if tok.Value == "ON CONFLICT" {
-				foundOnConflict = true
-				t.Logf("Found ON CONFLICT at index %d", i)
-			}
-			if tok.Value == "DO UPDATE" {
-				foundDoUpdate = true
-				t.Logf("Found DO UPDATE at index %d", i)
-			}
-			// Make sure we don't have standalone "DO" before "UPDATE"
-			if tok.Value == "DO" {
-				// Check if next non-whitespace token is UPDATE
-				for j := i + 1; j < len(tokens); j++ {
-					if tokens[j].Type == types.TokenTypeWhitespace {
-						continue
-					}
-					if tokens[j].Value == "UPDATE" {
-						t.Errorf("Found standalone 'DO' token at index %d followed by 'UPDATE' at %d. "+
-							"Should be 'DO UPDATE' compound keyword.", i, j)
-					}
-					break
-				}
-			}
+		if tok.Type != types.TokenTypeReserved {
+			continue
+		}
+
+		if tok.Value == "ON CONFLICT" {
+			foundOnConflict = true
+			t.Logf("Found ON CONFLICT at index %d", i)
+		}
+		if tok.Value == "DO UPDATE" {
+			foundDoUpdate = true
+			t.Logf("Found DO UPDATE at index %d", i)
+		}
+
+		// Make sure we don't have standalone "DO" before "UPDATE"
+		if tok.Value == "DO" {
+			checkStandaloneDoToken(t, tokens, i)
 		}
 	}
 

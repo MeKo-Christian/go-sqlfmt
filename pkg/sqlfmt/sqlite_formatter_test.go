@@ -1045,7 +1045,13 @@ func TestSQLite_Phase5_EdgeCases_NestedUpsert(t *testing.T) {
 		ON CONFLICT (user_id, metric)
 		DO UPDATE SET value = value + EXCLUDED.value, updated_at = datetime('now');`
 	result := Format(query, cfg)
-	if !containsString(result, "ON CONFLICT") || !containsString(result, "(user_id, metric)") || !containsString(result, "DO UPDATE") {
+	if !containsString(result, "ON CONFLICT") {
+		t.Error("SQLite should handle complex UPSERT expressions")
+	}
+	if !containsString(result, "(user_id, metric)") {
+		t.Error("SQLite should handle complex UPSERT expressions")
+	}
+	if !containsString(result, "DO UPDATE") {
 		t.Error("SQLite should handle complex UPSERT expressions")
 	}
 }
@@ -1099,8 +1105,14 @@ func TestSQLite_Phase5_EdgeCases_UpsertPlaceholders(t *testing.T) {
 			ELSE value
 		END;`
 	result := Format(query, cfg)
-	if !containsString(result, "ON CONFLICT") || !containsString(result, "(user_id, key)") || !containsString(result, ":force_update") {
-		t.Error("SQLite should handle complex UPSERT with placeholders and CASE expressions")
+	if !containsString(result, "ON CONFLICT") {
+		t.Error("SQLite should handle complex UPSERT")
+	}
+	if !containsString(result, "(user_id, key)") {
+		t.Error("SQLite should handle complex UPSERT")
+	}
+	if !containsString(result, ":force_update") {
+		t.Error("SQLite should handle complex UPSERT")
 	}
 }
 
@@ -1123,8 +1135,14 @@ func TestSQLite_Phase6_BasicCTE(t *testing.T) {
 		orders_summary AS (SELECT user_id, COUNT(*) as order_count FROM orders GROUP BY user_id)
 	SELECT au.name, os.order_count FROM active_users au JOIN orders_summary os ON au.user_id = os.user_id;`
 	result2 := Format(query2, cfg)
-	if !containsString(result2, "WITH") || !containsString(result2, "active_users AS") || !containsString(result2, "orders_summary AS") {
-		t.Error("SQLite should format multiple CTEs correctly")
+	if !containsString(result2, "WITH") {
+		t.Error("SQLite should format multiple CTEs")
+	}
+	if !containsString(result2, "active_users AS") {
+		t.Error("SQLite should format multiple CTEs")
+	}
+	if !containsString(result2, "orders_summary AS") {
+		t.Error("SQLite should format multiple CTEs")
 	}
 }
 
@@ -1313,8 +1331,14 @@ func TestSQLite_Phase6_WindowFrames(t *testing.T) {
 	FROM sales;`
 	result1 := Format(query1, cfg)
 
-	if !containsString(result1, "ROWS BETWEEN") || !containsString(result1, "UNBOUNDED PRECEDING") || !containsString(result1, "CURRENT ROW") {
-		t.Error("SQLite should format ROWS frame specification")
+	if !containsString(result1, "ROWS BETWEEN") {
+		t.Error("SQLite should format ROWS frame")
+	}
+	if !containsString(result1, "UNBOUNDED PRECEDING") {
+		t.Error("SQLite should format ROWS frame")
+	}
+	if !containsString(result1, "CURRENT ROW") {
+		t.Error("SQLite should format ROWS frame")
 	}
 
 	// Test window frames with RANGE
@@ -1375,8 +1399,19 @@ func TestSQLite_Phase6_WindowFunctionsWithPlaceholders(t *testing.T) {
 	if !containsString(result, "ROW_NUMBER() OVER") {
 		t.Error("SQLite window functions should work with placeholders in WHERE clause")
 	}
-	if !containsString(result, "= ?1") || !containsString(result, "> :min_score") ||
-		!containsString(result, "> @date_filter") || !containsString(result, "= $status") || !containsString(result, "LIMIT") {
+	if !containsString(result, "= ?1") {
+		t.Error("SQLite should preserve placeholders when using window functions")
+	}
+	if !containsString(result, "> :min_score") {
+		t.Error("SQLite should preserve placeholders when using window functions")
+	}
+	if !containsString(result, "> @date_filter") {
+		t.Error("SQLite should preserve placeholders when using window functions")
+	}
+	if !containsString(result, "= $status") {
+		t.Error("SQLite should preserve placeholders when using window functions")
+	}
+	if !containsString(result, "LIMIT") {
 		t.Error("SQLite should preserve placeholders when using window functions")
 	}
 }
@@ -1551,7 +1586,13 @@ func TestSQLite_Phase7_CreateTableWithGeneratedColumns(t *testing.T) {
 		slug GENERATED ALWAYS AS (LOWER(REPLACE(name, ' ', '-'))) VIRTUAL
 	);`
 	result1 := Format(query1, cfg)
-	if !containsString(result1, "CREATE TABLE") || !containsString(result1, "GENERATED ALWAYS AS") || !containsString(result1, "VIRTUAL") {
+	if !containsString(result1, "CREATE TABLE") {
+		t.Error("SQLite should format CREATE TABLE with VIRTUAL generated column")
+	}
+	if !containsString(result1, "GENERATED ALWAYS AS") {
+		t.Error("SQLite should format VIRTUAL generated column")
+	}
+	if !containsString(result1, "VIRTUAL") {
 		t.Error("SQLite should format CREATE TABLE with VIRTUAL generated column")
 	}
 
@@ -1641,7 +1682,13 @@ func TestSQLite_Phase7_CreateIndexWithIfNotExists(t *testing.T) {
 	// Test partial index with WHERE clause
 	query3 := "CREATE INDEX IF NOT EXISTS idx_active_users ON users(created_at) WHERE active = 1;"
 	result3 := Format(query3, cfg)
-	if !containsString(result3, "CREATE INDEX") || !containsString(result3, "IF NOT EXISTS") || !containsString(result3, "active = 1") {
+	if !containsString(result3, "CREATE INDEX") {
+		t.Error("SQLite should format partial index with WHERE clause")
+	}
+	if !containsString(result3, "IF NOT EXISTS") {
+		t.Error("SQLite should format partial index")
+	}
+	if !containsString(result3, "active = 1") {
 		t.Error("SQLite should format partial index with WHERE clause")
 	}
 
@@ -1947,8 +1994,11 @@ func TestSQLite_Phase7_EdgeCases_GeneratedColumnReferences(t *testing.T) {
 		quadrupled GENERATED ALWAYS AS (doubled * 2) VIRTUAL
 	);`
 	result := Format(query, cfg)
-	if !containsString(result, "doubled GENERATED ALWAYS AS") || !containsString(result, "quadrupled GENERATED ALWAYS AS") {
+	if !containsString(result, "doubled GENERATED ALWAYS AS") {
 		t.Error("SQLite should format generated columns that reference other columns")
+	}
+	if !containsString(result, "quadrupled GENERATED ALWAYS AS") {
+		t.Error("SQLite should format generated columns")
 	}
 }
 
@@ -1960,8 +2010,17 @@ func TestSQLite_Phase7_EdgeCases_ComplexIndex(t *testing.T) {
 		ON my_table(col1 COLLATE NOCASE, col2 DESC, col3 ASC)
 		WHERE col1 IS NOT NULL AND col2 > 0;`
 	result := Format(query, cfg)
-	if !containsString(result, "COLLATE NOCASE") || !containsString(result, "col2 DESC") || !containsString(result, "col1 IS NOT NULL") {
-		t.Error("SQLite should handle complex CREATE INDEX with collation, ordering, and WHERE clause")
+	if !containsString(result, "COLLATE NOCASE") {
+		t.Error("SQLite should handle complex CREATE INDEX with collation, " +
+			"ordering, and WHERE clause")
+	}
+	if !containsString(result, "col2 DESC") {
+		t.Error("SQLite should handle complex CREATE INDEX with collation, " +
+			"ordering, and WHERE clause")
+	}
+	if !containsString(result, "col1 IS NOT NULL") {
+		t.Error("SQLite should handle complex CREATE INDEX with collation, " +
+			"ordering, and WHERE clause")
 	}
 }
 
@@ -1973,7 +2032,14 @@ func TestSQLite_Phase7_EdgeCases_PragmaComplexValues(t *testing.T) {
 		PRAGMA journal_size_limit = 67108864;
 		PRAGMA compile_options;`
 	result := Format(query, cfg)
-	if !containsString(result, "secure_delete = FAST") || !containsString(result, "journal_size_limit = 67108864") || !containsString(result, "compile_options") {
+	if !containsString(result, "secure_delete = FAST") {
+		t.Error("SQLite should handle various PRAGMA statement formats")
+	}
+	if !containsString(result, "journal_size_limit = 67108864") {
+		t.Error("SQLite should handle various PRAGMA statement " +
+			"formats")
+	}
+	if !containsString(result, "compile_options") {
 		t.Error("SQLite should handle various PRAGMA statement formats")
 	}
 }
