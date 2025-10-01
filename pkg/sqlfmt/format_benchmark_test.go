@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// BenchmarkFormatSmall benchmarks formatting of small queries (< 100 characters)
+// BenchmarkFormatSmall benchmarks formatting of small queries (< 100 characters).
 func BenchmarkFormatSmall(b *testing.B) {
 	query := "SELECT id, name FROM users WHERE active = true ORDER BY name"
 	b.ResetTimer()
@@ -14,7 +14,7 @@ func BenchmarkFormatSmall(b *testing.B) {
 	}
 }
 
-// BenchmarkFormatMedium benchmarks formatting of medium queries (100-1000 characters)
+// BenchmarkFormatMedium benchmarks formatting of medium queries (100-1000 characters).
 func BenchmarkFormatMedium(b *testing.B) {
 	query := `SELECT
 	u.id,
@@ -43,7 +43,7 @@ LIMIT 100`
 	}
 }
 
-// BenchmarkFormatLarge benchmarks formatting of large queries (1000-10000 characters)
+// BenchmarkFormatLarge benchmarks formatting of large queries (1000-10000 characters).
 func BenchmarkFormatLarge(b *testing.B) {
 	query := `-- Complex PostgreSQL query with multiple CTEs and window functions
 WITH RECURSIVE employee_hierarchy AS (
@@ -134,7 +134,7 @@ ORDER BY
 	}
 }
 
-// BenchmarkFormatVeryLarge benchmarks formatting of very large queries (> 10000 characters)
+// BenchmarkFormatVeryLarge benchmarks formatting of very large queries (> 10000 characters).
 func BenchmarkFormatVeryLarge(b *testing.B) {
 	// Build a very large query by repeating complex patterns
 	var queryBuilder strings.Builder
@@ -280,7 +280,7 @@ LIMIT 1000`)
 	}
 }
 
-// BenchmarkFormatDeeplyNested benchmarks formatting of deeply nested queries (10+ subqueries)
+// BenchmarkFormatDeeplyNested benchmarks formatting of deeply nested queries (10+ subqueries).
 func BenchmarkFormatDeeplyNested(b *testing.B) {
 	query := `SELECT
 	level_1.id,
@@ -407,7 +407,7 @@ ORDER BY level_1.total_value DESC, level_1.max_nested_value DESC`
 	}
 }
 
-// BenchmarkFormatMySQL benchmarks MySQL-specific formatting
+// BenchmarkFormatMySQL benchmarks MySQL-specific formatting.
 func BenchmarkFormatMySQL(b *testing.B) {
 	cfg := &Config{Language: MySQL}
 	query := `SELECT
@@ -434,7 +434,7 @@ LIMIT 100`
 	}
 }
 
-// BenchmarkFormatPostgreSQL benchmarks PostgreSQL-specific formatting
+// BenchmarkFormatPostgreSQL benchmarks PostgreSQL-specific formatting.
 func BenchmarkFormatPostgreSQL(b *testing.B) {
 	cfg := &Config{Language: PostgreSQL}
 	query := `SELECT
@@ -461,7 +461,7 @@ LIMIT 100`
 	}
 }
 
-// BenchmarkFormatSQLite benchmarks SQLite-specific formatting
+// BenchmarkFormatSQLite benchmarks SQLite-specific formatting.
 func BenchmarkFormatSQLite(b *testing.B) {
 	cfg := &Config{Language: SQLite}
 	query := `SELECT

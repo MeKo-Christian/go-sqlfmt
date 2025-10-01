@@ -695,23 +695,275 @@ sqlfmt format --keyword-case=uppercase query.sql
 
 ### Multi-Dialect Projects
 
-For projects using multiple SQL dialects, you can:
+For projects using multiple SQL dialects, go-sqlfmt provides several mechanisms to handle different dialects within the same codebase:
 
-1. Create a base configuration in your home directory
-2. Override with project-specific settings in subdirectories
-3. Use CLI flags for file-specific formatting
+1. **Per-directory configuration overrides**
+2. **Inline dialect hints** in SQL files
+3. **File exclusion** with `.sqlfmtignore`
+4. **Auto-detection** as fallback
 
-Example project structure:
+#### Configuration Hierarchy
 
-```
+Settings are applied in the following order (later sources override earlier ones):
+
+1. **Default values** - Built-in defaults
+2. **Global configuration file** - User-wide settings (`~/.sqlfmt.yaml`)
+3. **Project configuration file** - Project root settings
+4. **Per-directory configuration** - Directory-specific overrides
+5. **Inline dialect hints** - File-specific dialect directives
+6. **Auto-detection** - Content-based dialect detection
+7. **CLI flags** - Command-line arguments (highest priority)
+
+#### Per-Directory Configuration
+
+You can place configuration files in subdirectories to override settings for files in those directories and their subdirectories.
+
+**Example project structure:**
+
+```text
 myproject/
-├── .sqlfmt.yaml           # Default: PostgreSQL
+├── .sqlfmt.yaml           # Default: PostgreSQL, 2-space indent
 ├── mysql/
-│   ├── .sqlfmt.yaml       # Override: MySQL
-│   └── schema.sql
+│   ├── .sqlfmt.yaml       # Override: MySQL, 4-space indent
+│   └── schema.sql         # Uses MySQL config
 └── postgresql/
-    └── migrations.sql     # Uses root config
+    ├── migrations.sql     # Uses root PostgreSQL config
+    └── reports/
+        └── .sqlfmt.yaml   # Override: PostgreSQL, tab indent
+        └── analytics.sql  # Uses tab indent
 ```
+
+**Root `.sqlfmt.yaml`:**
+
+```yaml
+language: postgresql
+indent: "  "
+```
+
+**MySQL subdirectory `.sqlfmt.yaml`:**
+
+```yaml
+language: mysql
+indent: "    "
+```
+
+**Reports subdirectory `.sqlfmt.yaml`:**
+
+```yaml
+indent: "\t"
+```
+
+When formatting files, go-sqlfmt searches upward from each file's directory to find the nearest configuration file.
+
+#### Inline Dialect Hints
+
+For maximum flexibility, you can specify the dialect directly in SQL files using special comments. These hints override configuration files but can still be overridden by CLI flags.
+
+**Syntax:**
+
+```sql
+-- sqlfmt: dialect=<dialect_name>
+SELECT * FROM users;
+```
+
+**Supported dialects:**
+
+- `sql` or `standard` - Standard SQL
+- `postgresql` or `postgres` - PostgreSQL
+- `mysql` - MySQL
+- `sqlite` - SQLite
+- `plsql` or `pl/sql` - PL/SQL
+- `db2` - DB2
+- `n1ql` - N1QL
+
+**Examples:**
+
+```sql
+-- sqlfmt: dialect=mysql
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL
+) ENGINE=InnoDB;
+```
+
+```sql
+-- sqlfmt: dialect=postgresql
+SELECT
+  id::integer,
+  data->>'name' as name
+FROM users
+WHERE id = $1;
+```
+
+```sql
+-- sqlfmt: dialect=sqlite
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL
+);
+```
+
+**Hint placement:** The hint must be at the very beginning of the file, before any SQL statements. Only one hint per file is recognized.
+
+#### File Exclusion with .sqlfmtignore
+
+Use `.sqlfmtignore` files to exclude specific files or directories from formatting. This is useful for:
+
+- Generated SQL files
+- Third-party SQL that shouldn't be modified
+- Files with incompatible syntax
+- Temporary or backup files
+
+**Pattern syntax:** Supports gitignore-style patterns including:
+
+- `*` - Match zero or more characters
+- `?` - Match exactly one character
+- `[abc]` - Match any character in the set
+- `**` - Match directories recursively
+- `!` - Negate patterns (include previously excluded files)
+
+**Example `.sqlfmtignore`:**
+
+```
+# Generated files
+generated/
+*.generated.sql
+
+# Third-party SQL
+vendor/
+lib/third-party.sql
+
+# Temporary files
+*.tmp
+*.bak
+
+# Specific files
+migrations/0001_initial.sql
+```
+
+**Search behavior:** go-sqlfmt searches for `.sqlfmtignore` files starting from the target file's directory and moving upward to the project root. All matching patterns are combined.
+
+**CLI usage:**
+
+```bash
+# Format all files except those matching .sqlfmtignore patterns
+sqlfmt format *.sql
+
+# Format specific files (respects .sqlfmtignore)
+sqlfmt format mysql/schema.sql postgresql/migration.sql
+```
+
+#### Complete Multi-Dialect Example
+
+Here's a comprehensive example of a project using all multi-dialect features:
+
+**Project structure:**
+
+```text
+multidb-project/
+├── .sqlfmt.yaml              # Global: PostgreSQL default
+├── .sqlfmtignore             # Exclude generated files
+├── mysql/
+│   ├── .sqlfmt.yaml          # MySQL config
+│   ├── schema.sql            # Uses MySQL config
+│   └── procedures.sql        # Uses MySQL config
+├── postgresql/
+│   ├── .sqlfmt.yaml          # PostgreSQL with tabs
+│   ├── migrations/
+│   │   ├── 001_create_users.sql
+│   │   └── 002_add_indexes.sql
+│   └── functions/
+│       └── utils.sql         # Uses PostgreSQL tab config
+├── sqlite/
+│   ├── .sqlfmt.yaml          # SQLite config
+│   └── local.db.sql          # Uses SQLite config
+├── generated/
+│   └── schema.sql            # Excluded by .sqlfmtignore
+└── mixed/
+    └── analysis.sql          # Uses inline hint
+```
+
+**Global `.sqlfmt.yaml`:**
+
+```yaml
+language: postgresql
+indent: "  "
+keyword_case: lowercase
+lines_between_queries: 1
+```
+
+**MySQL `.sqlfmt.yaml`:**
+
+```yaml
+language: mysql
+indent: "    "
+keyword_case: uppercase
+```
+
+**PostgreSQL `.sqlfmt.yaml`:**
+
+```yaml
+language: postgresql
+indent: "\t"
+keyword_case: lowercase
+```
+
+**SQLite `.sqlfmt.yaml`:**
+
+```yaml
+language: sqlite
+indent: "  "
+keyword_case: preserve
+```
+
+**`.sqlfmtignore`:**
+
+```gitignore
+# Exclude generated files
+generated/
+
+# Exclude backup files
+*.bak
+*~
+
+# Exclude specific problematic files
+mysql/old_schema.sql
+```
+
+**Mixed analysis.sql with inline hint:**
+
+```sql
+-- sqlfmt: dialect=postgresql
+-- This file uses PostgreSQL syntax despite being in mixed/ directory
+SELECT
+  u.id::integer,
+  u.name,
+  COUNT(o.id) as order_count
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE u.created_at >= $1
+GROUP BY u.id, u.name
+ORDER BY order_count DESC;
+```
+
+**Usage examples:**
+
+```bash
+# Format all files (respects .sqlfmtignore and per-directory configs)
+sqlfmt format
+
+# Format specific dialect directories
+sqlfmt format mysql/*.sql      # Uses MySQL config
+sqlfmt format postgresql/**/*.sql  # Uses PostgreSQL configs
+
+# Override with CLI flags
+sqlfmt format --lang=mysql --indent="  " postgresql/migrations/*.sql
+
+# Check what would be formatted
+sqlfmt format --dry-run
+```
+
+This setup allows you to maintain consistent formatting within each dialect while using the appropriate syntax for each database system.
 
 ### Shell Aliases (Alternative Approach)
 

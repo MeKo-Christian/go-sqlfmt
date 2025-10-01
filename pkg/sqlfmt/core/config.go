@@ -38,6 +38,9 @@ type Config struct {
 	Params              *utils.ParamsConfig
 	ColorConfig         *ColorConfig
 	TokenizerConfig     *TokenizerConfig
+	AlignColumnNames    bool
+	AlignAssignments    bool
+	AlignValues         bool
 }
 
 // TokenizerConfig represents tokenizer configuration.

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestLoadConfigFromCurrentDirectory tests loading config from the current directory
+// TestLoadConfigFromCurrentDirectory tests loading config from the current directory.
 func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -71,7 +71,7 @@ indent: "\t\t"`,
 			require.NoError(t, err)
 
 			// Write config file
-			err = os.WriteFile(tt.filename, []byte(tt.content), 0644)
+			err = os.WriteFile(tt.filename, []byte(tt.content), 0o644)
 			require.NoError(t, err)
 
 			// Load config
@@ -91,7 +91,7 @@ indent: "\t\t"`,
 	}
 }
 
-// TestLoadConfigFromParentDirectories tests config loading from parent directories
+// TestLoadConfigFromParentDirectories tests config loading from parent directories.
 func TestLoadConfigFromParentDirectories(t *testing.T) {
 	// Create directory structure:
 	// tmpDir/
@@ -108,13 +108,13 @@ func TestLoadConfigFromParentDirectories(t *testing.T) {
 	// Create root config
 	rootConfig := `language: postgresql
 indent: "    "`
-	err = os.WriteFile(filepath.Join(tmpDir, ".sqlfmtrc"), []byte(rootConfig), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, ".sqlfmtrc"), []byte(rootConfig), 0o644)
 	require.NoError(t, err)
 
 	// Create subdirectories
 	subDir1 := filepath.Join(tmpDir, "subdir1")
 	subDir2 := filepath.Join(subDir1, "subdir2")
-	err = os.MkdirAll(subDir2, 0755)
+	err = os.MkdirAll(subDir2, 0o755)
 	require.NoError(t, err)
 
 	// Change to deepest directory
@@ -134,7 +134,7 @@ indent: "    "`
 	require.Equal(t, "    ", config.Indent)
 }
 
-// TestLoadConfigFromHomeDirectory tests loading config from home directory
+// TestLoadConfigFromHomeDirectory tests loading config from home directory.
 func TestLoadConfigFromHomeDirectory(t *testing.T) {
 	// Create temp directory to use as fake home
 	tmpHome := t.TempDir()
@@ -153,7 +153,7 @@ func TestLoadConfigFromHomeDirectory(t *testing.T) {
 	// Write config to home directory
 	homeConfig := `language: mysql
 keyword_case: uppercase`
-	err = os.WriteFile(filepath.Join(tmpHome, ".sqlfmtrc"), []byte(homeConfig), 0644)
+	err = os.WriteFile(filepath.Join(tmpHome, ".sqlfmtrc"), []byte(homeConfig), 0o644)
 	require.NoError(t, err)
 
 	// Load config - should find home config
@@ -169,7 +169,7 @@ keyword_case: uppercase`
 	require.Equal(t, KeywordCaseUppercase, config.KeywordCase)
 }
 
-// TestConfigSearchOrderPrecedence tests that current dir takes precedence over home
+// TestConfigSearchOrderPrecedence tests that current dir takes precedence over home.
 func TestConfigSearchOrderPrecedence(t *testing.T) {
 	// Create temp home with config
 	tmpHome := t.TempDir()
@@ -178,7 +178,7 @@ func TestConfigSearchOrderPrecedence(t *testing.T) {
 	os.Setenv("HOME", tmpHome)
 
 	homeConfig := `language: mysql`
-	err := os.WriteFile(filepath.Join(tmpHome, ".sqlfmtrc"), []byte(homeConfig), 0644)
+	err := os.WriteFile(filepath.Join(tmpHome, ".sqlfmtrc"), []byte(homeConfig), 0o644)
 	require.NoError(t, err)
 
 	// Create temp work dir with different config
@@ -190,7 +190,7 @@ func TestConfigSearchOrderPrecedence(t *testing.T) {
 	require.NoError(t, err)
 
 	workConfig := `language: postgresql`
-	err = os.WriteFile(".sqlfmtrc", []byte(workConfig), 0644)
+	err = os.WriteFile(".sqlfmtrc", []byte(workConfig), 0o644)
 	require.NoError(t, err)
 
 	// Load config - should prefer current directory
@@ -206,7 +206,7 @@ func TestConfigSearchOrderPrecedence(t *testing.T) {
 	require.Equal(t, PostgreSQL, config.Language)
 }
 
-// TestParseAllConfigOptions tests parsing all configuration options
+// TestParseAllConfigOptions tests parsing all configuration options.
 func TestParseAllConfigOptions(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -220,7 +220,7 @@ indent: "\t"
 keyword_case: uppercase
 lines_between_queries: 3`
 
-	err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0644)
+	err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	configFile, err := LoadConfigFile()
@@ -236,7 +236,7 @@ lines_between_queries: 3`
 	require.Equal(t, 3, config.LinesBetweenQueries)
 }
 
-// TestParseLanguageVariants tests all language name variants
+// TestParseLanguageVariants tests all language name variants.
 func TestParseLanguageVariants(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -267,7 +267,7 @@ func TestParseLanguageVariants(t *testing.T) {
 			require.NoError(t, err)
 
 			configContent := "language: " + tt.yamlLanguage
-			err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0644)
+			err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
 			require.NoError(t, err)
 
 			configFile, err := LoadConfigFile()
@@ -282,7 +282,7 @@ func TestParseLanguageVariants(t *testing.T) {
 	}
 }
 
-// TestParseKeywordCaseVariants tests all keyword_case variants
+// TestParseKeywordCaseVariants tests all keyword_case variants.
 func TestParseKeywordCaseVariants(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -305,7 +305,7 @@ func TestParseKeywordCaseVariants(t *testing.T) {
 			require.NoError(t, err)
 
 			configContent := "keyword_case: " + tt.yamlKeywordCase
-			err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0644)
+			err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
 			require.NoError(t, err)
 
 			configFile, err := LoadConfigFile()
@@ -320,7 +320,7 @@ func TestParseKeywordCaseVariants(t *testing.T) {
 	}
 }
 
-// TestInvalidYAMLHandling tests error handling for invalid YAML
+// TestInvalidYAMLHandling tests error handling for invalid YAML.
 func TestInvalidYAMLHandling(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -333,7 +333,7 @@ func TestInvalidYAMLHandling(t *testing.T) {
 	invalidYAML := `language: postgresql
 indent: [this is not valid
 keyword_case: uppercase`
-	err = os.WriteFile(".sqlfmtrc", []byte(invalidYAML), 0644)
+	err = os.WriteFile(".sqlfmtrc", []byte(invalidYAML), 0o644)
 	require.NoError(t, err)
 
 	// Should return error
@@ -342,7 +342,7 @@ keyword_case: uppercase`
 	require.Contains(t, err.Error(), "failed to parse config file")
 }
 
-// TestUnknownLanguageHandling tests error handling for unknown language
+// TestUnknownLanguageHandling tests error handling for unknown language.
 func TestUnknownLanguageHandling(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -352,7 +352,7 @@ func TestUnknownLanguageHandling(t *testing.T) {
 	require.NoError(t, err)
 
 	configContent := `language: unknown_language`
-	err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0644)
+	err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	configFile, err := LoadConfigFile()
@@ -364,7 +364,7 @@ func TestUnknownLanguageHandling(t *testing.T) {
 	require.Contains(t, err.Error(), "unknown language")
 }
 
-// TestUnknownKeywordCaseHandling tests error handling for unknown keyword_case
+// TestUnknownKeywordCaseHandling tests error handling for unknown keyword_case.
 func TestUnknownKeywordCaseHandling(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -374,7 +374,7 @@ func TestUnknownKeywordCaseHandling(t *testing.T) {
 	require.NoError(t, err)
 
 	configContent := `keyword_case: unknown_case`
-	err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0644)
+	err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	configFile, err := LoadConfigFile()
@@ -386,7 +386,7 @@ func TestUnknownKeywordCaseHandling(t *testing.T) {
 	require.Contains(t, err.Error(), "unknown keyword_case")
 }
 
-// TestNoConfigFileFound tests behavior when no config file exists
+// TestNoConfigFileFound tests behavior when no config file exists.
 func TestNoConfigFileFound(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -401,13 +401,13 @@ func TestNoConfigFileFound(t *testing.T) {
 	require.NotNil(t, configFile)
 
 	// Should have empty/default values
-	require.Equal(t, "", configFile.Language)
-	require.Equal(t, "", configFile.Indent)
-	require.Equal(t, "", configFile.KeywordCase)
+	require.Empty(t, configFile.Language)
+	require.Empty(t, configFile.Indent)
+	require.Empty(t, configFile.KeywordCase)
 	require.Equal(t, 0, configFile.LinesBetweenQueries)
 }
 
-// TestEmptyConfigFile tests behavior with empty config file
+// TestEmptyConfigFile tests behavior with empty config file.
 func TestEmptyConfigFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -417,7 +417,7 @@ func TestEmptyConfigFile(t *testing.T) {
 	require.NoError(t, err)
 
 	// Write empty config file
-	err = os.WriteFile(".sqlfmtrc", []byte(""), 0644)
+	err = os.WriteFile(".sqlfmtrc", []byte(""), 0o644)
 	require.NoError(t, err)
 
 	configFile, err := LoadConfigFile()
@@ -437,7 +437,7 @@ func TestEmptyConfigFile(t *testing.T) {
 	require.Equal(t, origIndent, config.Indent)
 }
 
-// TestPartialConfigFile tests config file with only some options set
+// TestPartialConfigFile tests config file with only some options set.
 func TestPartialConfigFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -448,7 +448,7 @@ func TestPartialConfigFile(t *testing.T) {
 
 	// Only set language, leave others as default
 	configContent := `language: postgresql`
-	err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0644)
+	err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	configFile, err := LoadConfigFile()
@@ -467,7 +467,7 @@ func TestPartialConfigFile(t *testing.T) {
 	require.Equal(t, origLinesBetween, config.LinesBetweenQueries)
 }
 
-// TestGitRootStopsSearch tests that config search stops at git root
+// TestGitRootStopsSearch tests that config search stops at git root.
 func TestGitRootStopsSearch(t *testing.T) {
 	// Create directory structure:
 	// tmpDir/
@@ -484,18 +484,18 @@ func TestGitRootStopsSearch(t *testing.T) {
 
 	// Create config above git root
 	rootConfig := `language: mysql`
-	err = os.WriteFile(filepath.Join(tmpDir, ".sqlfmtrc"), []byte(rootConfig), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, ".sqlfmtrc"), []byte(rootConfig), 0o644)
 	require.NoError(t, err)
 
 	// Create git root
 	gitRootDir := filepath.Join(tmpDir, "subdir")
 	gitDir := filepath.Join(gitRootDir, ".git")
-	err = os.MkdirAll(gitDir, 0755)
+	err = os.MkdirAll(gitDir, 0o755)
 	require.NoError(t, err)
 
 	// Create test directory below git root
 	testDir := filepath.Join(gitRootDir, "subdir2")
-	err = os.MkdirAll(testDir, 0755)
+	err = os.MkdirAll(testDir, 0o755)
 	require.NoError(t, err)
 
 	// Change to test directory
@@ -508,10 +508,10 @@ func TestGitRootStopsSearch(t *testing.T) {
 	require.NotNil(t, configFile)
 
 	// Should be empty since config is above git root
-	require.Equal(t, "", configFile.Language)
+	require.Empty(t, configFile.Language)
 }
 
-// TestConfigWithGitRoot tests that config at git root is found
+// TestConfigWithGitRoot tests that config at git root is found.
 func TestConfigWithGitRoot(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -520,17 +520,17 @@ func TestConfigWithGitRoot(t *testing.T) {
 
 	// Create .git directory
 	gitDir := filepath.Join(tmpDir, ".git")
-	err = os.MkdirAll(gitDir, 0755)
+	err = os.MkdirAll(gitDir, 0o755)
 	require.NoError(t, err)
 
 	// Create config at git root
 	rootConfig := `language: postgresql`
-	err = os.WriteFile(filepath.Join(tmpDir, ".sqlfmtrc"), []byte(rootConfig), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, ".sqlfmtrc"), []byte(rootConfig), 0o644)
 	require.NoError(t, err)
 
 	// Create subdirectory
 	subDir := filepath.Join(tmpDir, "subdir")
-	err = os.MkdirAll(subDir, 0755)
+	err = os.MkdirAll(subDir, 0o755)
 	require.NoError(t, err)
 
 	// Change to subdirectory
@@ -549,7 +549,7 @@ func TestConfigWithGitRoot(t *testing.T) {
 	require.Equal(t, PostgreSQL, config.Language)
 }
 
-// TestMultipleConfigFilesPrecedence tests precedence when multiple config files exist
+// TestMultipleConfigFilesPrecedence tests precedence when multiple config files exist.
 func TestMultipleConfigFilesPrecedence(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -559,11 +559,11 @@ func TestMultipleConfigFilesPrecedence(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create multiple config files - .sqlfmtrc should be checked first
-	err = os.WriteFile(".sqlfmtrc", []byte("language: postgresql"), 0644)
+	err = os.WriteFile(".sqlfmtrc", []byte("language: postgresql"), 0o644)
 	require.NoError(t, err)
-	err = os.WriteFile(".sqlfmt.yaml", []byte("language: mysql"), 0644)
+	err = os.WriteFile(".sqlfmt.yaml", []byte("language: mysql"), 0o644)
 	require.NoError(t, err)
-	err = os.WriteFile("sqlfmt.yml", []byte("language: sqlite"), 0644)
+	err = os.WriteFile("sqlfmt.yml", []byte("language: sqlite"), 0o644)
 	require.NoError(t, err)
 
 	// Should load .sqlfmtrc first
@@ -577,7 +577,182 @@ func TestMultipleConfigFilesPrecedence(t *testing.T) {
 	require.Equal(t, PostgreSQL, config.Language)
 }
 
-// TestCaseInsensitiveLanguageParsing tests that language parsing is case-insensitive
+// TestLoadConfigFileForPath tests loading config files relative to a specific file path.
+func TestLoadConfigFileForPath(t *testing.T) {
+	// Create a temporary directory structure
+	tempDir, err := os.MkdirTemp("", "sqlfmt-config-path-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	// Create subdirectory
+	subDir := filepath.Join(tempDir, "subdir")
+	err = os.MkdirAll(subDir, 0o755)
+	require.NoError(t, err)
+
+	// Create config file in subdirectory
+	subConfigContent := `language: mysql
+indent: "    "`
+	err = os.WriteFile(filepath.Join(subDir, ".sqlfmt.yaml"), []byte(subConfigContent), 0o644)
+	require.NoError(t, err)
+
+	// Create config file in root directory
+	rootConfigContent := `language: postgresql
+keyword_case: uppercase`
+	err = os.WriteFile(filepath.Join(tempDir, ".sqlfmt.yaml"), []byte(rootConfigContent), 0o644)
+	require.NoError(t, err)
+
+	// Test loading config for file in subdirectory
+	testFile := filepath.Join(subDir, "test.sql")
+	config, err := LoadConfigFileForPath(testFile)
+	require.NoError(t, err)
+	require.Equal(t, "mysql", config.Language)
+	require.Equal(t, "    ", config.Indent)
+
+	// Test loading config for file in root directory
+	rootFile := filepath.Join(tempDir, "root.sql")
+	config, err = LoadConfigFileForPath(rootFile)
+	require.NoError(t, err)
+	require.Equal(t, "postgresql", config.Language)
+	require.Equal(t, "uppercase", config.KeywordCase)
+}
+
+// TestGetConfigSearchPathsForPath tests the search path generation for file-specific config loading.
+func TestGetConfigSearchPathsForPath(t *testing.T) {
+	// Create a temporary directory structure
+	tempDir, err := os.MkdirTemp("", "sqlfmt-search-paths-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	// Create subdirectory
+	subDir := filepath.Join(tempDir, "project", "sql")
+	err = os.MkdirAll(subDir, 0o755)
+	require.NoError(t, err)
+
+	testFile := filepath.Join(subDir, "test.sql")
+	paths := getConfigSearchPathsForPath(testFile)
+
+	// Should include paths from file directory up to temp directory
+	expectedPaths := []string{
+		filepath.Join(subDir, ".sqlfmtrc"),
+		filepath.Join(subDir, ".sqlfmt.yaml"),
+		filepath.Join(subDir, ".sqlfmt.yml"),
+		filepath.Join(subDir, "sqlfmt.yaml"),
+		filepath.Join(subDir, "sqlfmt.yml"),
+		filepath.Join(tempDir, "project", ".sqlfmtrc"),
+		filepath.Join(tempDir, "project", ".sqlfmt.yaml"),
+		filepath.Join(tempDir, "project", ".sqlfmt.yml"),
+		filepath.Join(tempDir, "project", "sqlfmt.yaml"),
+		filepath.Join(tempDir, "project", "sqlfmt.yml"),
+		filepath.Join(tempDir, ".sqlfmtrc"),
+		filepath.Join(tempDir, ".sqlfmt.yaml"),
+		filepath.Join(tempDir, ".sqlfmt.yml"),
+		filepath.Join(tempDir, "sqlfmt.yaml"),
+		filepath.Join(tempDir, "sqlfmt.yml"),
+	}
+
+	// Check that expected paths are included (order may vary)
+	for _, expected := range expectedPaths {
+		require.Contains(t, paths, expected, "Expected path %s not found in search paths", expected)
+	}
+}
+
+// TestParseInlineDialectHint tests parsing of inline dialect hints in SQL comments.
+func TestParseInlineDialectHint(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		expected Language
+		found    bool
+	}{
+		{
+			name:     "no hint",
+			content:  "SELECT * FROM users;",
+			expected: StandardSQL,
+			found:    false,
+		},
+		{
+			name: "mysql hint",
+			content: `-- sqlfmt: dialect=mysql
+SELECT * FROM users;`,
+			expected: MySQL,
+			found:    true,
+		},
+		{
+			name: "postgresql hint",
+			content: `-- sqlfmt: dialect=postgresql
+SELECT * FROM users;`,
+			expected: PostgreSQL,
+			found:    true,
+		},
+		{
+			name: "sqlite hint",
+			content: `-- sqlfmt: dialect=sqlite
+SELECT * FROM users;`,
+			expected: SQLite,
+			found:    true,
+		},
+		{
+			name: "hint with extra whitespace",
+			content: `   --   sqlfmt:   dialect=mysql   
+SELECT * FROM users;`,
+			expected: MySQL,
+			found:    true,
+		},
+		{
+			name: "hint after non-comment line",
+			content: `SELECT * FROM users;
+-- sqlfmt: dialect=mysql`,
+			expected: StandardSQL,
+			found:    false,
+		},
+		{
+			name: "multiple comments, hint first",
+			content: `-- sqlfmt: dialect=postgresql
+-- This is another comment
+SELECT * FROM users;`,
+			expected: PostgreSQL,
+			found:    true,
+		},
+		{
+			name: "case insensitive dialect",
+			content: `-- sqlfmt: dialect=POSTGRESQL
+SELECT * FROM users;`,
+			expected: PostgreSQL,
+			found:    true,
+		},
+		{
+			name: "alias postgres",
+			content: `-- sqlfmt: dialect=postgres
+SELECT * FROM users;`,
+			expected: PostgreSQL,
+			found:    true,
+		},
+		{
+			name: "alias mariadb",
+			content: `-- sqlfmt: dialect=mariadb
+SELECT * FROM users;`,
+			expected: MySQL,
+			found:    true,
+		},
+		{
+			name: "alias plsql",
+			content: `-- sqlfmt: dialect=plsql
+SELECT * FROM users;`,
+			expected: PLSQL,
+			found:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, found := ParseInlineDialectHint(tt.content)
+			require.Equal(t, tt.found, found)
+			if found {
+				require.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
 func TestCaseInsensitiveLanguageParsing(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -600,7 +775,7 @@ func TestCaseInsensitiveLanguageParsing(t *testing.T) {
 			require.NoError(t, err)
 
 			configContent := "language: " + tt.yamlLanguage
-			err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0644)
+			err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
 			require.NoError(t, err)
 
 			configFile, err := LoadConfigFile()
@@ -615,7 +790,7 @@ func TestCaseInsensitiveLanguageParsing(t *testing.T) {
 	}
 }
 
-// TestCaseInsensitiveKeywordCaseParsing tests that keyword_case parsing is case-insensitive
+// TestCaseInsensitiveKeywordCaseParsing tests that keyword_case parsing is case-insensitive.
 func TestCaseInsensitiveKeywordCaseParsing(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -637,7 +812,7 @@ func TestCaseInsensitiveKeywordCaseParsing(t *testing.T) {
 			require.NoError(t, err)
 
 			configContent := "keyword_case: " + tt.yamlKeywordCase
-			err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0644)
+			err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
 			require.NoError(t, err)
 
 			configFile, err := LoadConfigFile()

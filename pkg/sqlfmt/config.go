@@ -40,6 +40,9 @@ type Config struct {
 	Params              *Params
 	ColorConfig         *ColorConfig
 	TokenizerConfig     *TokenizerConfig
+	AlignColumnNames    bool
+	AlignAssignments    bool
+	AlignValues         bool
 }
 
 func NewDefaultConfig() *Config {
@@ -51,6 +54,9 @@ func NewDefaultConfig() *Config {
 		Params:              NewMapParams(nil),
 		ColorConfig:         &ColorConfig{},
 		TokenizerConfig:     &TokenizerConfig{},
+		AlignColumnNames:    false,
+		AlignAssignments:    false,
+		AlignValues:         false,
 	}
 }
 
@@ -92,6 +98,21 @@ func (c *Config) WithColorConfig(config *ColorConfig) *Config {
 
 func (c *Config) WithTokenizerConfig(config *TokenizerConfig) *Config {
 	c.TokenizerConfig = config
+	return c
+}
+
+func (c *Config) WithAlignColumnNames(align bool) *Config {
+	c.AlignColumnNames = align
+	return c
+}
+
+func (c *Config) WithAlignAssignments(align bool) *Config {
+	c.AlignAssignments = align
+	return c
+}
+
+func (c *Config) WithAlignValues(align bool) *Config {
+	c.AlignValues = align
 	return c
 }
 

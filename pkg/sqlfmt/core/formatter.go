@@ -33,6 +33,19 @@ type formatter struct {
 	previousReservedWord types.Token
 	tokens               []types.Token
 	index                int
+	// Alignment state
+	inSelectClause          bool
+	selectColumnLengths     []int
+	currentColumnLength     int
+	currentSelectIndex      int
+	inUpdateSetClause       bool
+	updateAssignmentLengths []int
+	currentAssignmentLength int
+	currentUpdateIndex      int
+	inInsertValuesClause    bool
+	insertValuesLengths     []int
+	currentValuesLength     int
+	currentInsertIndex      int
 }
 
 // newFormatter creates a new formatter instance.
@@ -43,23 +56,295 @@ func newFormatter(cfg *Config, tokenizer *tokenizer,
 		cfg.ColorConfig = &ColorConfig{}
 	}
 	return &formatter{
-		cfg:                  cfg,
-		indentation:          utils.NewIndentation(cfg.Indent),
-		inlineBlock:          utils.NewInlineBlock(),
-		params:               utils.NewParams(cfg.Params),
-		tokenizer:            tokenizer,
-		tokenOverride:        tokenOverride,
-		previousReservedWord: types.Token{},
-		tokens:               []types.Token{},
-		index:                0,
+		cfg:                     cfg,
+		indentation:             utils.NewIndentation(cfg.Indent),
+		inlineBlock:             utils.NewInlineBlock(),
+		params:                  utils.NewParams(cfg.Params),
+		tokenizer:               tokenizer,
+		tokenOverride:           tokenOverride,
+		previousReservedWord:    types.Token{},
+		tokens:                  []types.Token{},
+		index:                   0,
+		inSelectClause:          false,
+		selectColumnLengths:     []int{},
+		currentColumnLength:     0,
+		currentSelectIndex:      0,
+		inUpdateSetClause:       false,
+		updateAssignmentLengths: []int{},
+		currentAssignmentLength: 0,
+		currentUpdateIndex:      0,
+		inInsertValuesClause:    false,
+		insertValuesLengths:     []int{},
+		currentValuesLength:     0,
+		currentInsertIndex:      0,
 	}
 }
 
 // format formats whitespace in a SQL string to make it easier to read.
 func (f *formatter) format(query string) string {
 	f.tokens = f.tokenizer.tokenize(query)
+
+	// Pre-analyze for alignment if needed
+	if f.cfg.AlignColumnNames {
+		f.analyzeSelectClauses()
+	}
+	if f.cfg.AlignAssignments {
+		f.analyzeUpdateSetClauses()
+	}
+	if f.cfg.AlignValues {
+		f.analyzeInsertValuesClauses()
+	}
+
 	formattedQuery := f.getFormattedQueryFromTokens()
 	return strings.TrimSpace(formattedQuery)
+}
+
+// analyzeSelectClauses performs a pre-analysis pass to collect alignment information for SELECT clauses.
+func (f *formatter) analyzeSelectClauses() {
+	f.selectColumnLengths = []int{}
+
+	for i, tok := range f.tokens {
+		f.index = i
+
+		if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "SELECT" {
+			f.analyzeSelectClause()
+		}
+	}
+}
+
+// analyzeUpdateSetClauses performs a pre-analysis pass to collect alignment information for UPDATE SET clauses.
+func (f *formatter) analyzeUpdateSetClauses() {
+	f.updateAssignmentLengths = []int{}
+
+	for i, tok := range f.tokens {
+		f.index = i
+
+		if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "UPDATE" {
+			f.analyzeUpdateSetClause()
+		}
+	}
+}
+
+// analyzeInsertValuesClauses performs a pre-analysis pass to collect alignment information for INSERT VALUES clauses.
+func (f *formatter) analyzeInsertValuesClauses() {
+	f.insertValuesLengths = []int{}
+
+	for i, tok := range f.tokens {
+		f.index = i
+
+		if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "INSERT" {
+			f.analyzeInsertValuesClause()
+		}
+	}
+}
+
+// analyzeSelectClause analyzes a single SELECT clause to determine column alignment lengths.
+func (f *formatter) analyzeSelectClause() {
+	// Find the end of the SELECT clause (FROM, WHERE, etc.)
+	endIndex := f.findSelectClauseEnd()
+	if endIndex == -1 {
+		return
+	}
+
+	// Collect column lengths by simulating formatting
+	columnLengths := []int{}
+	currentLength := 0
+
+	for i := f.index + 1; i < endIndex; i++ {
+		tok := f.tokens[i]
+
+		if tok.Type == types.TokenTypeReservedTopLevel && f.isSelectClauseTerminator(tok.Value) {
+			break
+		}
+
+		if tok.Value == "," {
+			if currentLength > 0 {
+				columnLengths = append(columnLengths, currentLength)
+				currentLength = 0
+			}
+		} else if tok.Type != types.TokenTypeWhitespace && tok.Type != types.TokenTypeLineComment && tok.Type != types.TokenTypeBlockComment {
+			// Approximate rendered length
+			if tok.Type == types.TokenTypeReserved {
+				currentLength += len(f.formatReservedWord(tok.Value)) + 1 // +1 for space
+			} else {
+				currentLength += len(tok.Value) + 1 // +1 for space
+			}
+		}
+	}
+
+	// Add the last column if we ended without a comma
+	if currentLength > 0 {
+		columnLengths = append(columnLengths, currentLength)
+	}
+
+	// Store the maximum length for alignment
+	if len(columnLengths) > 0 {
+		maxLength := 0
+		for _, length := range columnLengths {
+			if length > maxLength {
+				maxLength = length
+			}
+		}
+		f.selectColumnLengths = append(f.selectColumnLengths, maxLength)
+	}
+}
+
+// analyzeUpdateSetClause analyzes a single UPDATE SET clause to determine assignment alignment lengths.
+func (f *formatter) analyzeUpdateSetClause() {
+	// Find the SET keyword
+	setIndex := -1
+	for i := f.index + 1; i < len(f.tokens); i++ {
+		tok := f.tokens[i]
+		if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "SET" {
+			setIndex = i
+			break
+		}
+	}
+	if setIndex == -1 {
+		return
+	}
+
+	// Find the end of the SET clause (WHERE, etc.)
+	endIndex := f.findUpdateSetClauseEnd(setIndex)
+	if endIndex == -1 {
+		endIndex = len(f.tokens)
+	}
+
+	// Collect assignment lengths by simulating formatting
+	assignmentLengths := []int{}
+	currentLength := 0
+
+	for i := setIndex + 1; i < endIndex; i++ {
+		tok := f.tokens[i]
+
+		if tok.Type == types.TokenTypeReservedTopLevel && f.isUpdateSetClauseTerminator(tok.Value) {
+			break
+		}
+
+		if tok.Value == "=" {
+			// Store the length up to the equals sign
+			if currentLength > 0 {
+				assignmentLengths = append(assignmentLengths, currentLength)
+				currentLength = 0
+			}
+		} else if tok.Value == "," {
+			// Skip commas
+			continue
+		} else if tok.Type != types.TokenTypeWhitespace && tok.Type != types.TokenTypeLineComment && tok.Type != types.TokenTypeBlockComment {
+			// Approximate rendered length
+			if tok.Type == types.TokenTypeReserved {
+				currentLength += len(f.formatReservedWord(tok.Value)) + 1 // +1 for space
+			} else {
+				currentLength += len(tok.Value) + 1 // +1 for space
+			}
+		}
+	}
+
+	// Store the maximum length for alignment
+	if len(assignmentLengths) > 0 {
+		maxLength := 0
+		for _, length := range assignmentLengths {
+			if length > maxLength {
+				maxLength = length
+			}
+		}
+		f.updateAssignmentLengths = append(f.updateAssignmentLengths, maxLength)
+	}
+}
+
+// analyzeInsertValuesClause analyzes a single INSERT VALUES clause to determine values alignment lengths.
+func (f *formatter) analyzeInsertValuesClause() {
+	// Find the VALUES keyword
+	valuesIndex := -1
+	for i := f.index + 1; i < len(f.tokens); i++ {
+		tok := f.tokens[i]
+		if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "VALUES" {
+			valuesIndex = i
+			break
+		}
+	}
+	if valuesIndex == -1 {
+		return
+	}
+
+	// Find the end of the VALUES clause (semicolon, etc.)
+	endIndex := f.findInsertValuesClauseEnd(valuesIndex)
+	if endIndex == -1 {
+		endIndex = len(f.tokens)
+	}
+
+	// For INSERT VALUES, we want to keep all values in each tuple on the same line
+	// So we just need to detect that VALUES alignment is enabled for this INSERT
+	f.insertValuesLengths = append(f.insertValuesLengths, 1) // Just mark that alignment is enabled
+}
+
+// findSelectClauseEnd finds the end of the current SELECT clause.
+func (f *formatter) findSelectClauseEnd() int {
+	for i := f.index + 1; i < len(f.tokens); i++ {
+		tok := f.tokens[i]
+		if tok.Type == types.TokenTypeReservedTopLevel && f.isSelectClauseTerminator(tok.Value) {
+			return i
+		}
+	}
+	return -1
+}
+
+// findUpdateSetClauseEnd finds the end of the current UPDATE SET clause.
+func (f *formatter) findUpdateSetClauseEnd(setIndex int) int {
+	for i := setIndex + 1; i < len(f.tokens); i++ {
+		tok := f.tokens[i]
+		if tok.Type == types.TokenTypeReservedTopLevel && f.isUpdateSetClauseTerminator(tok.Value) {
+			return i
+		}
+	}
+	return -1
+}
+
+// findInsertValuesClauseEnd finds the end of the current INSERT VALUES clause.
+func (f *formatter) findInsertValuesClauseEnd(valuesIndex int) int {
+	for i := valuesIndex + 1; i < len(f.tokens); i++ {
+		tok := f.tokens[i]
+		if tok.Value == ";" || (tok.Type == types.TokenTypeReservedTopLevel && f.isInsertValuesClauseTerminator(tok.Value)) {
+			return i
+		}
+	}
+	return -1
+}
+
+// isSelectClauseTerminator checks if a token value terminates a SELECT clause.
+func (f *formatter) isSelectClauseTerminator(value string) bool {
+	terminators := []string{"FROM", "WHERE", "GROUP BY", "ORDER BY", "HAVING", "LIMIT", "UNION", "INTERSECT", "EXCEPT"}
+	value = strings.ToUpper(value)
+	for _, term := range terminators {
+		if value == term {
+			return true
+		}
+	}
+	return false
+}
+
+// isUpdateSetClauseTerminator checks if a token value terminates an UPDATE SET clause.
+func (f *formatter) isUpdateSetClauseTerminator(value string) bool {
+	terminators := []string{"WHERE", "FROM", "RETURNING"}
+	value = strings.ToUpper(value)
+	for _, term := range terminators {
+		if value == term {
+			return true
+		}
+	}
+	return false
+}
+
+// isInsertValuesClauseTerminator checks if a token value terminates an INSERT VALUES clause.
+func (f *formatter) isInsertValuesClauseTerminator(value string) bool {
+	terminators := []string{"WHERE", "FROM", "RETURNING", "ON"}
+	value = strings.ToUpper(value)
+	for _, term := range terminators {
+		if value == term {
+			return true
+		}
+	}
+	return false
 }
 
 // FormatQuery is a public wrapper function for creating a formatter and formatting a query.
@@ -121,6 +406,38 @@ func (f *formatter) formatToken(tok types.Token, formattedQuery *strings.Builder
 
 func (f *formatter) formatReservedTopLevelToken(tok types.Token, formattedQuery *strings.Builder) {
 	f.formatTopLevelReservedWord(tok, formattedQuery)
+
+	// Track SELECT clause state for alignment
+	if strings.ToUpper(tok.Value) == "SELECT" {
+		f.inSelectClause = true
+		f.currentColumnLength = 0
+	} else if f.inSelectClause && f.isSelectClauseTerminator(tok.Value) {
+		f.inSelectClause = false
+		f.currentSelectIndex++
+	}
+
+	// Track UPDATE SET clause state for alignment
+	if strings.ToUpper(tok.Value) == "UPDATE" {
+		f.inUpdateSetClause = false // Reset, will be set when we encounter SET
+		f.currentUpdateIndex++
+	} else if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "SET" && f.cfg.AlignAssignments {
+		f.inUpdateSetClause = true
+		f.currentAssignmentLength = 0
+	} else if f.inUpdateSetClause && f.isUpdateSetClauseTerminator(tok.Value) {
+		f.inUpdateSetClause = false
+	}
+
+	// Track INSERT VALUES clause state for alignment
+	if strings.ToUpper(tok.Value) == "INSERT" {
+		f.inInsertValuesClause = false // Reset, will be set when we encounter VALUES
+		f.currentInsertIndex++
+	} else if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "VALUES" && f.cfg.AlignValues {
+		f.inInsertValuesClause = true
+		f.currentValuesLength = 0
+	} else if f.inInsertValuesClause && f.isInsertValuesClauseTerminator(tok.Value) {
+		f.inInsertValuesClause = false
+	}
+
 	f.previousReservedWord = tok
 }
 
@@ -232,6 +549,11 @@ func (f *formatter) formatOpeningParentheses(tok types.Token, query *strings.Bui
 	query.WriteString(value)
 
 	f.inlineBlock.BeginIfPossible(f.tokens, f.index)
+	// For INSERT VALUES alignment, treat as inline even if not detected as such
+	if !f.inlineBlock.IsActive() && f.cfg.AlignValues && f.inInsertValuesClause {
+		// Skip indentation for VALUES parentheses when alignment is enabled
+		return
+	}
 	if !f.inlineBlock.IsActive() {
 		f.indentation.IncreaseBlockLevel()
 		f.addNewline(query)
@@ -248,6 +570,9 @@ func (f *formatter) formatClosingParentheses(tok types.Token, query *strings.Bui
 
 	if f.inlineBlock.IsActive() {
 		f.inlineBlock.End()
+		f.formatWithSpaceAfter(tok, query)
+	} else if f.cfg.AlignValues && f.inInsertValuesClause {
+		// For INSERT VALUES alignment, treat as inline block
 		f.formatWithSpaceAfter(tok, query)
 	} else {
 		f.indentation.DecreaseBlockLevel()
@@ -267,10 +592,53 @@ func (f *formatter) formatPlaceholder(tok types.Token, query *strings.Builder) {
 // is not active, it will add a new line too.
 func (f *formatter) formatComma(tok types.Token, query *strings.Builder) {
 	trimSpacesEnd(query)
+
+	// Handle alignment for SELECT clauses
+	if f.cfg.AlignColumnNames && f.inSelectClause && f.currentSelectIndex < len(f.selectColumnLengths) {
+		maxLength := f.selectColumnLengths[f.currentSelectIndex]
+		padding := maxLength - f.currentColumnLength
+		if padding > 0 {
+			query.WriteString(strings.Repeat(" ", padding))
+		}
+	}
+
+	// Handle alignment for UPDATE SET clauses
+	if f.cfg.AlignAssignments && f.inUpdateSetClause && f.currentUpdateIndex-1 < len(f.updateAssignmentLengths) {
+		maxLength := f.updateAssignmentLengths[f.currentUpdateIndex-1]
+		padding := maxLength - f.currentAssignmentLength
+		if padding > 0 {
+			query.WriteString(strings.Repeat(" ", padding))
+		}
+	}
+
+	// Handle alignment for INSERT VALUES clauses
+	if f.cfg.AlignValues && f.inInsertValuesClause && f.currentInsertIndex-1 < len(f.insertValuesLengths) {
+		// For INSERT VALUES alignment, keep all values in a tuple on the same line
+		// All commas within VALUES should not add newlines
+		query.WriteString(tok.Value)
+		query.WriteString(" ")
+		return
+	}
+
 	query.WriteString(tok.Value)
 	query.WriteString(" ")
 
-	if f.inlineBlock.IsActive() {
+	// For alignment, keep assignments on the same line
+	if f.cfg.AlignAssignments && f.inUpdateSetClause {
+		return
+	}
+
+	// For alignment, keep columns on the same line
+	if f.cfg.AlignColumnNames && f.inSelectClause {
+		return
+	}
+
+	// For alignment, keep values on the same line
+	if f.cfg.AlignValues && f.inInsertValuesClause {
+		return
+	}
+
+	if f.inlineBlock.IsActive() || (f.cfg.AlignValues && f.inInsertValuesClause) {
 		return
 	}
 	if limitKeywordRegex.MatchString(f.previousReservedWord.Value) {
@@ -278,6 +646,21 @@ func (f *formatter) formatComma(tok types.Token, query *strings.Builder) {
 		return
 	} else {
 		f.addNewline(query)
+	}
+
+	// Reset column length tracking for next column
+	if f.inSelectClause {
+		f.currentColumnLength = 0
+	}
+
+	// Reset assignment length tracking for next assignment
+	if f.inUpdateSetClause {
+		f.currentAssignmentLength = 0
+	}
+
+	// Reset values length tracking for next value
+	if f.inInsertValuesClause {
+		f.currentValuesLength = 0
 	}
 }
 
@@ -311,6 +694,19 @@ func (f *formatter) formatWithSpaces(tok types.Token, query *strings.Builder) {
 
 	query.WriteString(value)
 	query.WriteString(" ")
+
+	// Track column length for SELECT alignment
+	if f.inSelectClause {
+		f.currentColumnLength += len(value) + 1 // +1 for the space
+	}
+
+	// Track assignment length for UPDATE alignment (up to equals sign)
+	if f.inUpdateSetClause && tok.Value != "=" {
+		nextTok := f.nextToken()
+		if nextTok.Value != "=" {
+			f.currentAssignmentLength += len(value) + 1 // +1 for the space
+		}
+	}
 }
 
 // formatReservedWord makes sure the reserved word is formatted according to the Config.

@@ -53,6 +53,9 @@ func createFormatterForLanguage(c *Config) Formatter {
 		Params:              convertParams(c.Params, c.Language),
 		ColorConfig:         convertColorConfig(c.ColorConfig),
 		TokenizerConfig:     convertTokenizerConfig(c.TokenizerConfig),
+		AlignColumnNames:    c.AlignColumnNames,
+		AlignAssignments:    c.AlignAssignments,
+		AlignValues:         c.AlignValues,
 	}
 
 	return dialects.CreateFormatterForLanguage(coreCfg)
@@ -135,6 +138,9 @@ func convertToInternalConfig(c *Config) *core.Config {
 		Params:              convertParams(c.Params, c.Language),
 		ColorConfig:         convertColorConfig(c.ColorConfig),
 		TokenizerConfig:     convertTokenizerConfig(c.TokenizerConfig),
+		AlignColumnNames:    c.AlignColumnNames,
+		AlignAssignments:    c.AlignAssignments,
+		AlignValues:         c.AlignValues,
 	}
 }
 

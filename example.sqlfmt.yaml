@@ -10,3 +10,7 @@ keyword_case: lowercase
 indent: "    "
 # Number of lines between separate queries
 lines_between_queries: 1
+# Vertical alignment options
+align_column_names: false
+align_assignments: false
+align_values: false

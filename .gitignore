@@ -24,8 +24,10 @@ go.work.sum
 # env file
 .env
 
-# Jetbrains
+# IDE
 .idea
+.vscode
+.trunk
 
 # Build output directory
 bin/

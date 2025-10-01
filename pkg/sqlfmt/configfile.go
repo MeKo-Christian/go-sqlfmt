@@ -90,6 +90,99 @@ func isGitRoot(dir string) bool {
 	return false
 }
 
+// LoadConfigFileForPath attempts to load configuration from various locations relative to a file path.
+func LoadConfigFileForPath(filePath string) (*ConfigFile, error) {
+	searchPaths := getConfigSearchPathsForPath(filePath)
+
+	for _, path := range searchPaths {
+		if content, err := os.ReadFile(path); err == nil {
+			var config ConfigFile
+			if err := yaml.Unmarshal(content, &config); err != nil {
+				return nil, fmt.Errorf("failed to parse config file %s: %w", path, err)
+			}
+			return &config, nil
+		}
+	}
+
+	// No config file found, return empty config
+	return &ConfigFile{}, nil
+}
+
+// getConfigSearchPathsForPath returns the list of paths to search for config files relative to a file path.
+func getConfigSearchPathsForPath(filePath string) []string {
+	var paths []string
+
+	// Get the directory of the file
+	fileDir := filepath.Dir(filePath)
+
+	// Search from file directory up to git root
+	dir := fileDir
+	for {
+		// Add potential config files in this directory
+		for _, filename := range []string{".sqlfmtrc", ".sqlfmt.yaml", ".sqlfmt.yml", "sqlfmt.yaml", "sqlfmt.yml"} {
+			paths = append(paths, filepath.Join(dir, filename))
+		}
+
+		parent := filepath.Dir(dir)
+
+		// Stop if we've reached the root or found a git directory
+		if parent == dir || isGitRoot(dir) {
+			break
+		}
+
+		dir = parent
+	}
+
+	// Also search user home directory (global configs)
+	if homeDir, err := os.UserHomeDir(); err == nil {
+		paths = append(paths,
+			filepath.Join(homeDir, ".sqlfmtrc"),
+			filepath.Join(homeDir, ".sqlfmt.yaml"),
+			filepath.Join(homeDir, ".sqlfmt.yml"),
+		)
+	}
+
+	return paths
+}
+
+// ParseInlineDialectHint parses SQL comments for dialect hints like "-- sqlfmt: dialect=mysql"
+func ParseInlineDialectHint(content string) (Language, bool) {
+	lines := strings.Split(content, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "--") {
+			comment := strings.TrimSpace(strings.TrimPrefix(line, "--"))
+			if strings.HasPrefix(comment, "sqlfmt:") {
+				directive := strings.TrimSpace(strings.TrimPrefix(comment, "sqlfmt:"))
+				if strings.HasPrefix(directive, "dialect=") {
+					dialectStr := strings.TrimSpace(strings.TrimPrefix(directive, "dialect="))
+					switch strings.ToLower(dialectStr) {
+					case "sql", "standard":
+						return StandardSQL, true
+					case "postgresql", "postgres":
+						return PostgreSQL, true
+					case "mysql", "mariadb":
+						return MySQL, true
+					case "pl/sql", "plsql", "oracle":
+						return PLSQL, true
+					case "db2":
+						return DB2, true
+					case "n1ql":
+						return N1QL, true
+					case "sqlite":
+						return SQLite, true
+					}
+				}
+			}
+		}
+		// Stop at first non-comment line
+		if line != "" && !strings.HasPrefix(line, "--") {
+			break
+		}
+	}
+	return StandardSQL, false
+}
+
 // ApplyToConfig applies the configuration file settings to a Config struct.
 func (cf *ConfigFile) ApplyToConfig(config *Config) error {
 	if cf.Language != "" {

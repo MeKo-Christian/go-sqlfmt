@@ -36,6 +36,9 @@ sqlfmt pretty-format query.sql
 # Format for specific dialect
 sqlfmt format --lang=postgresql query.sql
 
+# Auto-detect SQL dialect from file extension and content
+sqlfmt format --auto-detect query.mysql
+
 # Use a configuration file for persistent settings
 echo "language: postgresql\nkeyword_case: lowercase" > .sqlfmt.yaml
 sqlfmt format query.sql  # Uses settings from .sqlfmt.yaml
@@ -75,6 +78,7 @@ WHERE
 - **[CLI Usage](docs/cli-usage.md)** - Complete CLI commands and options
 - **[Library Usage](docs/library-usage.md)** - Go API documentation and examples
 - **[Configuration](docs/configuration.md)** - Configuration options and customization
+- **[Dialect Auto-Detection](docs/dialect-detection.md)** - Automatic SQL dialect detection
 
 ### SQL Dialects
 
@@ -94,6 +98,7 @@ WHERE
 ## Key Features
 
 - **Multiple SQL Dialects** - Support for 7 major SQL variants
+- **Auto-Detection** - Automatically detect SQL dialect from file extensions and content
 - **Colored Output** - ANSI color formatting for terminal display
 - **Configuration Files** - Project-wide and user-wide settings with `.sqlfmt.yaml` files
 - **Flexible Configuration** - Customizable indentation, keywords, and formatting rules

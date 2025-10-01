@@ -10,7 +10,7 @@ import (
 )
 
 // TestRealWorldScenarios tests formatting of real-world SQL scenarios
-// including migrations, stored procedures, analytics queries, and mixed DDL/DML
+// including migrations, stored procedures, analytics queries, and mixed DDL/DML.
 func TestRealWorldScenarios(t *testing.T) {
 	scenariosDir := filepath.Join("..", "..", "testdata", "scenarios")
 
@@ -40,8 +40,10 @@ func TestRealWorldScenarios(t *testing.T) {
 	}
 }
 
-// testScenarioFile tests a single scenario SQL file
+// testScenarioFile tests a single scenario SQL file.
 func testScenarioFile(t *testing.T, filePath string) {
+	t.Helper()
+
 	// Read the SQL file
 	content, err := os.ReadFile(filePath)
 	require.NoError(t, err)
@@ -122,7 +124,7 @@ func testScenarioFile(t *testing.T, filePath string) {
 	})
 }
 
-// detectDialectFromFilename determines SQL dialect from filename
+// detectDialectFromFilename determines SQL dialect from filename.
 func detectDialectFromFilename(filename string) string {
 	base := strings.ToLower(filepath.Base(filename))
 	if strings.HasPrefix(base, "postgresql") {
@@ -137,7 +139,7 @@ func detectDialectFromFilename(filename string) string {
 	return "standard"
 }
 
-// countSQLKeywords counts major SQL keywords in a string
+// countSQLKeywords counts major SQL keywords in a string.
 func countSQLKeywords(sql string) map[string]int {
 	keywords := []string{
 		"SELECT", "FROM", "WHERE", "JOIN", "INNER", "LEFT", "RIGHT", "FULL",
@@ -157,7 +159,7 @@ func countSQLKeywords(sql string) map[string]int {
 	return counts
 }
 
-// TestScenarioPerformance tests that scenario files format within reasonable time
+// TestScenarioPerformance tests that scenario files format within reasonable time.
 func TestScenarioPerformance(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping performance test in short mode")
@@ -193,7 +195,7 @@ func TestScenarioPerformance(t *testing.T) {
 	}
 }
 
-// TestScenarioComplexity tests various complexity metrics of scenario files
+// TestScenarioComplexity tests various complexity metrics of scenario files.
 func TestScenarioComplexity(t *testing.T) {
 	scenariosDir := filepath.Join("..", "..", "testdata", "scenarios")
 
@@ -213,18 +215,19 @@ func TestScenarioComplexity(t *testing.T) {
 				nestedLevel := 0
 				maxNestedLevel := 0
 				for _, char := range sqlContent {
-					if char == '(' {
+					switch char {
+					case '(':
 						nestedLevel++
 						if nestedLevel > maxNestedLevel {
 							maxNestedLevel = nestedLevel
 						}
-					} else if char == ')' {
+					case ')':
 						nestedLevel--
 					}
 				}
 
 				// Should handle reasonable nesting levels
-				require.True(t, maxNestedLevel <= 10, "Nesting level should be reasonable (max 10, got %d)", maxNestedLevel)
+				require.LessOrEqual(t, maxNestedLevel, 10, "Nesting level should be reasonable (max 10, got %d)", maxNestedLevel)
 			})
 
 			t.Run("statement_count", func(t *testing.T) {
@@ -232,7 +235,7 @@ func TestScenarioComplexity(t *testing.T) {
 				statementCount := strings.Count(sqlContent, ";")
 
 				// Should handle files with multiple statements
-				require.True(t, statementCount <= 100, "Should have reasonable number of statements (max 100, got %d)", statementCount)
+				require.LessOrEqual(t, statementCount, 100, "Should have reasonable number of statements (max 100, got %d)", statementCount)
 			})
 
 			t.Run("line_length", func(t *testing.T) {
@@ -245,7 +248,7 @@ func TestScenarioComplexity(t *testing.T) {
 				}
 
 				// Should handle long lines (but formatter should help with this)
-				require.True(t, maxLineLength <= 1000, "Line length should be reasonable (max 1000, got %d)", maxLineLength)
+				require.LessOrEqual(t, maxLineLength, 1000, "Line length should be reasonable (max 1000, got %d)", maxLineLength)
 			})
 		})
 	}

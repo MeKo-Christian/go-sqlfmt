@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// TestMemoryUsage_ProfileAllocation tests memory allocation patterns during formatting
+// TestMemoryUsage_ProfileAllocation tests memory allocation patterns during formatting.
 func TestMemoryUsage_ProfileAllocation(t *testing.T) {
 	// Force garbage collection before starting
 	runtime.GC()
@@ -77,7 +77,7 @@ func TestMemoryUsage_ProfileAllocation(t *testing.T) {
 	ORDER BY eh.department, eh.salary DESC, eh.name`
 
 	// Run formatting multiple times to get stable measurements
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		Format(largeQuery)
 	}
 
@@ -93,7 +93,7 @@ func TestMemoryUsage_ProfileAllocation(t *testing.T) {
 	}
 }
 
-// TestMemoryUsage_NoLeaks tests for memory leaks with repeated formatting operations
+// TestMemoryUsage_NoLeaks tests for memory leaks with repeated formatting operations.
 func TestMemoryUsage_NoLeaks(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping memory leak test in short mode")
@@ -127,7 +127,7 @@ func TestMemoryUsage_NoLeaks(t *testing.T) {
 
 	// Run many iterations to detect potential leaks
 	const iterations = 10000
-	for i := 0; i < iterations; i++ {
+	for i := range iterations {
 		Format(query)
 		if i%1000 == 0 {
 			runtime.GC() // Periodic GC to clean up
@@ -151,7 +151,7 @@ func TestMemoryUsage_NoLeaks(t *testing.T) {
 	}
 }
 
-// TestConcurrentFormatting tests concurrent formatting operations for thread safety and performance
+// TestConcurrentFormatting tests concurrent formatting operations for thread safety and performance.
 func TestConcurrentFormatting(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping concurrent formatting test in short mode")
@@ -172,12 +172,12 @@ func TestConcurrentFormatting(t *testing.T) {
 	var wg sync.WaitGroup
 	start := time.Now()
 
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		wg.Add(1)
 		go func(goroutineID int) {
 			defer wg.Done()
 
-			for j := 0; j < operationsPerGoroutine; j++ {
+			for j := range operationsPerGoroutine {
 				query := queries[j%len(queries)]
 				result := Format(query)
 				if result == "" {
@@ -204,7 +204,7 @@ func TestConcurrentFormatting(t *testing.T) {
 	}
 }
 
-// BenchmarkMemoryUsage tracks memory usage during benchmark operations
+// BenchmarkMemoryUsage tracks memory usage during benchmark operations.
 func BenchmarkMemoryUsage(b *testing.B) {
 	query := `SELECT
 		u.id,
@@ -234,7 +234,7 @@ func BenchmarkMemoryUsage(b *testing.B) {
 	}
 }
 
-// BenchmarkConcurrentFormatting benchmarks concurrent formatting operations
+// BenchmarkConcurrentFormatting benchmarks concurrent formatting operations.
 func BenchmarkConcurrentFormatting(b *testing.B) {
 	query := `SELECT
 		u.id,

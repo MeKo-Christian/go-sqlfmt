@@ -11,13 +11,17 @@ import (
 )
 
 var (
-	lang         string
-	indent       string
-	write        bool
-	color        bool
-	uppercase    bool
-	keywordCase  string
-	linesBetween int
+	lang             string
+	indent           string
+	write            bool
+	color            bool
+	uppercase        bool
+	keywordCase      string
+	linesBetween     int
+	autoDetect       bool
+	alignColumnNames bool
+	alignAssignments bool
+	alignValues      bool
 )
 
 var formatCmd = &cobra.Command{
@@ -55,18 +59,31 @@ func init() {
 		"Keyword casing options",
 	)
 	formatCmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
+	formatCmd.Flags().BoolVar(&autoDetect, "auto-detect", false, "Automatically detect SQL dialect from file extension and content")
+	formatCmd.Flags().BoolVar(&alignColumnNames, "align-column-names", false, "Align SELECT column names vertically")
+	formatCmd.Flags().BoolVar(&alignAssignments, "align-assignments", false, "Align UPDATE assignment operators vertically")
+	formatCmd.Flags().BoolVar(&alignValues, "align-values", false, "Align INSERT VALUES vertically")
 }
 
 func runFormat(cmd *cobra.Command, args []string) error {
 	config := buildConfig(cmd)
+
+	// Load ignore file if available
+	ignoreFile, err := sqlfmt.LoadIgnoreFile()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to load ignore file: %v\n", err)
+	}
 
 	// If no args or args is "-", read from stdin
 	if len(args) == 0 || (len(args) == 1 && args[0] == "-") {
 		return formatStdin(config)
 	}
 
-	// Process files
+	// Process files, filtering out ignored ones
 	for _, filename := range args {
+		if ignoreFile.ShouldIgnore(filename) {
+			continue
+		}
 		if err := formatFile(filename, config); err != nil {
 			return fmt.Errorf("failed to format %s: %w", filename, err)
 		}
@@ -98,6 +115,13 @@ func buildConfig(cmd *cobra.Command) *sqlfmt.Config {
 }
 
 func applyCommandLineFlags(cmd *cobra.Command, config *sqlfmt.Config) {
+	// Handle auto-detection first (only if explicitly requested)
+	if cmd.Flags().Changed("auto-detect") && autoDetect {
+		// Auto-detection will be handled per-file in formatFile
+		// For now, don't set language from --lang flag if auto-detect is used
+		return
+	}
+
 	// Set language (only if explicitly provided via flag)
 	if cmd.Flags().Changed("lang") {
 		applyLanguageFlag(config)
@@ -114,6 +138,17 @@ func applyCommandLineFlags(cmd *cobra.Command, config *sqlfmt.Config) {
 	// Set lines between queries (only if explicitly provided)
 	if cmd.Flags().Changed("lines-between") {
 		config.WithLinesBetweenQueries(linesBetween)
+	}
+
+	// Set alignment options (only if explicitly provided)
+	if cmd.Flags().Changed("align-column-names") {
+		config.WithAlignColumnNames(alignColumnNames)
+	}
+	if cmd.Flags().Changed("align-assignments") {
+		config.WithAlignAssignments(alignAssignments)
+	}
+	if cmd.Flags().Changed("align-values") {
+		config.WithAlignValues(alignValues)
 	}
 }
 
@@ -164,10 +199,29 @@ func applyKeywordCaseFlag(config *sqlfmt.Config) {
 	}
 }
 
-func formatStdin(config *sqlfmt.Config) error {
+func formatStdin(baseConfig *sqlfmt.Config) error {
 	input, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return fmt.Errorf("failed to read stdin: %w", err)
+	}
+
+	config := baseConfig
+
+	// For stdin, auto-detection only uses content (no file path available)
+	if autoDetect {
+		detectedLang, detected := sqlfmt.DetectDialect("", string(input))
+		if detected {
+			// Create a new config with detected language
+			config = &sqlfmt.Config{
+				Language:            detectedLang,
+				Indent:              baseConfig.Indent,
+				KeywordCase:         baseConfig.KeywordCase,
+				LinesBetweenQueries: baseConfig.LinesBetweenQueries,
+				Params:              baseConfig.Params,
+				ColorConfig:         baseConfig.ColorConfig,
+				TokenizerConfig:     baseConfig.TokenizerConfig,
+			}
+		}
 	}
 
 	var formatted string
@@ -181,17 +235,62 @@ func formatStdin(config *sqlfmt.Config) error {
 	return nil
 }
 
-func formatFile(filename string, config *sqlfmt.Config) error {
+func formatFile(filename string, baseConfig *sqlfmt.Config) error {
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
 
+	contentStr := string(content)
+
+	// Start with base config
+	config := baseConfig
+
+	// Load per-directory config file for this specific file
+	if dirConfig, err := sqlfmt.LoadConfigFileForPath(filename); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to load config file for %s: %v\n", filename, err)
+	} else {
+		// Apply directory-specific config (this will override global config)
+		if err := dirConfig.ApplyToConfig(config); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to apply config file for %s: %v\n", filename, err)
+		}
+	}
+
+	// Check for inline dialect hints (these override config file settings)
+	if hintedLang, found := sqlfmt.ParseInlineDialectHint(contentStr); found {
+		config = &sqlfmt.Config{
+			Language:            hintedLang,
+			Indent:              config.Indent,
+			KeywordCase:         config.KeywordCase,
+			LinesBetweenQueries: config.LinesBetweenQueries,
+			Params:              config.Params,
+			ColorConfig:         config.ColorConfig,
+			TokenizerConfig:     config.TokenizerConfig,
+		}
+	}
+
+	// Handle auto-detection if enabled (this overrides everything else)
+	if autoDetect {
+		detectedLang, detected := sqlfmt.DetectDialect(filename, contentStr)
+		if detected {
+			// Create a new config with detected language, preserving other settings
+			config = &sqlfmt.Config{
+				Language:            detectedLang,
+				Indent:              config.Indent,
+				KeywordCase:         config.KeywordCase,
+				LinesBetweenQueries: config.LinesBetweenQueries,
+				Params:              config.Params,
+				ColorConfig:         config.ColorConfig,
+				TokenizerConfig:     config.TokenizerConfig,
+			}
+		}
+	}
+
 	var formatted string
 	if color {
-		formatted = sqlfmt.PrettyFormat(string(content), config)
+		formatted = sqlfmt.PrettyFormat(contentStr, config)
 	} else {
-		formatted = sqlfmt.Format(string(content), config)
+		formatted = sqlfmt.Format(contentStr, config)
 	}
 
 	if write {
@@ -199,7 +298,11 @@ func formatFile(filename string, config *sqlfmt.Config) error {
 		if err := os.WriteFile(filename, []byte(formatted), 0o644); err != nil {
 			return fmt.Errorf("failed to write file: %w", err)
 		}
-		fmt.Printf("Formatted %s\n", filename)
+		fmt.Printf("Formatted %s", filename)
+		if autoDetect && config.Language != baseConfig.Language {
+			fmt.Printf(" (detected as %s)", config.Language)
+		}
+		fmt.Println()
 	} else {
 		// Output to stdout
 		fmt.Print(formatted)

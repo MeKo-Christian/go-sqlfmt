@@ -1419,3 +1419,127 @@ func runFormatterTests(t *testing.T, tests []struct {
 		})
 	}
 }
+
+func TestFormatAlignment(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
+		{
+			name:  "aligns SELECT columns when AlignColumnNames is true",
+			query: "SELECT id, name, email FROM users;",
+			exp: Dedent(`
+SELECT
+  id   , name, email
+FROM
+  users;
+`),
+			cfg: Config{AlignColumnNames: true},
+		},
+		{
+			name:  "does not align SELECT columns when AlignColumnNames is false",
+			query: "SELECT id, name, email FROM users;",
+			exp: Dedent(`
+SELECT
+  id,
+  name,
+  email
+FROM
+  users;
+`),
+			cfg: Config{AlignColumnNames: false},
+		},
+		{
+			name:  "aligns UPDATE assignments when AlignAssignments is true",
+			query: "UPDATE users SET name = 'John', email = 'john@example.com', age = 30 WHERE id = 1;",
+			exp: Dedent(`
+UPDATE
+  users
+SET
+  name = 'John'                  , email = 'john@example.com'            , age = 30
+WHERE
+  id = 1;
+`),
+			cfg: Config{AlignAssignments: true},
+		},
+		{
+			name:  "aligns INSERT values when AlignValues is true",
+			query: "INSERT INTO users (id, name, email, address, phone, created_at) VALUES (1, 'John Doe', 'john@example.com', '123 Main St, Anytown, USA', '+1-555-123-4567', '2023-01-01 00:00:00'), (2, 'Jane Smith', 'jane@example.com', '456 Oak Ave, Somewhere, USA', '+1-555-987-6543', '2023-01-02 00:00:00');",
+			exp: Dedent(`
+INSERT INTO
+  users (id, name, email, address, phone, created_at)
+VALUES
+  (1, 'John Doe', 'john@example.com', '123 Main St, Anytown, USA', '+1-555-123-4567', '2023-01-01 00:00:00'), (2, 'Jane Smith', 'jane@example.com', '456 Oak Ave, Somewhere, USA', '+1-555-987-6543', '2023-01-02 00:00:00');
+`),
+			cfg: Config{AlignValues: true},
+		},
+		{
+			name:  "does not align INSERT values when AlignValues is false",
+			query: "INSERT INTO users (id, name, email, address, phone, created_at) VALUES (1, 'John Doe', 'john@example.com', '123 Main St, Anytown, USA', '+1-555-123-4567', '2023-01-01 00:00:00'), (2, 'Jane Smith', 'jane@example.com', '456 Oak Ave, Somewhere, USA', '+1-555-987-6543', '2023-01-02 00:00:00');",
+			exp: Dedent(`
+INSERT INTO
+  users (id, name, email, address, phone, created_at)
+VALUES
+  (
+    1,
+    'John Doe',
+    'john@example.com',
+    '123 Main St, Anytown, USA',
+    '+1-555-123-4567',
+    '2023-01-01 00:00:00'
+  ),
+  (
+    2,
+    'Jane Smith',
+    'jane@example.com',
+    '456 Oak Ave, Somewhere, USA',
+    '+1-555-987-6543',
+    '2023-01-02 00:00:00'
+  );
+`),
+			cfg: Config{AlignValues: false},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Merge with default config
+			cfg := NewDefaultConfig()
+			if tt.cfg.Language != "" {
+				cfg.Language = tt.cfg.Language
+			}
+			if tt.cfg.Indent != "" {
+				cfg.Indent = tt.cfg.Indent
+			}
+			if tt.cfg.KeywordCase != "" {
+				cfg.KeywordCase = tt.cfg.KeywordCase
+			}
+			cfg.AlignColumnNames = tt.cfg.AlignColumnNames
+			cfg.AlignAssignments = tt.cfg.AlignAssignments
+			cfg.AlignValues = tt.cfg.AlignValues
+
+			result := Format(tt.query, cfg)
+
+			exp := strings.TrimRight(tt.exp, "\n\t ")
+			exp = strings.TrimLeft(exp, "\n")
+			exp = strings.ReplaceAll(exp, "\t", DefaultIndent)
+
+			if result != exp {
+				fmt.Println("=== QUERY ===")
+				fmt.Println(tt.query)
+				fmt.Println()
+
+				fmt.Println("=== EXP ===")
+				fmt.Println(exp)
+				fmt.Println()
+
+				fmt.Println("=== RESULT ===")
+				fmt.Println(result)
+				fmt.Println()
+			}
+			require.Equal(t, exp, result)
+		})
+	}
+}
