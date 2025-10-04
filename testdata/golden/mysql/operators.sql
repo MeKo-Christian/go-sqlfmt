@@ -3,10 +3,8 @@
 -- JSON operators: -> and ->>
 SELECT
   user_id,
-  profile->'$.name' as profile_name_json,
-  -- Returns JSON
-  profile->>'$.name' as profile_name_text,
-  -- Returns text
+  profile->'$.name' as profile_name_json, -- Returns JSON
+  profile->>'$.name' as profile_name_text, -- Returns text
   settings->'$.preferences'->'$.theme' as theme_json,
   settings->'$.preferences'->>'$.theme' as theme_text,
   metadata->'$.tags' [0] as first_tag_json,
@@ -125,20 +123,13 @@ WHERE
 SELECT
   user_id,
   permissions,
-  permissions & 1 as can_read,
-  -- Bitwise AND
-  permissions & 2 as can_write,
-  -- Check write permission  
-  permissions & 4 as can_delete,
-  -- Check delete permission
-  permissions | 8 as with_admin,
-  -- Bitwise OR - add admin
-  permissions ^ 16 as toggle_super,
-  -- Bitwise XOR - toggle super user
-  ~ permissions as inverted_permissions,
-  -- Bitwise NOT
-  permissions << 1 as left_shifted,
-  -- Left shift  
+  permissions & 1 as can_read, -- Bitwise AND
+  permissions & 2 as can_write, -- Check write permission  
+  permissions & 4 as can_delete, -- Check delete permission
+  permissions | 8 as with_admin, -- Bitwise OR - add admin
+  permissions ^ 16 as toggle_super, -- Bitwise XOR - toggle super user
+  ~ permissions as inverted_permissions, -- Bitwise NOT
+  permissions << 1 as left_shifted, -- Left shift  
   permissions >> 1 as right_shifted -- Right shift
 FROM
   user_permissions
@@ -151,14 +142,10 @@ WHERE
 SELECT
   product_id,
   feature_flags,
-  feature_flags & 0xFF as basic_features,
-  -- Mask lower 8 bits
-  (feature_flags >> 8) & 0xFF as advanced_features,
-  -- Extract middle 8 bits
-  feature_flags | 0x80000000 as with_enabled_flag,
-  -- Set high bit
-  feature_flags ^ (feature_flags & - feature_flags) as clear_lowest_bit,
-  -- Clear lowest set bit
+  feature_flags & 0xFF as basic_features, -- Mask lower 8 bits
+  (feature_flags >> 8) & 0xFF as advanced_features, -- Extract middle 8 bits
+  feature_flags | 0x80000000 as with_enabled_flag, -- Set high bit
+  feature_flags ^ (feature_flags & - feature_flags) as clear_lowest_bit, -- Clear lowest set bit
   CASE
     WHEN (feature_flags & (feature_flags - 1)) = 0
     AND feature_flags > 0 THEN 'POWER_OF_TWO'
@@ -186,13 +173,11 @@ SELECT
   e.event_id,
   e.user_id,
   e.event_data->'$.action'->>'$' as action,
-  u.permissions,
-  -- JSON + NULL-safe equality
+  u.permissions, -- JSON + NULL-safe equality
   CASE
     WHEN e.event_data->'$.user_id'->>'$' <=> CAST(u.user_id AS CHAR) THEN 'VERIFIED'
     ELSE 'UNVERIFIED'
-  END as user_verification,
-  -- Bitwise + REGEXP
+  END as user_verification, -- Bitwise + REGEXP
   CASE
     WHEN u.permissions & 1 > 0
     AND e.event_data->>'$.action' REGEXP '^read_' THEN 'ALLOWED'
@@ -201,8 +186,7 @@ SELECT
     WHEN u.permissions & 4 > 0
     AND e.event_data->>'$.action' REGEXP '^delete_' THEN 'ALLOWED'
     ELSE 'DENIED'
-  END as permission_check,
-  -- JSON + Bitwise
+  END as permission_check, -- JSON + Bitwise
   (
     CAST(e.event_data->>'$.flags' AS UNSIGNED) | u.permissions
   ) as effective_permissions
@@ -222,18 +206,15 @@ WHERE
 -- Operators in aggregation and window functions
 SELECT
   DATE(created_at) as event_date,
-  COUNT(*) as total_events,
-  -- Aggregate with JSON operators
+  COUNT(*) as total_events, -- Aggregate with JSON operators
   COUNT(
     CASE
       WHEN data->>'$.status' = 'success' THEN 1
     END
   ) as success_count,
-  AVG(CAST(data->>'$.duration_ms' AS UNSIGNED)) as avg_duration,
-  -- Aggregate with bitwise operations
+  AVG(CAST(data->>'$.duration_ms' AS UNSIGNED)) as avg_duration, -- Aggregate with bitwise operations
   BIT_OR(CAST(data->>'$.flags' AS UNSIGNED)) as all_flags_combined,
-  BIT_AND(CAST(data->>'$.flags' AS UNSIGNED)) as common_flags_only,
-  -- Window functions with operators
+  BIT_AND(CAST(data->>'$.flags' AS UNSIGNED)) as common_flags_only, -- Window functions with operators
   LAG(COUNT(*), 1) OVER (
     ORDER BY
       DATE(created_at)
@@ -241,8 +222,7 @@ SELECT
   COUNT(*) - LAG(COUNT(*), 1) OVER (
     ORDER BY
       DATE(created_at)
-  ) as day_change,
-  -- Complex window expression
+  ) as day_change, -- Complex window expression
   SUM(
     CASE
       WHEN data->>'$.priority' REGEXP '^(high|urgent)$' THEN 1

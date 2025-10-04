@@ -19,6 +19,7 @@ const (
 
 	DefaultIndent              = "  " // two spaces
 	DefaultLinesBetweenQueries = 2
+	DefaultMaxLineLength       = 0 // 0 means unlimited/disabled
 )
 
 type KeywordCase string
@@ -33,30 +34,36 @@ const (
 )
 
 type Config struct {
-	Language            Language
-	Indent              string
-	KeywordCase         KeywordCase
-	LinesBetweenQueries int
-	Params              *Params
-	ColorConfig         *ColorConfig
-	TokenizerConfig     *TokenizerConfig
-	AlignColumnNames    bool
-	AlignAssignments    bool
-	AlignValues         bool
+	Language              Language
+	Indent                string
+	KeywordCase           KeywordCase
+	LinesBetweenQueries   int
+	Params                *Params
+	ColorConfig           *ColorConfig
+	TokenizerConfig       *TokenizerConfig
+	AlignColumnNames      bool
+	AlignAssignments      bool
+	AlignValues           bool
+	MaxLineLength         int
+	PreserveCommentIndent bool
+	CommentMinSpacing     int
 }
 
 func NewDefaultConfig() *Config {
 	return &Config{
-		Language:            StandardSQL,
-		Indent:              DefaultIndent,
-		KeywordCase:         DefaultKeywordCase,
-		LinesBetweenQueries: DefaultLinesBetweenQueries,
-		Params:              NewMapParams(nil),
-		ColorConfig:         &ColorConfig{},
-		TokenizerConfig:     &TokenizerConfig{},
-		AlignColumnNames:    false,
-		AlignAssignments:    false,
-		AlignValues:         false,
+		Language:              StandardSQL,
+		Indent:                DefaultIndent,
+		KeywordCase:           DefaultKeywordCase,
+		LinesBetweenQueries:   DefaultLinesBetweenQueries,
+		Params:                NewMapParams(nil),
+		ColorConfig:           &ColorConfig{},
+		TokenizerConfig:       &TokenizerConfig{},
+		AlignColumnNames:      false,
+		AlignAssignments:      false,
+		AlignValues:           false,
+		MaxLineLength:         DefaultMaxLineLength,
+		PreserveCommentIndent: false,
+		CommentMinSpacing:     1,
 	}
 }
 
@@ -113,6 +120,21 @@ func (c *Config) WithAlignAssignments(align bool) *Config {
 
 func (c *Config) WithAlignValues(align bool) *Config {
 	c.AlignValues = align
+	return c
+}
+
+func (c *Config) WithMaxLineLength(maxLineLength int) *Config {
+	c.MaxLineLength = maxLineLength
+	return c
+}
+
+func (c *Config) WithPreserveCommentIndent(preserve bool) *Config {
+	c.PreserveCommentIndent = preserve
+	return c
+}
+
+func (c *Config) WithCommentMinSpacing(spacing int) *Config {
+	c.CommentMinSpacing = spacing
 	return c
 }
 

@@ -35,25 +35,25 @@ Formatted query.mysql (detected as mysql)
 
 The following file extensions are recognized:
 
-| Extension | Dialect | Examples |
-|-----------|---------|----------|
+| Extension         | Dialect    | Examples                        |
+| ----------------- | ---------- | ------------------------------- |
 | `.psql`, `.pgsql` | PostgreSQL | `query.psql`, `migration.pgsql` |
-| `.mysql` | MySQL | `schema.mysql` |
-| `.sqlite` | SQLite | `database.sqlite` |
-| `.plsql` | PL/SQL | `procedure.plsql` |
-| `.ora.sql` | PL/SQL | `oracle.ora.sql` |
+| `.mysql`          | MySQL      | `schema.mysql`                  |
+| `.sqlite`         | SQLite     | `database.sqlite`               |
+| `.plsql`          | PL/SQL     | `procedure.plsql`               |
+| `.ora.sql`        | PL/SQL     | `oracle.ora.sql`                |
 
 ### Compound Extensions
 
 Files with compound extensions are also supported:
 
-| Extension | Dialect | Examples |
-|-----------|---------|----------|
-| `.mysql.sql` | MySQL | `query.mysql.sql` |
-| `.psql.sql` | PostgreSQL | `migration.psql.sql` |
-| `.sqlite.sql` | SQLite | `schema.sqlite.sql` |
-| `.db.sql` | SQLite | `database.db.sql` |
-| `.my.sql` | MySQL | `legacy.my.sql` |
+| Extension     | Dialect    | Examples             |
+| ------------- | ---------- | -------------------- |
+| `.mysql.sql`  | MySQL      | `query.mysql.sql`    |
+| `.psql.sql`   | PostgreSQL | `migration.psql.sql` |
+| `.sqlite.sql` | SQLite     | `schema.sqlite.sql`  |
+| `.db.sql`     | SQLite     | `database.db.sql`    |
+| `.my.sql`     | MySQL      | `legacy.my.sql`      |
 
 ## Content-Based Detection Patterns
 

@@ -144,8 +144,7 @@ func TestMySQLFormatter_Format_Basic(t *testing.T) {
 			"WHERE /*! STRAIGHT_JOIN */ active = 1;"
 		exp := Dedent(`
             SELECT
-              id
-              /* block comment */
+              id /* block comment */
             ,
               name -- line comment
             FROM
@@ -224,8 +223,7 @@ func TestMySQLFormatter_Format_Basic(t *testing.T) {
               ` + "`user_table`" + ` -- main user table  
             WHERE
               active = TRUE # active users only
-              AND flags & 0b1010 > 0
-              /* bitwise check */
+              AND flags & 0b1010 > 0 /* bitwise check */
               AND created_at > ?;
         `)
 		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)

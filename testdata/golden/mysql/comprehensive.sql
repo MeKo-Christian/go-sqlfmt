@@ -13,10 +13,8 @@ FROM
   `user_table` # hash comment
 WHERE
   `status` IN (?, ?, ?) -- prepared statement parameters
-  AND created_at > ?
-  /* parameter for date filter */
-  AND flags & 0b0001 > 0
-  /*! MySQL version hint */
+  AND created_at > ? /* parameter for date filter */
+  AND flags & 0b0001 > 0 /*! MySQL version hint */
 ;
 
 -- Phase 4: JSON operators and NULL-safe equality
@@ -148,8 +146,7 @@ WITH RECURSIVE
       e.salary,
       e.department_id,
       dt.hierarchy_path,
-      dt.level as dept_level,
-      -- Window functions
+      dt.level as dept_level, -- Window functions
       ROW_NUMBER() OVER (
         PARTITION BY e.department_id
         ORDER BY
@@ -168,16 +165,14 @@ WITH RECURSIVE
         PARTITION BY e.department_id
         ORDER BY
           e.hire_date
-      ) as next_salary,
-      -- Frame specifications
+      ) as next_salary, -- Frame specifications
       AVG(e.salary) OVER (PARTITION BY e.department_id) as dept_avg_salary,
       SUM(e.salary) OVER (
         PARTITION BY e.department_id
         ORDER BY
           e.hire_date ROWS BETWEEN UNBOUNDED PRECEDING
           AND CURRENT ROW
-      ) as running_dept_payroll,
-      -- JSON aggregation with window
+      ) as running_dept_payroll, -- JSON aggregation with window
       JSON_ARRAYAGG(e.skill) OVER (
         PARTITION BY e.department_id
         ORDER BY
@@ -215,8 +210,7 @@ CREATE TABLE products (
   description TEXT,
   base_price DECIMAL(10, 2) NOT NULL,
   discount_percentage DECIMAL(5, 2) DEFAULT 0.00,
-  tax_rate DECIMAL(5, 4) DEFAULT 0.0825,
-  -- Generated columns
+  tax_rate DECIMAL(5, 4) DEFAULT 0.0825, -- Generated columns
   discounted_price DECIMAL(10, 2) GENERATED ALWAYS AS (
     CASE
       WHEN discount_percentage > 0 THEN base_price * (1 - discount_percentage / 100)
@@ -226,21 +220,18 @@ CREATE TABLE products (
   final_price DECIMAL(10, 2) GENERATED ALWAYS AS (discounted_price * (1 + tax_rate)) STORED,
   search_vector TEXT GENERATED ALWAYS AS (
     CONCAT_WS(' ', LOWER(name), LOWER(description))
-  ) STORED,
-  -- JSON column with generated extraction
+  ) STORED, -- JSON column with generated extraction
   metadata JSON,
   category_name VARCHAR(100) GENERATED ALWAYS AS (
     JSON_UNQUOTE(metadata->'$.category')
   ) VIRTUAL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  -- Constraints
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Constraints
   CONSTRAINT chk_positive_price CHECK (base_price > 0),
   CONSTRAINT chk_valid_discount CHECK (
     discount_percentage >= 0
     AND discount_percentage <= 100
-  ),
-  -- Index definitions
+  ), -- Index definitions
   INDEX idx_category_price (category_name, final_price),
   INDEX idx_created (created_at),
   FULLTEXT INDEX ft_search (name, description, search_vector)

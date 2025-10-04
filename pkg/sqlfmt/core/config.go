@@ -31,16 +31,19 @@ const (
 
 // Config represents the configuration for formatting.
 type Config struct {
-	Language            Language
-	Indent              string
-	KeywordCase         KeywordCase
-	LinesBetweenQueries int
-	Params              *utils.ParamsConfig
-	ColorConfig         *ColorConfig
-	TokenizerConfig     *TokenizerConfig
-	AlignColumnNames    bool
-	AlignAssignments    bool
-	AlignValues         bool
+	Language              Language
+	Indent                string
+	KeywordCase           KeywordCase
+	LinesBetweenQueries   int
+	Params                *utils.ParamsConfig
+	ColorConfig           *ColorConfig
+	TokenizerConfig       *TokenizerConfig
+	AlignColumnNames      bool
+	AlignAssignments      bool
+	AlignValues           bool
+	MaxLineLength         int
+	PreserveCommentIndent bool
+	CommentMinSpacing     int
 }
 
 // TokenizerConfig represents tokenizer configuration.

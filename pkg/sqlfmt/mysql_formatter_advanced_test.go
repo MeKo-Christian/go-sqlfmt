@@ -605,8 +605,7 @@ func TestMySQLFormatter_WindowFunctions(t *testing.T) {
               id,
               name
             FROM
-              users
-              /*! USE INDEX (idx_name) */
+              users /*! USE INDEX (idx_name) */
             WHERE
               /*! SQL_BUFFER_RESULT */
               active = 1;

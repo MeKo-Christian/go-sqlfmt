@@ -63,20 +63,17 @@ CREATE TABLE
     quantity INTEGER NOT NULL CHECK(quantity > 0),
     unit_price DECIMAL(10, 2) NOT NULL,
     discount_percent DECIMAL(5, 2) DEFAULT 0.0,
-    order_date TEXT NOT NULL DEFAULT (datetime('now')),
-    -- Generated columns for calculations
+    order_date TEXT NOT NULL DEFAULT (datetime('now')), -- Generated columns for calculations
     subtotal GENERATED ALWAYS AS (quantity * unit_price) STORED,
     discount_amount GENERATED ALWAYS AS (subtotal * discount_percent / 100.0) VIRTUAL,
-    total_amount GENERATED ALWAYS AS (subtotal - discount_amount) STORED,
-    -- Generated columns for categorization
+    total_amount GENERATED ALWAYS AS (subtotal - discount_amount) STORED, -- Generated columns for categorization
     order_size GENERATED ALWAYS AS (
       CASE
         WHEN quantity >= 100 THEN 'BULK'
         WHEN quantity >= 10 THEN 'MEDIUM'
         ELSE 'SMALL'
       END
-    ) VIRTUAL,
-    -- Constraints
+    ) VIRTUAL, -- Constraints
     FOREIGN KEY (customer_id) REFERENCES customers(id),
     FOREIGN KEY (product_id) REFERENCES products(id)
   );
@@ -116,8 +113,7 @@ CREATE TABLE
     user_id INTEGER PRIMARY KEY,
     settings JSON NOT NULL DEFAULT '{}',
     created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
-    -- Generated columns for JSON access
+    updated_at TEXT DEFAULT (datetime('now')), -- Generated columns for JSON access
     theme GENERATED ALWAYS AS (json_extract(settings, '$.theme')) VIRTUAL,
     notifications_enabled GENERATED ALWAYS AS (
       json_extract(settings, '$.notifications.enabled')
@@ -144,8 +140,7 @@ CREATE TABLE
     old_values JSON,
     new_values JSON,
     changed_at REAL NOT NULL DEFAULT (julianday('now')),
-    changed_by INTEGER NOT NULL,
-    -- Generated columns
+    changed_by INTEGER NOT NULL, -- Generated columns
     change_type GENERATED ALWAYS AS (
       CASE
         WHEN old_values IS NULL THEN 'CREATE'

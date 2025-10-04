@@ -46,6 +46,8 @@ type formatter struct {
 	insertValuesLengths     []int
 	currentValuesLength     int
 	currentInsertIndex      int
+	// Line length tracking
+	currentLineLength int
 }
 
 // newFormatter creates a new formatter instance.
@@ -77,6 +79,7 @@ func newFormatter(cfg *Config, tokenizer *tokenizer,
 		insertValuesLengths:     []int{},
 		currentValuesLength:     0,
 		currentInsertIndex:      0,
+		currentLineLength:       0,
 	}
 }
 
@@ -484,28 +487,132 @@ func (f *formatter) formatDefaultToken(tok types.Token, formattedQuery *strings.
 
 func (f *formatter) formatLineComment(tok types.Token, query *strings.Builder) {
 	value := tok.Value
+
+	// Check if we're at the start of a line (current line only has indentation)
+	atStartOfLine := f.currentLineLength == len(f.indentation.GetIndent())
+
+	if atStartOfLine {
+		// Already on a new line, just add the comment without extra spacing
+		value = utils.AddANSIFormats(f.cfg.ColorConfig.CommentFormatOptions, value)
+		query.WriteString(value)
+		f.updateLineLength(tok.Value)
+		f.addNewline(query)
+		return
+	}
+
+	// Check if comment should be inline or on a new line
+	isInline := f.shouldCommentBeInline(tok.Value)
+
+	if isInline {
+		// Place comment inline with appropriate spacing
+		// First, trim any trailing spaces to have clean control over spacing
+		trimSpacesEnd(query)
+		spacing := f.calculateCommentSpacing()
+		query.WriteString(strings.Repeat(" ", spacing))
+		// Update line length: remove previous trailing spaces, add new spacing
+		f.currentLineLength = len(strings.TrimRight(query.String()[strings.LastIndex(query.String(), "\n")+1:], " \t")) + spacing
+	} else {
+		// Place comment on new line (no extra spacing needed)
+		f.addNewline(query)
+	}
+
+	// Add the comment with color formatting
 	value = utils.AddANSIFormats(f.cfg.ColorConfig.CommentFormatOptions, value)
 	query.WriteString(value)
+	f.updateLineLength(tok.Value) // Track original value length, not colored
 	f.addNewline(query)
 }
 
 func (f *formatter) formatBlockComment(tok types.Token, query *strings.Builder) {
 	value := tok.Value
-	value = f.indentComment(value)
-	value = utils.AddANSIFormats(f.cfg.ColorConfig.CommentFormatOptions, value)
-	f.addNewline(query)
-	query.WriteString(value)
-	f.addNewline(query)
+
+	// Check if this is a single-line block comment (no newlines inside)
+	isSingleLine := !strings.Contains(tok.Value, "\n")
+
+	if isSingleLine {
+		// Check if we're at the start of a line (current line only has indentation)
+		atStartOfLine := f.currentLineLength == len(f.indentation.GetIndent())
+
+		if atStartOfLine {
+			// Already on a new line, just add the comment without extra spacing
+			value = utils.AddANSIFormats(f.cfg.ColorConfig.CommentFormatOptions, value)
+			query.WriteString(value)
+			f.updateLineLength(tok.Value)
+			f.addNewline(query)
+			return
+		}
+
+		// Treat single-line block comments like line comments
+		if f.shouldCommentBeInline(tok.Value) {
+			// Place comment inline with appropriate spacing
+			// First, trim any trailing spaces to have clean control over spacing
+			trimSpacesEnd(query)
+			spacing := f.calculateCommentSpacing()
+			query.WriteString(strings.Repeat(" ", spacing))
+			// Update line length: remove previous trailing spaces, add new spacing
+			f.currentLineLength = len(strings.TrimRight(query.String()[strings.LastIndex(query.String(), "\n")+1:], " \t")) + spacing
+		} else {
+			// Place comment on new line
+			f.addNewline(query)
+		}
+
+		// Add the comment with color formatting
+		value = utils.AddANSIFormats(f.cfg.ColorConfig.CommentFormatOptions, value)
+		query.WriteString(value)
+		f.updateLineLength(tok.Value) // Track original value length, not colored
+		f.addNewline(query)
+	} else {
+		// Multi-line block comment: keep current behavior (separate lines)
+		value = f.indentComment(value)
+		value = utils.AddANSIFormats(f.cfg.ColorConfig.CommentFormatOptions, value)
+		f.addNewline(query)
+		query.WriteString(value)
+		f.updateLineLength(tok.Value) // Track original value length, not colored
+		f.addNewline(query)
+	}
 }
 
 func (f *formatter) indentComment(comment string) string {
 	return newLineFollowByWhitespaceRegex.ReplaceAllString(comment, "\n"+f.indentation.GetIndent()+" ")
 }
 
+// shouldCommentBeInline determines if a comment should be placed inline or on a new line.
+func (f *formatter) shouldCommentBeInline(comment string) bool {
+	// Calculate spacing needed
+	spacing := f.calculateCommentSpacing()
+
+	// Check if comment fits on current line
+	return f.commentFitsOnLine(comment, spacing)
+}
+
+// calculateCommentSpacing returns the number of spaces to add before an inline comment.
+func (f *formatter) calculateCommentSpacing() int {
+	if f.cfg.CommentMinSpacing > 0 {
+		return f.cfg.CommentMinSpacing
+	}
+	return 1 // default
+}
+
+// commentFitsOnLine checks if adding a comment with spacing fits within MaxLineLength.
+func (f *formatter) commentFitsOnLine(comment string, spacing int) bool {
+	// If no max line length is set, always allow inline
+	if f.cfg.MaxLineLength <= 0 {
+		return true
+	}
+
+	// Calculate total length: current line + spacing + comment
+	commentLength := utils.VisibleLength(comment)
+	totalLength := f.currentLineLength + spacing + commentLength
+
+	return totalLength <= f.cfg.MaxLineLength
+}
+
 func (f *formatter) formatTopLevelReservedWordNoIndent(tok types.Token, query *strings.Builder) {
 	f.indentation.DecreaseTopLevel()
 	f.addNewline(query)
-	query.WriteString(f.equalizeWhitespace(f.formatReservedWord(tok.Value)))
+	value := f.equalizeWhitespace(f.formatReservedWord(tok.Value))
+	query.WriteString(value)
+	f.updateLineLength(value)
 	f.addNewline(query)
 }
 
@@ -514,15 +621,21 @@ func (f *formatter) formatTopLevelReservedWord(tok types.Token, query *strings.B
 	f.addNewline(query)
 
 	f.indentation.IncreaseTopLevel()
-	query.WriteString(f.equalizeWhitespace(f.formatReservedWord(tok.Value)))
+	value := f.equalizeWhitespace(f.formatReservedWord(tok.Value))
+	query.WriteString(value)
+	f.updateLineLength(value)
 
 	f.addNewline(query)
 }
 
 func (f *formatter) formatNewlineReservedWord(tok types.Token, query *strings.Builder) {
+	// Check if we need to break line due to max length
+	// Even if this is a newline reserved word, we still want to honor that behavior
 	f.addNewline(query)
-	query.WriteString(f.equalizeWhitespace(f.formatReservedWord(tok.Value)))
+	value := f.equalizeWhitespace(f.formatReservedWord(tok.Value))
+	query.WriteString(value)
 	query.WriteString(" ")
+	f.updateLineLength(value + " ")
 }
 
 // equalizeWhitespace replaces any sequence of whitespace characters with a single space.
@@ -547,6 +660,7 @@ func (f *formatter) formatOpeningParentheses(tok types.Token, query *strings.Bui
 		value = strings.ToUpper(value)
 	}
 	query.WriteString(value)
+	f.updateLineLength(value)
 
 	f.inlineBlock.BeginIfPossible(f.tokens, f.index)
 	// For INSERT VALUES alignment, treat as inline even if not detected as such
@@ -564,8 +678,10 @@ func (f *formatter) formatOpeningParentheses(tok types.Token, query *strings.Bui
 // block level, then adds the closing paren.
 func (f *formatter) formatClosingParentheses(tok types.Token, query *strings.Builder) {
 	// For parentheses, only apply casing if they are SQL keywords (unlikely, but preserve old logic)
+	value := tok.Value
 	if f.cfg.KeywordCase == KeywordCaseUppercase {
-		tok.Value = strings.ToUpper(tok.Value)
+		value = strings.ToUpper(value)
+		tok.Value = value
 	}
 
 	if f.inlineBlock.IsActive() {
@@ -584,8 +700,10 @@ func (f *formatter) formatClosingParentheses(tok types.Token, query *strings.Bui
 // formatPlaceholder formats a placeholder by replacing it with a param value
 // from the cfg params and adds a space after.
 func (f *formatter) formatPlaceholder(tok types.Token, query *strings.Builder) {
-	query.WriteString(f.params.Get(tok.Key, tok.Value))
+	value := f.params.Get(tok.Key, tok.Value)
+	query.WriteString(value)
 	query.WriteString(" ")
+	f.updateLineLength(value + " ")
 }
 
 // formatComma adds the comma to the query and adds a space. If an inline block
@@ -622,6 +740,7 @@ func (f *formatter) formatComma(tok types.Token, query *strings.Builder) {
 
 	query.WriteString(tok.Value)
 	query.WriteString(" ")
+	f.updateLineLength(tok.Value + " ")
 
 	// For alignment, keep assignments on the same line
 	if f.cfg.AlignAssignments && f.inUpdateSetClause {
@@ -638,14 +757,30 @@ func (f *formatter) formatComma(tok types.Token, query *strings.Builder) {
 		return
 	}
 
+	// Check if we should break the line based on max line length
+	shouldBreakForLength := f.cfg.MaxLineLength > 0 && f.currentLineLength > f.cfg.MaxLineLength
+
 	if f.inlineBlock.IsActive() || (f.cfg.AlignValues && f.inInsertValuesClause) {
 		return
 	}
-	if limitKeywordRegex.MatchString(f.previousReservedWord.Value) {
+	if limitKeywordRegex.MatchString(f.previousReservedWord.Value) && !shouldBreakForLength {
 		// avoids creating new lines after LIMIT keyword so that two limit items appear on one line for nicer formatting
+		// unless line is too long
 		return
 	} else {
-		f.addNewline(query)
+		// Check if next non-whitespace token is a comment - if so, let the comment formatter decide inline vs newline
+		nextTok := f.nextToken()
+		// Skip whitespace tokens to find the actual next token
+		offset := 1
+		for nextTok.Type == types.TokenTypeWhitespace && f.index+offset < len(f.tokens) {
+			offset++
+			nextTok = f.nextToken(offset)
+		}
+		isNextComment := nextTok.Type == types.TokenTypeLineComment || nextTok.Type == types.TokenTypeBlockComment
+
+		if !isNextComment {
+			f.addNewline(query)
+		}
 	}
 
 	// Reset column length tracking for next column
@@ -670,6 +805,7 @@ func (f *formatter) formatWithSpaceAfter(tok types.Token, query *strings.Builder
 	trimSpacesEnd(query)
 	query.WriteString(tok.Value)
 	query.WriteString(" ")
+	f.updateLineLength(tok.Value + " ")
 }
 
 // formatWithoutSpaceAfter returns the query with spaces trimmed off the end and
@@ -677,6 +813,7 @@ func (f *formatter) formatWithSpaceAfter(tok types.Token, query *strings.Builder
 func (f *formatter) formatWithoutSpaceAfter(tok types.Token, query *strings.Builder) {
 	trimSpacesEnd(query)
 	query.WriteString(tok.Value)
+	f.updateLineLength(tok.Value)
 }
 
 // formatWithSpaces returns the query with the value and a space added, plus
@@ -692,8 +829,33 @@ func (f *formatter) formatWithSpaces(tok types.Token, query *strings.Builder) {
 		value = utils.AddANSIFormats(f.cfg.ColorConfig.FunctionCallFormatOptions, value)
 	}
 
+	// Check if we need to break line before adding this token
+	// Break at logical operators (AND, OR) or when line would be too long
+	// But don't break if we're in an inline block or alignment is active
+	shouldBreak := false
+	if f.cfg.MaxLineLength > 0 && !f.inlineBlock.IsActive() {
+		tokUpper := strings.ToUpper(tok.Value)
+		isLogicalOp := tokUpper == "AND" || tokUpper == "OR"
+		wouldExceed := f.exceedsMaxLineLength(value + " ")
+
+		// Break if: we'd exceed the limit, OR this is a logical operator and we're close to the limit
+		if wouldExceed || (isLogicalOp && f.currentLineLength > f.cfg.MaxLineLength*3/4) {
+			// Don't break during alignment
+			if !f.inSelectClause && !f.inUpdateSetClause && !f.inInsertValuesClause {
+				shouldBreak = true
+			}
+		}
+	}
+
+	if shouldBreak {
+		f.addNewline(query)
+	}
+
 	query.WriteString(value)
 	query.WriteString(" ")
+
+	// Track current line length
+	f.updateLineLength(value + " ")
 
 	// Track column length for SELECT alignment
 	if f.inSelectClause {
@@ -747,7 +909,9 @@ func (f *formatter) formatQuerySeparator(tok types.Token, query *strings.Builder
 	f.indentation.ResetIndentation()
 	trimSpacesEnd(query)
 	query.WriteString(tok.Value)
+	f.updateLineLength(tok.Value)
 	query.WriteString(strings.Repeat("\n", f.cfg.LinesBetweenQueries))
+	f.currentLineLength = 0 // Reset after query separator
 }
 
 func (f *formatter) formatString(tok types.Token, query *strings.Builder) {
@@ -755,6 +919,7 @@ func (f *formatter) formatString(tok types.Token, query *strings.Builder) {
 	value = utils.AddANSIFormats(f.cfg.ColorConfig.StringFormatOptions, value)
 	query.WriteString(value)
 	query.WriteString(" ")
+	f.updateLineLength(tok.Value + " ")
 }
 
 func (f *formatter) formatNumber(tok types.Token, query *strings.Builder) {
@@ -762,6 +927,7 @@ func (f *formatter) formatNumber(tok types.Token, query *strings.Builder) {
 	value = utils.AddANSIFormats(f.cfg.ColorConfig.NumberFormatOptions, value)
 	query.WriteString(value)
 	query.WriteString(" ")
+	f.updateLineLength(tok.Value + " ")
 }
 
 func (f *formatter) formatBoolean(tok types.Token, query *strings.Builder) {
@@ -769,12 +935,14 @@ func (f *formatter) formatBoolean(tok types.Token, query *strings.Builder) {
 	value = utils.AddANSIFormats(f.cfg.ColorConfig.BooleanFormatOptions, value)
 	query.WriteString(value)
 	query.WriteString(" ")
+	f.updateLineLength(tok.Value + " ")
 }
 
 func (f *formatter) formatSpecialOperator(tok types.Token, query *strings.Builder) {
 	// Special operators like :: (type cast) should be formatted without spaces
 	trimSpacesEnd(query)
 	query.WriteString(tok.Value)
+	f.updateLineLength(tok.Value)
 }
 
 // addNewline trims spaces from the end of query, adds a new line character if
@@ -785,7 +953,23 @@ func (f *formatter) addNewline(query *strings.Builder) {
 	if !strings.HasSuffix(query.String(), "\n") {
 		query.WriteString("\n")
 	}
-	query.WriteString(f.indentation.GetIndent())
+	indent := f.indentation.GetIndent()
+	query.WriteString(indent)
+	// Reset line length to the indentation length
+	f.currentLineLength = len(indent)
+}
+
+// updateLineLength updates the current line length by adding the visible length of the string.
+func (f *formatter) updateLineLength(s string) {
+	f.currentLineLength += utils.VisibleLength(s)
+}
+
+// exceedsMaxLineLength checks if adding the given string would exceed the max line length.
+func (f *formatter) exceedsMaxLineLength(s string) bool {
+	if f.cfg.MaxLineLength <= 0 {
+		return false // unlimited
+	}
+	return f.currentLineLength+utils.VisibleLength(s) > f.cfg.MaxLineLength
 }
 
 // previousToken peeks at the previous types.Token in the formatters list of types.Tokens with

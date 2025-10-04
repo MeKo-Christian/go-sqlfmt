@@ -50,39 +50,39 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ### 2.1 Alignment Options
 
-- [ ] Add vertical alignment configuration:
-  - [ ] Column name alignment in SELECT
-  - [ ] Assignment operator alignment in UPDATE
-  - [ ] Values alignment in INSERT
-- [ ] Add configuration options in `Config`:
-  - [ ] `AlignColumnNames bool`
-  - [ ] `AlignAssignments bool`
-  - [ ] `AlignValues bool`
-- [ ] Implement alignment logic in formatter
-- [ ] Add tests for alignment options
-- [ ] Document in configuration guide
+- [x] Add vertical alignment configuration:
+  - [x] Column name alignment in SELECT
+  - [x] Assignment operator alignment in UPDATE
+  - [x] Values alignment in INSERT
+- [x] Add configuration options in `Config`:
+  - [x] `AlignColumnNames bool`
+  - [x] `AlignAssignments bool`
+  - [x] `AlignValues bool`
+- [x] Implement alignment logic in formatter
+- [x] Add tests for alignment options
+- [x] Document in configuration guide
 
 ### 2.2 Line Length Limits
 
-- [ ] Add `MaxLineLength int` configuration option
-- [ ] Implement line breaking logic:
-  - [ ] Break long SELECT column lists
-  - [ ] Break long WHERE conditions
-  - [ ] Break long function calls
-  - [ ] Smart break at appropriate points (commas, operators)
-- [ ] Add tests for line length enforcement
-- [ ] Document behavior and limitations
+- [x] Add `MaxLineLength int` configuration option
+- [x] Implement line breaking logic:
+  - [x] Break long SELECT column lists
+  - [x] Break long WHERE conditions
+  - [x] Break long function calls
+  - [x] Smart break at appropriate points (commas, operators)
+- [x] Add tests for line length enforcement
+- [x] Document behavior and limitations
 
 ### 2.3 Comment Handling Improvements
 
-- [ ] Improve inline comment positioning:
-  - [ ] Keep inline comments on same line when possible
-  - [ ] Move to next line if line length exceeded
-  - [ ] Preserve relative position in code
-- [ ] Add comment formatting options:
-  - [ ] `PreserveCommentIndent bool`
-  - [ ] `CommentMinSpacing int` - spaces before inline comments
-- [ ] Test comment handling edge cases
+- [x] Improve inline comment positioning:
+  - [x] Keep inline comments on same line when possible
+  - [x] Move to next line if line length exceeded
+  - [x] Preserve relative position in code
+- [x] Add comment formatting options:
+  - [x] `PreserveCommentIndent bool`
+  - [x] `CommentMinSpacing int` - spaces before inline comments
+- [x] Test comment handling edge cases
 
 ---
 
@@ -111,12 +111,12 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ### 3.3 Validation Improvements
 
-- [ ] Enhance `sqlfmt validate` command:
-  - [ ] Exit code: 0 (all valid), 1 (some invalid)
-  - [ ] JSON output mode: `--output=json`
-  - [ ] Summary report: files checked, files valid, files invalid
-- [ ] Add `sqlfmt check` alias for validate
-- [ ] Add `--diff` flag to show what would change
+- [x] Enhance `sqlfmt validate` command:
+  - [x] Exit code: 0 (all valid), 1 (some invalid)
+  - [x] JSON output mode: `--output=json`
+  - [x] Summary report: files checked, files valid, files invalid
+- [x] Add `sqlfmt check` alias for validate
+- [x] Add `--diff` flag to show what would change
 
 ---
 

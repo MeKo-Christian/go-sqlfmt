@@ -196,8 +196,7 @@ SELECT
   product_id,
   product_name,
   category,
-  price,
-  -- Ranking functions
+  price, -- Ranking functions
   ROW_NUMBER() OVER (
     ORDER BY
       price DESC
@@ -221,8 +220,7 @@ SELECT
   NTILE(4) OVER (
     ORDER BY
       price
-  ) as price_quartile,
-  -- Partition-based rankings
+  ) as price_quartile, -- Partition-based rankings
   ROW_NUMBER() OVER (
     PARTITION BY category
     ORDER BY
@@ -244,8 +242,7 @@ ORDER BY
 -- Window functions with frames
 SELECT
   sale_date,
-  daily_revenue,
-  -- Running totals and averages
+  daily_revenue, -- Running totals and averages
   SUM(daily_revenue) OVER (
     ORDER BY
       sale_date ROWS BETWEEN UNBOUNDED PRECEDING
@@ -255,14 +252,12 @@ SELECT
     ORDER BY
       sale_date ROWS BETWEEN 6 PRECEDING
       AND CURRENT ROW
-  ) as seven_day_moving_avg,
-  -- Range-based window (last 30 days)
+  ) as seven_day_moving_avg, -- Range-based window (last 30 days)
   SUM(daily_revenue) OVER (
     ORDER BY
       sale_date RANGE BETWEEN INTERVAL 29 DAY PRECEDING
       AND CURRENT ROW
-  ) as thirty_day_total,
-  -- Lead and lag
+  ) as thirty_day_total, -- Lead and lag
   LAG(daily_revenue, 1) OVER (
     ORDER BY
       sale_date
@@ -274,8 +269,7 @@ SELECT
   LEAD(daily_revenue, 1) OVER (
     ORDER BY
       sale_date
-  ) as next_day_revenue,
-  -- First and last values in window
+  ) as next_day_revenue, -- First and last values in window
   FIRST_VALUE(daily_revenue) OVER (
     ORDER BY
       sale_date ROWS BETWEEN 6 PRECEDING
@@ -299,15 +293,12 @@ SELECT
   name,
   department,
   salary,
-  hire_date,
-  -- Using named windows
+  hire_date, -- Using named windows
   RANK() OVER dept_salary_window as dept_salary_rank,
   DENSE_RANK() OVER company_salary_window as company_salary_rank,
-  ROW_NUMBER() OVER dept_tenure_window as dept_tenure_rank,
-  -- Aggregate functions with windows
+  ROW_NUMBER() OVER dept_tenure_window as dept_tenure_rank, -- Aggregate functions with windows
   AVG(salary) OVER dept_salary_window as dept_avg_salary,
-  COUNT(*) OVER dept_salary_window as dept_employee_count,
-  -- Complex expressions with windows
+  COUNT(*) OVER dept_salary_window as dept_employee_count, -- Complex expressions with windows
   salary - AVG(salary) OVER dept_salary_window as salary_vs_dept_avg,
   (salary - MIN(salary) OVER company_salary_window) / (
     MAX(salary) OVER company_salary_window - MIN(salary) OVER company_salary_window
@@ -373,8 +364,7 @@ WITH RECURSIVE
       sh.level,
       sh.territory_chain,
       COALESCE(SUM(s.amount), 0) as total_sales,
-      COUNT(s.sale_id) as sale_count,
-      -- Window functions within CTE
+      COUNT(s.sale_id) as sale_count, -- Window functions within CTE
       SUM(COALESCE(s.amount, 0)) OVER (
         PARTITION BY JSON_EXTRACT(sh.territory_chain, '$[0]')
         ORDER BY
@@ -401,8 +391,7 @@ SELECT
   sp.level,
   sp.total_sales,
   sp.performance_rank_by_level,
-  JSON_PRETTY(sp.territory_chain) as territory_structure,
-  -- Final window functions on CTE results
+  JSON_PRETTY(sp.territory_chain) as territory_structure, -- Final window functions on CTE results
   PERCENT_RANK() OVER (
     PARTITION BY sp.level
     ORDER BY

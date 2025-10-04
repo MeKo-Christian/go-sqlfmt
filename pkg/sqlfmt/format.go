@@ -56,6 +56,7 @@ func createFormatterForLanguage(c *Config) Formatter {
 		AlignColumnNames:    c.AlignColumnNames,
 		AlignAssignments:    c.AlignAssignments,
 		AlignValues:         c.AlignValues,
+		MaxLineLength:       c.MaxLineLength,
 	}
 
 	return dialects.CreateFormatterForLanguage(coreCfg)
@@ -131,16 +132,19 @@ func convertToInternalConfig(c *Config) *core.Config {
 		c = NewDefaultConfig()
 	}
 	return &core.Config{
-		Language:            core.Language(c.Language),
-		Indent:              c.Indent,
-		KeywordCase:         core.KeywordCase(c.KeywordCase),
-		LinesBetweenQueries: c.LinesBetweenQueries,
-		Params:              convertParams(c.Params, c.Language),
-		ColorConfig:         convertColorConfig(c.ColorConfig),
-		TokenizerConfig:     convertTokenizerConfig(c.TokenizerConfig),
-		AlignColumnNames:    c.AlignColumnNames,
-		AlignAssignments:    c.AlignAssignments,
-		AlignValues:         c.AlignValues,
+		Language:              core.Language(c.Language),
+		Indent:                c.Indent,
+		KeywordCase:           core.KeywordCase(c.KeywordCase),
+		LinesBetweenQueries:   c.LinesBetweenQueries,
+		Params:                convertParams(c.Params, c.Language),
+		ColorConfig:           convertColorConfig(c.ColorConfig),
+		TokenizerConfig:       convertTokenizerConfig(c.TokenizerConfig),
+		AlignColumnNames:      c.AlignColumnNames,
+		AlignAssignments:      c.AlignAssignments,
+		AlignValues:           c.AlignValues,
+		MaxLineLength:         c.MaxLineLength,
+		PreserveCommentIndent: c.PreserveCommentIndent,
+		CommentMinSpacing:     c.CommentMinSpacing,
 	}
 }
 

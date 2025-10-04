@@ -753,6 +753,7 @@ SELECT * FROM users;`,
 		})
 	}
 }
+
 func TestCaseInsensitiveLanguageParsing(t *testing.T) {
 	tests := []struct {
 		name         string

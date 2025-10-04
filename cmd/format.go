@@ -11,17 +11,20 @@ import (
 )
 
 var (
-	lang             string
-	indent           string
-	write            bool
-	color            bool
-	uppercase        bool
-	keywordCase      string
-	linesBetween     int
-	autoDetect       bool
-	alignColumnNames bool
-	alignAssignments bool
-	alignValues      bool
+	lang                  string
+	indent                string
+	write                 bool
+	color                 bool
+	uppercase             bool
+	keywordCase           string
+	linesBetween          int
+	autoDetect            bool
+	alignColumnNames      bool
+	alignAssignments      bool
+	alignValues           bool
+	maxLineLength         int
+	preserveCommentIndent bool
+	commentMinSpacing     int
 )
 
 var formatCmd = &cobra.Command{
@@ -63,6 +66,9 @@ func init() {
 	formatCmd.Flags().BoolVar(&alignColumnNames, "align-column-names", false, "Align SELECT column names vertically")
 	formatCmd.Flags().BoolVar(&alignAssignments, "align-assignments", false, "Align UPDATE assignment operators vertically")
 	formatCmd.Flags().BoolVar(&alignValues, "align-values", false, "Align INSERT VALUES vertically")
+	formatCmd.Flags().IntVar(&maxLineLength, "max-line-length", 0, "Maximum line length (0 = unlimited)")
+	formatCmd.Flags().BoolVar(&preserveCommentIndent, "preserve-comment-indent", false, "Preserve relative indentation of comments")
+	formatCmd.Flags().IntVar(&commentMinSpacing, "comment-min-spacing", 1, "Minimum spaces before inline comments")
 }
 
 func runFormat(cmd *cobra.Command, args []string) error {
@@ -149,6 +155,19 @@ func applyCommandLineFlags(cmd *cobra.Command, config *sqlfmt.Config) {
 	}
 	if cmd.Flags().Changed("align-values") {
 		config.WithAlignValues(alignValues)
+	}
+
+	// Set max line length (only if explicitly provided)
+	if cmd.Flags().Changed("max-line-length") {
+		config.WithMaxLineLength(maxLineLength)
+	}
+
+	// Set comment options (only if explicitly provided)
+	if cmd.Flags().Changed("preserve-comment-indent") {
+		config.WithPreserveCommentIndent(preserveCommentIndent)
+	}
+	if cmd.Flags().Changed("comment-min-spacing") {
+		config.WithCommentMinSpacing(commentMinSpacing)
 	}
 }
 

@@ -8,6 +8,92 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMaxLineLength(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		cfg   Config
+	}{
+		{
+			name:  "formats long SELECT with max line length",
+			query: "SELECT id, name, email, phone, address, city, state, zip FROM users;",
+			exp: `SELECT
+  id,
+  name,
+  email,
+  phone,
+  address,
+  city,
+  state,
+  zip
+FROM
+  users;`,
+			cfg: Config{Indent: "  ", MaxLineLength: 40},
+		},
+		{
+			name:  "breaks long WHERE clause at AND operator",
+			query: "SELECT * FROM users WHERE status = 'active' AND role = 'admin' AND created_at > NOW();",
+			exp: `SELECT
+  *
+FROM
+  users
+WHERE
+  status = 'active'
+  AND role = 'admin'
+  AND created_at > NOW();`,
+			cfg: Config{Indent: "  ", MaxLineLength: 50},
+		},
+		{
+			name:  "breaks long WHERE clause at OR operator",
+			query: "SELECT * FROM users WHERE role = 'admin' OR role = 'moderator' OR role = 'editor';",
+			exp: `SELECT
+  *
+FROM
+  users
+WHERE
+  role = 'admin'
+  OR role = 'moderator'
+  OR role = 'editor';`,
+			cfg: Config{Indent: "  ", MaxLineLength: 45},
+		},
+		{
+			name:  "respects unlimited when MaxLineLength is 0",
+			query: "SELECT id, name, email, phone, address, city, state, zip FROM users;",
+			exp: `SELECT
+  id,
+  name,
+  email,
+  phone,
+  address,
+  city,
+  state,
+  zip
+FROM
+  users;`,
+			cfg: Config{Indent: "  ", MaxLineLength: 0},
+		},
+		{
+			name:  "breaks LIMIT line when too long - forces break even for LIMIT",
+			query: "SELECT * FROM users LIMIT 100, 50;",
+			exp: `SELECT
+  *
+FROM
+  users
+LIMIT
+  100, 50;`,
+			cfg: Config{Indent: "  ", MaxLineLength: 30},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := Format(tt.query, &tt.cfg)
+			require.Equal(t, tt.exp, actual, "Formatted query does not match expected")
+		})
+	}
+}
+
 func TestFormatBasic(t *testing.T) {
 	tests := []struct {
 		name  string

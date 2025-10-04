@@ -82,3 +82,27 @@ func addANSIFormat(option ANSIFormatOption, s string) string {
 	}
 	return strings.Join(spl, "\n")
 }
+
+// VisibleLength returns the visible length of a string, excluding ANSI escape sequences.
+func VisibleLength(s string) int {
+	// Remove ANSI escape sequences
+	result := s
+	inEscape := false
+	var cleaned strings.Builder
+
+	for _, r := range result {
+		if r == '\033' {
+			inEscape = true
+			continue
+		}
+		if inEscape {
+			if (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') {
+				inEscape = false
+			}
+			continue
+		}
+		cleaned.WriteRune(r)
+	}
+
+	return len(cleaned.String())
+}

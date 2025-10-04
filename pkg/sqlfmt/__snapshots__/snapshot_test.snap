@@ -180,8 +180,7 @@ END;
 [TestSnapshotFormatting_MySQL/MySQL_comments_and_backticks - 1]
 SELECT
   /*! SQL_CALC_FOUND_ROWS */
-  `user_id`,
-  # hash comment
+  `user_id`, # hash comment
   "full_name"
 FROM
   `user_table` -- standard comment

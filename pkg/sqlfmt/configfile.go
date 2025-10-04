@@ -15,6 +15,10 @@ type ConfigFile struct {
 	Indent              string `yaml:"indent,omitempty"`
 	KeywordCase         string `yaml:"keyword_case,omitempty"`
 	LinesBetweenQueries int    `yaml:"lines_between_queries,omitempty"`
+	AlignColumnNames    *bool  `yaml:"align_column_names,omitempty"`
+	AlignAssignments    *bool  `yaml:"align_assignments,omitempty"`
+	AlignValues         *bool  `yaml:"align_values,omitempty"`
+	MaxLineLength       *int   `yaml:"max_line_length,omitempty"`
 }
 
 // LoadConfigFile attempts to load configuration from various locations.
@@ -203,6 +207,22 @@ func (cf *ConfigFile) ApplyToConfig(config *Config) error {
 
 	if cf.LinesBetweenQueries > 0 {
 		config.LinesBetweenQueries = cf.LinesBetweenQueries
+	}
+
+	// Apply alignment options (only if explicitly set in config)
+	if cf.AlignColumnNames != nil {
+		config.AlignColumnNames = *cf.AlignColumnNames
+	}
+	if cf.AlignAssignments != nil {
+		config.AlignAssignments = *cf.AlignAssignments
+	}
+	if cf.AlignValues != nil {
+		config.AlignValues = *cf.AlignValues
+	}
+
+	// Apply max line length (only if explicitly set in config)
+	if cf.MaxLineLength != nil {
+		config.MaxLineLength = *cf.MaxLineLength
 	}
 
 	return nil
