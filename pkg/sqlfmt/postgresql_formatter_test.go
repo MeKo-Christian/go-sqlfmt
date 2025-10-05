@@ -1868,7 +1868,7 @@ func TestPostgreSQLFormatter_ComplexPLpgSQL(t *testing.T) {
                 
                 IF result_count > 1000 THEN
                     sql_query := format('CREATE INDEX CONCURRENTLY IF NOT EXISTS ' +
-                        'idx_%s_%s ON %I (%I)', table_name, column_name, table_name, column_name);
+                        'idx_%s_%s ON %I', table_name, column_name, table_name, column_name);
                     EXECUTE sql_query;
                     RAISE NOTICE 'Created index for % rows', result_count;
                 END IF;

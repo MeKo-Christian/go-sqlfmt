@@ -4,33 +4,16 @@ This consolidated plan covers all remaining work for MySQL, PostgreSQL, and SQLi
 
 ## Overview
 
-**Major Milestones Achieved:**
-- ✅ **pkg/sqlfmt test coverage: 91.4%** (exceeded 90% target!)
-- ✅ **pkg/sqlfmt/utils: 100% coverage**
-- ✅ Configuration system: 100% coverage
-- ✅ Format functions: 100% coverage
-- ✅ All dialect formatters tested (PostgreSQL, MySQL, SQLite, PL/SQL, DB2, N1QL, Standard SQL)
-- ✅ Ignorefile system fully tested
-
 **Remaining Focus Areas:**
 
-1. ✅ **CLI tests: 84.3%** (was 60.5% → target 85%+) - **ACHIEVED!**
-2. Fix failing PostgreSQL formatter test
-3. Core package coverage improvement (65.9% → target 90%+)
-4. Integration & performance tests
-5. Documentation improvements
+1. ✅ ~~Fix failing PostgreSQL formatter test~~ - COMPLETED
+2. ✅ ~~Fix failing MySQL formatter tests (11 tests)~~ - COMPLETED
+3. Integration & performance tests
+4. Documentation improvements
 
 ---
 
 ## Phase 1: Test Coverage Improvement
-
-**Current Status**: ~91.4% pkg/sqlfmt coverage (was ~89.7%, was ~66.5%, was ~55%) → Target: 90%+ ✅ **ACHIEVED!**
-
-### Coverage by Package:
-- `cmd/`: ✅ **84.3%** (was 60.5% → target 85%+)
-- `pkg/sqlfmt/`: ✅ **91.4%**
-- `pkg/sqlfmt/core/`: ✅ **95.6%** (was 83.4%, was 65.9% → target 90%+) ✅ **ACHIEVED!**
-- `pkg/sqlfmt/utils/`: ✅ **100%**
 
 ### 1.1 Integration Tests
 
@@ -266,7 +249,7 @@ This consolidated plan covers all remaining work for MySQL, PostgreSQL, and SQLi
 
 ### Code Quality
 
-- [ ] All tests passing (100%) - Most passing, 1 PostgreSQL formatter test needs fix
+- [x] All tests passing (100%) - PostgreSQL ✅, MySQL ✅ - ALL TESTS PASSING!
 
 ### Documentation
 
@@ -293,4 +276,12 @@ This consolidated plan covers all remaining work for MySQL, PostgreSQL, and SQLi
 **Total Estimated Time**: 8-12 weeks for complete implementation
 
 **Immediate Next Steps** (This Week):
-1. Fix failing PostgreSQL formatter test (1 test in ComplexPLpgSQL)
+1. ✅ ~~Fix failing PostgreSQL formatter test~~ - COMPLETED
+2. ✅ ~~Fix MySQL formatter tests (11 failures)~~ - COMPLETED
+
+**All Tests Passing!** 🎉
+
+Next priorities:
+- Integration & performance tests
+- Documentation improvements
+- Watch mode and CLI enhancements

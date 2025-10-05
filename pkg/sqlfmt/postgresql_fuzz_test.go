@@ -7,7 +7,7 @@ import (
 	"unicode/utf8"
 )
 
-// Phase 11 fuzz testing for PostgreSQL formatter robustness.
+// Fuzz testing for PostgreSQL formatter robustness.
 func FuzzPostgreSQLFormatter(f *testing.F) {
 	cfg := &Config{Language: PostgreSQL, Indent: "  "}
 
@@ -62,7 +62,7 @@ func FuzzPostgreSQLFormatter(f *testing.F) {
 }
 
 // Stress test for very large PostgreSQL inputs.
-func TestPostgreSQL_Phase11_StressTestLargeInputs(t *testing.T) {
+func TestPostgreSQL_StressTestLargeInputs(t *testing.T) {
 	cfg := &Config{Language: PostgreSQL, Indent: "  "}
 
 	// Generate progressively larger queries to test memory usage and performance
@@ -127,7 +127,7 @@ func TestPostgreSQL_Phase11_StressTestLargeInputs(t *testing.T) {
 }
 
 // Test extreme edge cases for PostgreSQL.
-func TestPostgreSQL_Phase11_ExtremeEdgeCases(t *testing.T) {
+func TestPostgreSQL_ExtremeEdgeCases(t *testing.T) {
 	cfg := &Config{Language: PostgreSQL, Indent: "  "}
 
 	edgeCases := []struct {

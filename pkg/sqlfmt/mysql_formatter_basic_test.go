@@ -120,7 +120,8 @@ func TestMySQLFormatter_Comments(t *testing.T) {
             FROM
               users
             WHERE
-              id = 1 /*!40100 AND name = 'test' */;
+              id = 1 /*!40100 AND name = 'test' */
+            ;
         `)
 		runFormattingTest(t, formatter, query, exp)
 	})
@@ -129,8 +130,7 @@ func TestMySQLFormatter_Comments(t *testing.T) {
 		query := "SELECT id, /* block comment */ name # line comment\nFROM users;"
 		exp := Dedent(`
             SELECT
-              id,
-              /* block comment */
+              id, /* block comment */
               name # line comment
             FROM
               users;
@@ -204,10 +204,7 @@ func TestMySQLFormatter_Operators(t *testing.T) {
               u.name
             FROM
               users u
-            JOIN
-              profiles p
-            ON
-              u.id <=> p.user_id;
+              JOIN profiles p ON u.id <=> p.user_id;
         `)
 		runFormattingTest(t, formatter, query, exp)
 	})
@@ -246,7 +243,7 @@ func TestMySQLFormatter_Operators(t *testing.T) {
               a & b,
               a | b,
               a ^ b,
-              ~a,
+              ~ a,
               a << 2,
               a >> 1
             FROM
@@ -287,7 +284,7 @@ func TestMySQLFormatter_JSON(t *testing.T) {
 func TestMySQLFormatter_Integration(t *testing.T) {
 	formatter := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL))
 
-	t.Run("comprehensive Phase 2 integration test", func(t *testing.T) {
+	t.Run("comprehensive query integration test", func(t *testing.T) {
 		query := "SELECT u.id, u.name, u.email, p.bio, p.avatar_url FROM users u " +
 			"LEFT JOIN profiles p ON u.id = p.user_id WHERE u.active = true AND u.created_at > '2023-01-01' " +
 			"ORDER BY u.created_at DESC LIMIT 10;"
@@ -300,10 +297,7 @@ func TestMySQLFormatter_Integration(t *testing.T) {
               p.avatar_url
             FROM
               users u
-            LEFT JOIN
-              profiles p
-            ON
-              u.id = p.user_id
+              LEFT JOIN profiles p ON u.id = p.user_id
             WHERE
               u.active = true
               AND u.created_at > '2023-01-01'

@@ -7,7 +7,7 @@ import (
 	"unicode/utf8"
 )
 
-// Phase 11 fuzz testing for MySQL formatter robustness.
+// Fuzz testing for MySQL formatter robustness.
 func FuzzMySQLFormatter(f *testing.F) {
 	cfg := &Config{Language: MySQL, Indent: "  "}
 
@@ -62,7 +62,7 @@ func FuzzMySQLFormatter(f *testing.F) {
 }
 
 // Stress test for very large MySQL inputs.
-func TestMySQL_Phase11_StressTestLargeInputs(t *testing.T) {
+func TestMySQL_StressTestLargeInputs(t *testing.T) {
 	cfg := &Config{Language: MySQL, Indent: "  "}
 
 	// Generate progressively larger queries to test memory usage and performance
@@ -120,7 +120,7 @@ func TestMySQL_Phase11_StressTestLargeInputs(t *testing.T) {
 }
 
 // Test extreme edge cases for MySQL.
-func TestMySQL_Phase11_ExtremeEdgeCases(t *testing.T) {
+func TestMySQL_ExtremeEdgeCases(t *testing.T) {
 	cfg := &Config{Language: MySQL, Indent: "  "}
 
 	edgeCases := []struct {

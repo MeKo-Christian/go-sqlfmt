@@ -1,6 +1,6 @@
 -- MySQL 8.0 Comprehensive Feature Test
--- This file tests all major MySQL features implemented in phases 1-9
--- Phase 1-3: Basic MySQL syntax with comments, identifiers, and placeholders
+-- This file tests all major MySQL features including syntax, operators, DDL, CTEs, and window functions
+-- Basic MySQL syntax with comments, identifiers, and placeholders
 SELECT
   /*! SQL_CALC_FOUND_ROWS */
   `user_id`,
@@ -17,7 +17,7 @@ WHERE
   AND flags & 0b0001 > 0 /*! MySQL version hint */
 ;
 
--- Phase 4: JSON operators and NULL-safe equality
+-- JSON operators and NULL-safe equality
 SELECT
   u.id,
   profile->'$.name' AS profile_name,
@@ -37,7 +37,7 @@ WHERE
   AND u.score << 2 > 100;
 
 -- bitwise shift
--- Phase 5: LIMIT variations and locking
+-- LIMIT variations and row locking
 SELECT
   order_id,
   customer_name,
@@ -57,7 +57,7 @@ FOR UPDATE
 ;
 
 -- Row locking
--- Phase 6: MySQL upsert with ON DUPLICATE KEY UPDATE
+-- MySQL upsert with ON DUPLICATE KEY UPDATE
 INSERT INTO
   user_analytics (
     user_id,
@@ -94,7 +94,7 @@ ON DUPLICATE KEY UPDATE
   browser_info = VALUES(browser_info),
   updated_at = CURRENT_TIMESTAMP;
 
--- Phase 6: REPLACE statement
+-- REPLACE statement
 REPLACE
   INTO cache_entries (cache_key, cache_value, expires_at)
 VALUES
@@ -109,7 +109,7 @@ VALUES
     DATE_ADD(NOW(), INTERVAL 1 HOUR)
   );
 
--- Phase 7: CTEs and Window Functions
+-- CTEs and Window Functions
 WITH RECURSIVE
   department_tree AS (
     -- Base case: top-level departments
@@ -203,7 +203,7 @@ ORDER BY
 LIMIT
   50;
 
--- Phase 8: DDL with indexes, generated columns, and table options
+-- DDL with indexes, generated columns, and table options
 CREATE TABLE products (
   id INT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(255) NOT NULL,
@@ -250,15 +250,15 @@ CREATE SPATIAL INDEX
 -- ALTER TABLE with MySQL options
 ALTER TABLE
   products
-ADD
-  COLUMN weight DECIMAL(8, 3),
-ADD
-  COLUMN dimensions JSON,
-MODIFY
-  COLUMN description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+ADD COLUMN
+  weight DECIMAL(8, 3),
+ADD COLUMN
+  dimensions JSON,
+MODIFY COLUMN
+  description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
 ADD
   CONSTRAINT fk_category FOREIGN KEY (category_name) REFERENCES categories(name) ON DELETE
 SET
   NULL ON UPDATE CASCADE,
-  ALGORITHM = instant,
-  LOCK = none;
+  ALGORITHM = INSTANT,
+  LOCK = NONE;

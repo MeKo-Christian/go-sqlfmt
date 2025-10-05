@@ -1,5 +1,5 @@
 -- SQLite DDL Essentials Test File
--- Tests Phase 7: CREATE TABLE with generated columns, CREATE INDEX, PRAGMA statements
+-- Tests CREATE TABLE with generated columns, CREATE INDEX, PRAGMA statements
 
 -- Basic CREATE TABLE with generated columns (VIRTUAL)
 CREATE TABLE products (

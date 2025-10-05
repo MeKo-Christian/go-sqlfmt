@@ -1,14 +1,14 @@
 -- MySQL 8.0 Comprehensive Feature Test
--- This file tests all major MySQL features implemented in phases 1-9
+-- This file tests all major MySQL features including syntax, operators, DDL, CTEs, and window functions
 
--- Phase 1-3: Basic MySQL syntax with comments, identifiers, and placeholders
+-- Basic MySQL syntax with comments, identifiers, and placeholders
 SELECT /*! SQL_CALC_FOUND_ROWS */ `user_id`, "full_name", 'email_address', 0xFF as hex_flags, 0b1010 as binary_mask, TRUE as is_active
 FROM `user_table` # hash comment
 WHERE `status` IN (?, ?, ?) -- prepared statement parameters
   AND created_at > ? /* parameter for date filter */
   AND flags & 0b0001 > 0 /*! MySQL version hint */;
 
--- Phase 4: JSON operators and NULL-safe equality
+-- JSON operators and NULL-safe equality
 SELECT 
     u.id,
     profile->'$.name' AS profile_name,
@@ -25,7 +25,7 @@ WHERE u.email REGEXP '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
   AND (u.flags | 0x10) > 0  -- bitwise operations
   AND u.score << 2 > 100;   -- bitwise shift
 
--- Phase 5: LIMIT variations and locking
+-- LIMIT variations and row locking
 SELECT order_id, customer_name, total_amount, status
 FROM orders
 WHERE status = 'pending'
@@ -34,7 +34,7 @@ ORDER BY total_amount DESC, created_at DESC
 LIMIT 20, 10  -- MySQL-style offset, limit
 FOR UPDATE;   -- Row locking
 
--- Phase 6: MySQL upsert with ON DUPLICATE KEY UPDATE
+-- MySQL upsert with ON DUPLICATE KEY UPDATE
 INSERT INTO user_analytics (
     user_id, 
     session_data, 
@@ -51,13 +51,13 @@ ON DUPLICATE KEY UPDATE
     browser_info = VALUES(browser_info),
     updated_at = CURRENT_TIMESTAMP;
 
--- Phase 6: REPLACE statement
+-- REPLACE statement
 REPLACE INTO cache_entries (cache_key, cache_value, expires_at)
 VALUES 
     ('user:123:profile', '{"name": "John", "email": "john@test.com"}', DATE_ADD(NOW(), INTERVAL 1 HOUR)),
     ('user:124:profile', '{"name": "Jane", "email": "jane@test.com"}', DATE_ADD(NOW(), INTERVAL 1 HOUR));
 
--- Phase 7: CTEs and Window Functions
+-- CTEs and Window Functions
 WITH RECURSIVE department_tree AS (
     -- Base case: top-level departments
     SELECT 
@@ -131,7 +131,7 @@ WHERE es.salary_rank <= 3
 ORDER BY es.dept_level, es.department_id, es.salary_rank
 LIMIT 50;
 
--- Phase 8: DDL with indexes, generated columns, and table options
+-- DDL with indexes, generated columns, and table options
 CREATE TABLE products (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,

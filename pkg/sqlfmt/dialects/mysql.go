@@ -19,26 +19,28 @@ var (
 		"IFNULL", "ISNULL", "CONCAT", "LENGTH", "SUBSTRING",
 		// Storage engines and options
 		"STORAGE", "DYNAMIC", "FIXED", "COMPRESSED", "REDUNDANT", "COMPACT",
-		// Phase 4: Regex operators
+		// Regex operators
 		"NOT REGEXP", "NOT RLIKE",
-		// Phase 5: Core clauses and locking
+		// Locking and insert clauses
 		"FOR UPDATE", "FOR SHARE", "LOCK IN SHARE MODE",
 		"INSERT IGNORE", "REPLACE",
-		// Phase 6: MySQL "Upsert"
+		// MySQL upsert (ON DUPLICATE KEY UPDATE)
 		"ON DUPLICATE KEY UPDATE",
-		// Phase 7: CTEs & Window Functions (8.0+)
+		// CTEs and window functions (MySQL 8.0+)
 		"WITH", "WITH RECURSIVE", "WINDOW", "OVER", "PARTITION BY",
 		"RANGE", "ROWS", "UNBOUNDED", "PRECEDING", "FOLLOWING", "CURRENT ROW",
 		// Window function names
 		"ROW_NUMBER", "RANK", "DENSE_RANK", "NTILE", "LAG", "LEAD",
 		"FIRST_VALUE", "LAST_VALUE", "NTH_VALUE", "PERCENT_RANK", "CUME_DIST",
-		// Phase 8: DDL Essentials
+		// DDL Essentials
 		"UNIQUE", "FULLTEXT", "SPATIAL", "USING",
 		"ALGORITHM", "INSTANT", "INPLACE", "COPY",
 		"LOCK", "NONE", "SHARED", "EXCLUSIVE",
 		"GENERATED", "ALWAYS", "VIRTUAL", "STORED",
 		"CONSTRAINT", "CHECK", "FOREIGN KEY", "REFERENCES",
-		// Phase 9: Stored Routines
+		// ALTER TABLE compound keywords
+		"ADD COLUMN", "MODIFY COLUMN", "DROP COLUMN",
+		// Stored Routines
 		"PROCEDURE", "FUNCTION", "BEGIN", "END",
 		"RETURNS", "RETURN", "DETERMINISTIC", "NOT DETERMINISTIC",
 		"READS SQL DATA", "MODIFIES SQL DATA", "NO SQL", "CONTAINS SQL",
@@ -53,29 +55,39 @@ var (
 	}...)
 
 	// MySQL extends standard SQL top-level words with specific clauses.
-	mySQLReservedTopLevelWords = append(standardSQLReservedTopLevelWords, []string{
-		"INSERT IGNORE", "REPLACE", "ON DUPLICATE KEY UPDATE",
-		// Phase 7: CTEs & Window Functions (8.0+)
-		"WITH", "WITH RECURSIVE", "WINDOW",
-		// Phase 8: DDL Essentials
-		"CREATE INDEX", "CREATE UNIQUE INDEX", "CREATE FULLTEXT INDEX", "CREATE SPATIAL INDEX",
+	// IMPORTANT: Multi-word keywords must come first so they match before single words
+	mySQLReservedTopLevelWords = append([]string{
+		// Multi-word keywords first (longer matches)
+		"INSERT IGNORE", "ON DUPLICATE KEY UPDATE",
+		// ALTER TABLE compound keywords
+		"ADD COLUMN", "MODIFY COLUMN", "DROP COLUMN",
+		// CTEs and window functions (MySQL 8.0+)
+		"WITH RECURSIVE",
+		// DDL statements
+		"CREATE UNIQUE INDEX", "CREATE FULLTEXT INDEX", "CREATE SPATIAL INDEX", "CREATE INDEX",
 		"DROP INDEX", "ALTER TABLE",
-		// Phase 9: Stored Routines
+		// Stored procedures and functions
 		"CREATE PROCEDURE", "CREATE FUNCTION", "DROP PROCEDURE", "DROP FUNCTION",
 		"ALTER PROCEDURE", "ALTER FUNCTION",
-	}...)
+		// Single-word keywords
+		"REPLACE", "WITH", "WINDOW",
+	}, standardSQLReservedTopLevelWords...)
 
 	// MySQL extends top-level words without indent to include locking clauses.
 	mySQLReservedTopLevelWordsNoIndent = append(standardSQLReservedTopLevelWordsNoIndent, []string{
-		// Phase 5: Locking clauses - appear at end of SELECT but don't add indentation
+		// Locking clauses - appear at end of SELECT but don't add indentation
 		"LOCK IN SHARE MODE", "FOR UPDATE", "FOR SHARE",
-		// Phase 9: BEGIN starts at base level like PostgreSQL
+		// BEGIN starts at base level (for stored procedures)
 		"BEGIN",
 	}...)
 
 	// MySQL extends newline words to include stored routine keywords.
 	mySQLReservedNewlineWords = append(standardSQLReservedNewlineWords, []string{
-		// Phase 9: Stored routine control flow
+		// ALTER TABLE compound keywords
+		"ADD COLUMN", "MODIFY COLUMN", "DROP COLUMN",
+		// ALTER TABLE options (not LOCK - conflicts with "LOCK IN SHARE MODE")
+		"ALGORITHM",
+		// Stored procedure control flow keywords
 		"BEGIN", "END", "END IF", "END WHILE", "END LOOP", "END REPEAT",
 		"IF", "ELSEIF", "ELSE", // Remove THEN from newline words - it should follow WHEN/ELSE
 		"WHILE", "DO", "LOOP", "REPEAT", "UNTIL",
@@ -99,14 +111,14 @@ func NewMySQLTokenizerConfig() *TokenizerConfig {
 		ReservedTopLevelWords:         mySQLReservedTopLevelWords,
 		ReservedNewlineWords:          mySQLReservedNewlineWords,
 		ReservedTopLevelWordsNoIndent: mySQLReservedTopLevelWordsNoIndent,
-		// Phase 2: Enhanced string and identifier support
+		// String and identifier support
 		// Backticks for identifiers, single/double quotes for strings
-		// Phase 12: Add support for hex/bit literal forms X'ABCD' and B'1010'
+		// Hex/bit literal forms X'ABCD' and B'1010'
 		StringTypes:             []string{"''", "\"\"", "``", "X''", "B''"},
 		OpenParens:              []string{"(", "CASE", "BEGIN", "IF", "WHILE", "LOOP", "REPEAT"},
 		CloseParens:             []string{")", "END", "END IF", "END WHILE", "END LOOP", "END REPEAT"},
 		IndexedPlaceholderTypes: []string{"?"},       // MySQL uses ? for parameters
-		NamedPlaceholderTypes:   []string{},          // Phase 2: Still no named parameters
+		NamedPlaceholderTypes:   []string{},          // MySQL doesn't support named parameters
 		LineCommentTypes:        []string{"--", "#"}, // MySQL supports both -- and #
 		SpecialWordChars:        []string{},          // Default special characters
 	}
@@ -125,36 +137,36 @@ func (msf *MySQLFormatter) tokenOverride(
 	tok types.Token,
 	previousReservedWord types.Token,
 ) types.Token {
-	// Phase 9: Handle DELIMITER statements as pass-through
+	// Handle DELIMITER statements as pass-through (for stored procedures)
 	if tok.Type == types.TokenTypeReserved && tok.Value == "DELIMITER" {
 		return msf.handleDelimiterToken(tok)
 	}
 
-	// Phase 9: Handle stored routine specific keywords
+	// Handle stored procedure specific keywords
 	if tok.Type == types.TokenTypeReserved {
 		if result := msf.handleStoredRoutineKeywords(tok, previousReservedWord); !result.Empty() {
 			return result
 		}
 	}
 
-	// Phase 6: Handle VALUES as function in ON DUPLICATE KEY UPDATE context
+	// Handle VALUES as function in ON DUPLICATE KEY UPDATE context
 	if result := msf.handleValuesInUpsert(tok, previousReservedWord); !result.Empty() {
 		return result
 	}
 
-	// Phase 8: Handle GENERATED ALWAYS AS sequence formatting
+	// Handle GENERATED ALWAYS AS sequence formatting
 	if result := msf.handleGeneratedAlwaysAs(tok, previousReservedWord); !result.Empty() {
 		return result
 	}
 
-	// Phase 8: Handle table options in DDL statements
+	// Handle table options in DDL statements (ALGORITHM, LOCK, etc.)
 	if tok.Type == types.TokenTypeReserved {
 		if result := msf.handleTableOptions(tok, previousReservedWord); !result.Empty() {
 			return result
 		}
 	}
 
-	// Phase 4: Handle MySQL-specific operators
+	// Handle MySQL-specific operators (->>, ->, etc.)
 	if result := msf.handleMySQLOperators(tok); !result.Empty() {
 		return result
 	}
@@ -197,7 +209,7 @@ func (msf *MySQLFormatter) handleStoredRoutineKeywords(tok types.Token, previous
 }
 
 func (msf *MySQLFormatter) handleValuesInUpsert(tok types.Token, previousReservedWord types.Token) types.Token {
-	// Phase 6: Handle VALUES as function in ON DUPLICATE KEY UPDATE context
+	// Handle VALUES as function in ON DUPLICATE KEY UPDATE context
 	if tok.Type == types.TokenTypeReservedTopLevel && tok.Value == "VALUES" {
 		// If the previous reserved word is "ON DUPLICATE KEY UPDATE", treat VALUES as a word/function
 		if previousReservedWord.Value == "ON DUPLICATE KEY UPDATE" {
@@ -212,7 +224,7 @@ func (msf *MySQLFormatter) handleValuesInUpsert(tok types.Token, previousReserve
 }
 
 func (msf *MySQLFormatter) handleGeneratedAlwaysAs(tok types.Token, previousReservedWord types.Token) types.Token {
-	// Phase 8: Handle GENERATED ALWAYS AS sequence formatting
+	// Handle GENERATED ALWAYS AS sequence formatting
 	if tok.Type == types.TokenTypeReserved && tok.Value == "AS" {
 		// If previous reserved word is "GENERATED ALWAYS", keep AS as a normal reserved word
 		if previousReservedWord.Value == "GENERATED ALWAYS" {
@@ -228,14 +240,7 @@ func (msf *MySQLFormatter) handleTableOptions(tok types.Token, previousReservedW
 		// These should be treated as regular reserved words in DDL context
 		return tok
 	case "INSTANT", "INPLACE", "COPY", "NONE", "SHARED", "EXCLUSIVE":
-		// These are option values that should be formatted as words when following their keywords
-		if previousReservedWord.Value == "ALGORITHM" || previousReservedWord.Value == "LOCK" {
-			return types.Token{
-				Type:  types.TokenTypeWord,
-				Value: strings.ToLower(tok.Value),
-				Key:   tok.Key,
-			}
-		}
+		// These are option values that should remain as reserved words (uppercase)
 		return tok
 	case "VIRTUAL", "STORED":
 		// These are generated column storage options
@@ -252,7 +257,7 @@ func (msf *MySQLFormatter) handleTableOptions(tok types.Token, previousReservedW
 }
 
 func (msf *MySQLFormatter) handleMySQLOperators(tok types.Token) types.Token {
-	// Phase 4: Handle MySQL-specific operators
+	// Handle MySQL-specific operators (<=>, ->, ->>)
 	if tok.Type == types.TokenTypeOperator {
 		switch tok.Value {
 		case "<=>":

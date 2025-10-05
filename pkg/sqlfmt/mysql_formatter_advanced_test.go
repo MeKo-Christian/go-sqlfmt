@@ -219,8 +219,8 @@ func TestMySQLFormatter_OnDuplicateKeyUpdate(t *testing.T) {
 		runFormattingTest(t, formatter, query, exp)
 	})
 
-	t.Run("comprehensive Phase 6 integration test", func(t *testing.T) {
-		query := `-- Phase 6 comprehensive test: MySQL upsert with all features
+	t.Run("comprehensive ON DUPLICATE KEY UPDATE integration test", func(t *testing.T) {
+		query := `-- Comprehensive MySQL upsert test with ON DUPLICATE KEY UPDATE
 				  INSERT INTO user_analytics (user_id, session_data, visit_count, last_seen) 
 				  VALUES (?, '{"page": "home", "source": "direct"}', 1, NOW()) 
 				  ON DUPLICATE KEY UPDATE 
@@ -229,7 +229,7 @@ func TestMySQLFormatter_OnDuplicateKeyUpdate(t *testing.T) {
 				    last_seen = GREATEST(last_seen, VALUES(last_seen)),
 				    updated_by = 'system';`
 		exp := Dedent(`
-            -- Phase 6 comprehensive test: MySQL upsert with all features
+            -- Comprehensive MySQL upsert test with ON DUPLICATE KEY UPDATE
             INSERT INTO
               user_analytics (user_id, session_data, visit_count, last_seen)
             VALUES
@@ -253,7 +253,7 @@ func TestMySQLFormatter_OnDuplicateKeyUpdate(t *testing.T) {
 }
 
 func TestMySQLFormatter_Format_Advanced(t *testing.T) {
-	// Phase 5: Core Clauses Tests
+	// MySQL LIMIT and OFFSET clause tests
 
 	t.Run("formats LIMIT n OFFSET m syntax", func(t *testing.T) {
 		query := "SELECT id, name FROM users ORDER BY created_at DESC LIMIT 10 OFFSET 20;"
@@ -345,7 +345,7 @@ func TestMySQLFormatter_Format_Advanced(t *testing.T) {
 		require.Equal(t, exp, result)
 	})
 
-	// Phase 6: MySQL Upsert Tests
+	// MySQL ON DUPLICATE KEY UPDATE (upsert) tests
 
 	t.Run("formats INSERT with ON DUPLICATE KEY UPDATE", func(t *testing.T) {
 		query := "INSERT INTO user_analytics (user_id, session_data, page_views, last_visit) VALUES (?, '{\"page\": \"dashboard\"}', 1, NOW()) ON DUPLICATE KEY UPDATE session_data = JSON_MERGE_PATCH(session_data, VALUES(session_data)), page_views = page_views + VALUES(page_views), last_visit = GREATEST(last_visit, VALUES(last_visit));"
@@ -387,7 +387,7 @@ func TestMySQLFormatter_Format_Advanced(t *testing.T) {
 		require.Equal(t, exp, result)
 	})
 
-	// Phase 7: Window Functions Tests
+	// MySQL window function tests
 
 	t.Run("formats window functions with JSON operations", func(t *testing.T) {
 		query := "SELECT user_id, event_data->'$.timestamp' as timestamp, " +
@@ -410,7 +410,7 @@ func TestMySQLFormatter_Format_Advanced(t *testing.T) {
 		require.Equal(t, exp, result)
 	})
 
-	t.Run("comprehensive Phase 7 integration test", func(t *testing.T) {
+	t.Run("comprehensive window function and CTE integration test", func(t *testing.T) {
 		query := `WITH RECURSIVE department_hierarchy AS (
             SELECT id, name, parent_id, 0 as level, CAST(id AS CHAR(200)) as path
             FROM departments WHERE parent_id IS NULL
@@ -495,7 +495,7 @@ func TestMySQLFormatter_Format_Advanced(t *testing.T) {
 		require.Equal(t, exp, result)
 	})
 
-	// Phase 12: Final Polish & Edge Cases Tests
+	// Edge case and robustness tests for MySQL formatter
 
 	t.Run("formats backtick identifiers with unicode and emoji", func(t *testing.T) {
 		query := "SELECT `用户ID`, `имя`, `🚀rocket_field`, `café_name` FROM `表格📊` WHERE `数量` > 100;"

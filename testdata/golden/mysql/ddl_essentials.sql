@@ -1,5 +1,5 @@
--- Phase 8: DDL Essentials Test File for MySQL
--- This file contains comprehensive DDL examples to test MySQL Phase 8 features
+-- MySQL DDL Essentials Test File
+-- This file contains comprehensive DDL examples: CREATE INDEX, ALTER TABLE, generated columns
 -- CREATE INDEX variations
 CREATE INDEX
   idx_user_email ON users (email) USING BTREE;
@@ -23,17 +23,17 @@ CREATE UNIQUE INDEX
 -- ALTER TABLE with options  
 ALTER TABLE
   users
-ADD
-  COLUMN status VARCHAR(20) DEFAULT 'active',
-  ALGORITHM = instant,
-  LOCK = none;
+ADD COLUMN
+  status VARCHAR(20) DEFAULT 'active',
+  ALGORITHM = INSTANT,
+  LOCK = NONE;
 
 ALTER TABLE
   products
-MODIFY
-  COLUMN price DECIMAL(10, 2) NOT NULL,
-  ALGORITHM = inplace,
-  LOCK = shared;
+MODIFY COLUMN
+  price DECIMAL(10, 2) NOT NULL,
+  ALGORITHM = INPLACE,
+  LOCK = SHARED;
 
 ALTER TABLE
   orders
@@ -41,8 +41,8 @@ ADD
   CONSTRAINT chk_total CHECK (total > 0),
 ADD
   INDEX idx_order_date (created_at),
-  ALGORITHM = copy,
-  LOCK = exclusive;
+  ALGORITHM = COPY,
+  LOCK = EXCLUSIVE;
 
 -- Generated columns - VIRTUAL
 CREATE TABLE orders (
@@ -101,11 +101,11 @@ CREATE FULLTEXT INDEX
 
 ALTER TABLE
   users
-ADD
-  COLUMN phone VARCHAR(15),
-ADD
-  COLUMN is_verified BOOLEAN DEFAULT FALSE,
+ADD COLUMN
+  phone VARCHAR(15),
+ADD COLUMN
+  is_verified BOOLEAN DEFAULT FALSE,
 ADD
   CONSTRAINT chk_username_length CHECK (LENGTH(username) >= 3),
-  ALGORITHM = instant,
-  LOCK = none;
+  ALGORITHM = INSTANT,
+  LOCK = NONE;

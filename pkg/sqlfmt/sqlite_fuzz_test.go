@@ -7,7 +7,7 @@ import (
 	"unicode/utf8"
 )
 
-// Phase 11 fuzz testing for SQLite formatter robustness.
+// Fuzz testing for SQLite formatter robustness.
 func FuzzSQLiteFormatter(f *testing.F) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -57,7 +57,7 @@ func FuzzSQLiteFormatter(f *testing.F) {
 }
 
 // Stress test for very large inputs.
-func TestSQLite_Phase11_StressTestLargeInputs(t *testing.T) {
+func TestSQLite_StressTestLargeInputs(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Generate progressively larger queries to test memory usage and performance
@@ -111,7 +111,7 @@ func TestSQLite_Phase11_StressTestLargeInputs(t *testing.T) {
 }
 
 // Test extreme edge cases.
-func TestSQLite_Phase11_ExtremeEdgeCases(t *testing.T) {
+func TestSQLite_ExtremeEdgeCases(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	edgeCases := []struct {

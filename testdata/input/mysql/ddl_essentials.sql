@@ -1,5 +1,5 @@
--- Phase 8: DDL Essentials Test File for MySQL
--- This file contains comprehensive DDL examples to test MySQL Phase 8 features
+-- MySQL DDL Essentials Test File
+-- This file contains comprehensive DDL examples: CREATE INDEX, ALTER TABLE, generated columns
 
 -- CREATE INDEX variations
 CREATE INDEX idx_user_email ON users (email) USING BTREE;

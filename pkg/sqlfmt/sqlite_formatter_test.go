@@ -164,7 +164,7 @@ func TestSQLite_BasicFeatures(t *testing.T) {
 	}
 }
 
-// Phase 2 comprehensive SQLite tests.
+// Comment handling tests for SQLite formatter.
 func TestSQLite_Phase2_Comments(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -268,7 +268,7 @@ func TestSQLite_Phase2_Numbers(t *testing.T) {
 func TestSQLite_Phase2_IntegratedExample(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Test a comprehensive example with all Phase 2 features
+	// Test comprehensive comment handling example
 	query := `-- SQLite test query
 SELECT
     "user_id",           -- double quotes
@@ -306,7 +306,7 @@ WHERE ` + "`status`" + ` = 'active'
 	}
 }
 
-// Phase 3: Comprehensive Placeholder Tests.
+// Comprehensive placeholder and parameter tests for SQLite.
 func TestSQLite_Phase3_AllPlaceholderForms(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -566,7 +566,7 @@ func TestSQLite_Phase3_IndexingBehavior(t *testing.T) {
 	}
 }
 
-// Phase 4: Operators & Specials Tests.
+// SQLite operator and special syntax tests.
 func TestSQLite_Phase4_ConcatenationOperator(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -707,8 +707,8 @@ func TestSQLite_Phase4_PatternMatching(t *testing.T) {
 func TestSQLite_Phase4_IntegratedExample(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Test comprehensive example with all Phase 4 features
-	query := `-- Phase 4: Operators and Specials test
+	// Test comprehensive example with operators and special syntax
+	query := `-- SQLite operators and special syntax test
 SELECT 
     first_name || ' ' || last_name as full_name,   -- concatenation
     data->'profile'->>'name' as profile_name,      -- JSON operators  
@@ -729,7 +729,7 @@ ORDER BY first_name || last_name;` // concatenation in ORDER BY
 
 	// Test that all features are preserved and formatted correctly
 	expectedElements := []string{
-		"-- Phase 4: Operators and Specials test",
+		"-- SQLite operators and special syntax test",
 		"first_name || ' ' || last_name",
 		"data -> 'profile' ->> 'name'",
 		"email IS NULL",
@@ -744,7 +744,7 @@ ORDER BY first_name || last_name;` // concatenation in ORDER BY
 
 	for _, element := range expectedElements {
 		if !containsString(result, element) {
-			t.Errorf("Phase 4 integrated example should contain: %s\nFull result:\n%s", element, result)
+			t.Errorf("Operators and special syntax test should contain: %s\nFull result:\n%s", element, result)
 		}
 	}
 }
@@ -783,8 +783,7 @@ func TestSQLite_Phase4_EdgeCases(t *testing.T) {
 	}
 }
 
-// Phase 5: Core Clauses Tests.
-// Phase 5: Core Clauses Tests.
+// Core SQL clause tests for SQLite (LIMIT, OFFSET, INSERT OR, WITHOUT ROWID).
 func TestSQLite_Phase5_LimitStandardOffset(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -974,8 +973,8 @@ func TestSQLite_Phase5_WithoutRowid(t *testing.T) {
 func TestSQLite_Phase5_IntegratedExample(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Test comprehensive Phase 5 example with all features
-	query := `-- Phase 5: Core Clauses comprehensive test
+	// Test comprehensive core clause example with all SQLite features
+	query := `-- SQLite core clauses: LIMIT, OFFSET, INSERT OR, WITHOUT ROWID
 
 -- Create table without rowid
 CREATE TABLE user_preferences (
@@ -1002,7 +1001,7 @@ DO UPDATE SET setting_value = EXCLUDED.setting_value,
 SELECT * FROM user_preferences WHERE user_id = 1 LIMIT 5 OFFSET 0;
 SELECT * FROM user_preferences WHERE setting_key = 'theme' LIMIT 0, 10;
 
--- Complex query with multiple Phase 5 features
+-- Complex query demonstrating multiple core clause features
 INSERT INTO audit_log (user_id, action, details) 
 SELECT user_id, 'preference_change' as action, 
        'Updated ' || setting_key || ' to ' || setting_value as details
@@ -1014,9 +1013,9 @@ ON CONFLICT (user_id, action, created_at) DO NOTHING;`
 
 	result := Format(query, cfg)
 
-	// Test that all Phase 5 features are preserved and formatted
+	// Test that all core clause features are preserved and formatted
 	expectedElements := []string{
-		"-- Phase 5: Core Clauses comprehensive test",
+		"-- SQLite core clauses: LIMIT, OFFSET, INSERT OR, WITHOUT ROWID",
 		"WITHOUT ROWID",
 		"INSERT OR REPLACE",
 		"ON CONFLICT",
@@ -1031,7 +1030,7 @@ ON CONFLICT (user_id, action, created_at) DO NOTHING;`
 
 	for _, element := range expectedElements {
 		if !containsString(result, element) {
-			t.Errorf("Phase 5 integrated example should contain: %s\nFull result:\n%s", element, result)
+			t.Errorf("Core clause integrated example should contain: %s\nFull result:\n%s", element, result)
 		}
 	}
 }
@@ -1116,7 +1115,7 @@ func TestSQLite_Phase5_EdgeCases_UpsertPlaceholders(t *testing.T) {
 	}
 }
 
-// Phase 6: CTEs & Window Functions Tests.
+// Common Table Expressions (CTEs) and window function tests for SQLite.
 func TestSQLite_Phase6_BasicCTE(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -1462,7 +1461,7 @@ func TestSQLite_Phase6_ComplexWindowExample(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test comprehensive example with CTEs, window functions, and all SQLite features
-	query := `-- Phase 6: CTEs and Window Functions comprehensive test
+	query := `-- Comprehensive CTEs and window functions test
 	WITH RECURSIVE 
 		sales_hierarchy AS (
 			-- Manager hierarchy for sales teams
@@ -1542,7 +1541,7 @@ func TestSQLite_Phase6_ComplexWindowExample(t *testing.T) {
 
 	// Test comprehensive integration
 	expectedElements := []string{
-		"-- Phase 6: CTEs and Window Functions comprehensive test",
+		"-- Comprehensive CTEs and window functions test",
 		"WITH",
 		"RECURSIVE",
 		"sales_hierarchy AS",
@@ -1569,12 +1568,12 @@ func TestSQLite_Phase6_ComplexWindowExample(t *testing.T) {
 
 	for _, element := range expectedElements {
 		if !containsString(result, element) {
-			t.Errorf("Phase 6 comprehensive example should contain: %s\nFull result:\n%s", element, result)
+			t.Errorf("CTE and window function comprehensive example should contain: %s\nFull result:\n%s", element, result)
 		}
 	}
 }
 
-// Phase 7: DDL Essentials Tests.
+// DDL tests for SQLite (CREATE TABLE, PRAGMA, generated columns, etc.).
 func TestSQLite_Phase7_CreateTableWithGeneratedColumns(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -1766,8 +1765,8 @@ func TestSQLite_Phase7_PragmaStatements_Multiple(t *testing.T) {
 func TestSQLite_Phase7_DDLIntegratedExample(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Test comprehensive DDL example combining all Phase 7 features
-	query := `-- Phase 7: DDL Essentials comprehensive test
+	// Test comprehensive DDL example with generated columns, PRAGMA, and STRICT mode
+	query := `-- Comprehensive SQLite DDL test: PRAGMA, generated columns, STRICT mode
 	
 -- PRAGMA setup
 PRAGMA foreign_keys = ON;
@@ -1830,9 +1829,9 @@ PRAGMA index_list('user_sessions');`
 
 	result := Format(query, cfg)
 
-	// Test that all Phase 7 features are preserved and formatted correctly
+	// Test that all DDL features are preserved and formatted correctly
 	expectedElements := []string{
-		"-- Phase 7: DDL Essentials comprehensive test",
+		"-- Comprehensive SQLite DDL test: PRAGMA, generated columns, STRICT mode",
 		"foreign_keys = ON",
 		"journal_mode = WAL",
 		"CREATE TABLE",
@@ -1858,7 +1857,7 @@ PRAGMA index_list('user_sessions');`
 
 	for _, element := range expectedElements {
 		if !containsString(result, element) {
-			t.Errorf("Phase 7 integrated example should contain: %s\nFull result:\n%s", element, result)
+			t.Errorf("DDL integrated example should contain: %s\nFull result:\n%s", element, result)
 		}
 	}
 }
@@ -1957,7 +1956,7 @@ PRAGMA table_xinfo(user_data);`
 
 	for _, element := range expectedElements {
 		if !containsString(result, element) {
-			t.Errorf("Phase 7 with previous features should contain: %s\nFull result:\n%s", element, result)
+			t.Errorf("DDL with previously tested features should contain: %s\nFull result:\n%s", element, result)
 		}
 	}
 }
@@ -2044,7 +2043,7 @@ func TestSQLite_Phase7_EdgeCases_PragmaComplexValues(t *testing.T) {
 	}
 }
 
-// Phase 8: Triggers & Views Tests.
+// Trigger and view tests for SQLite.
 func TestSQLite_Phase8_CreateTriggerBeforeInsert(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -2393,7 +2392,7 @@ func TestSQLite_Phase8_IntegratedExample_View(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
 	// Test comprehensive view creation with CTE, JSON operators, and window functions
-	query := `-- Phase 8: Triggers & Views comprehensive test
+	query := `-- Comprehensive view test with CTEs, JSON operators, and window functions
 
 -- Create a view with CTE, JSON operators, and window functions
 CREATE VIEW IF NOT EXISTS user_activity_summary AS
@@ -2437,7 +2436,7 @@ CREATE VIEW IF NOT EXISTS user_activity_summary AS
 
 	// Test comprehensive integration of view features
 	expectedElements := []string{
-		"-- Phase 8: Triggers & Views comprehensive test",
+		"-- Comprehensive view test with CTEs, JSON operators, and window functions",
 		"CREATE VIEW",
 		"IF NOT EXISTS",
 		"user_activity_summary",
@@ -2459,7 +2458,7 @@ CREATE VIEW IF NOT EXISTS user_activity_summary AS
 
 	for _, element := range expectedElements {
 		if !containsString(result, element) {
-			t.Errorf("Phase 8 integrated view example should contain: %s\nFull result:\n%s", element, result)
+			t.Errorf("Integrated view example should contain: %s\nFull result:\n%s", element, result)
 		}
 	}
 }
@@ -2552,12 +2551,12 @@ CREATE TRIGGER IF NOT EXISTS user_change_logger
 
 	for _, element := range expectedElements {
 		if !containsString(result, element) {
-			t.Errorf("Phase 8 integrated trigger example should contain: %s\nFull result:\n%s", element, result)
+			t.Errorf("Integrated trigger example should contain: %s\nFull result:\n%s", element, result)
 		}
 	}
 }
 
-// Phase 11: Final Polish & Edge Cases Tests.
+// Edge case and robustness tests for SQLite formatter.
 func TestSQLite_Phase11_PragmaValuePreservation(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
@@ -2845,8 +2844,8 @@ func TestSQLite_Phase11_EdgeCaseParameters(t *testing.T) {
 func TestSQLite_Phase11_IntegratedScenario(t *testing.T) {
 	cfg := &Config{Language: SQLite, Indent: "  "}
 
-	// Comprehensive test combining all Phase 11 requirements
-	query := `-- Phase 11 integration test with Unicode: Тест системы
+	// Comprehensive edge case test with Unicode and special characters
+	query := `-- Edge case integration test with Unicode: Тест системы
 	PRAGMA foreign_keys = ON;
 	PRAGMA encoding = 'UTF-8'; 
 	
@@ -2891,8 +2890,8 @@ func TestSQLite_Phase11_IntegratedScenario(t *testing.T) {
 
 	result := Format(query, cfg)
 
-	// Verify all key Phase 11 elements are handled correctly
-	phase11Elements := []string{
+	// Verify all key edge case elements are handled correctly
+	edgeCaseElements := []string{
 		// PRAGMA values preserved
 		"PRAGMA", "foreign_keys = ON", "encoding = 'UTF-8'", "table_xinfo",
 		// Unicode identifiers preserved
@@ -2906,12 +2905,12 @@ func TestSQLite_Phase11_IntegratedScenario(t *testing.T) {
 		// Complex JSON and CTEs formatted
 		"json_object", "json_extract", "WITH", "user_stats",
 		// Comments with Unicode preserved
-		"-- Phase 11 integration test with Unicode: Тест системы",
+		"-- Edge case integration test with Unicode: Тест системы",
 	}
 
-	for _, element := range phase11Elements {
+	for _, element := range edgeCaseElements {
 		if !containsString(result, element) {
-			t.Errorf("Phase 11 integrated test should contain: %s\nFull result:\n%s", element, result)
+			t.Errorf("Edge case integrated test should contain: %s\nFull result:\n%s", element, result)
 		}
 	}
 
