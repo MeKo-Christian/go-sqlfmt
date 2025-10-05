@@ -382,3 +382,156 @@ func TestValidateMultipleFiles(t *testing.T) {
 	assert.Contains(t, output, "properly formatted")
 	assert.Contains(t, output, "needs formatting")
 }
+
+func TestValidateFileWithError(t *testing.T) {
+	// Reset global flags
+	lang = validationSQLDialect
+	indent = "  "
+	uppercase = false
+	linesBetween = 2
+	outputFormat = outputFormatText
+	showDiff = false
+
+	// Create validate command
+	cmd := &cobra.Command{
+		Use:  "validate [files...]",
+		Args: cobra.ArbitraryArgs,
+		RunE: runValidateTest,
+	}
+	cmd.Flags().StringVar(&lang, "lang", validationSQLDialect, "SQL dialect")
+	cmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
+	cmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert to uppercase")
+	cmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
+	cmd.Flags().StringVar(&outputFormat, "output", outputFormatText, "Output format")
+	cmd.Flags().BoolVar(&showDiff, "diff", false, "Show diff")
+
+	// Capture stdout
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	// Run the command with a non-existent file
+	cmd.SetArgs([]string{"/nonexistent/file.sql"})
+	err := cmd.Execute()
+	require.NoError(t, err)
+
+	// Restore stdout and capture output
+	_ = w.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	output := buf.String()
+
+	// Verify error output
+	assert.Contains(t, output, "ERROR")
+	assert.Contains(t, output, "failed to read file")
+}
+
+func TestValidateJSONOutputWithError(t *testing.T) {
+	// Reset global flags
+	lang = validationSQLDialect
+	indent = "  "
+	uppercase = false
+	linesBetween = 2
+	outputFormat = outputFormatJSON
+	showDiff = false
+
+	// Create validate command
+	cmd := &cobra.Command{
+		Use:  "validate [files...]",
+		Args: cobra.ArbitraryArgs,
+		RunE: runValidateTest,
+	}
+	cmd.Flags().StringVar(&lang, "lang", validationSQLDialect, "SQL dialect")
+	cmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
+	cmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert to uppercase")
+	cmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
+	cmd.Flags().StringVar(&outputFormat, "output", outputFormatJSON, "Output format")
+	cmd.Flags().BoolVar(&showDiff, "diff", false, "Show diff")
+
+	// Capture stdout
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	// Run the command with a non-existent file
+	cmd.SetArgs([]string{"/nonexistent/file.sql"})
+	err := cmd.Execute()
+	require.NoError(t, err)
+
+	// Restore stdout and capture output
+	_ = w.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	output := buf.String()
+
+	// Verify JSON output with error
+	assert.Contains(t, output, "\"error\"")
+	assert.Contains(t, output, "failed to read file")
+	assert.Contains(t, output, "\"error_files\": 1")
+
+	// Reset outputFormat
+	outputFormat = outputFormatText
+}
+
+func TestValidateMultipleFilesWithErrors(t *testing.T) {
+	// Create one valid file
+	tmpFile, err := os.CreateTemp("", "test*.sql")
+	require.NoError(t, err)
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+
+	// Properly formatted SQL
+	_, err = tmpFile.WriteString("SELECT\n  *\nFROM\n  users")
+	require.NoError(t, err)
+	_ = tmpFile.Close()
+
+	// Reset global flags
+	lang = validationSQLDialect
+	indent = "  "
+	uppercase = false
+	linesBetween = 2
+	outputFormat = outputFormatText
+	showDiff = false
+
+	// Create validate command
+	cmd := &cobra.Command{
+		Use:  "validate [files...]",
+		Args: cobra.ArbitraryArgs,
+		RunE: runValidateTest,
+	}
+	cmd.Flags().StringVar(&lang, "lang", validationSQLDialect, "SQL dialect")
+	cmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
+	cmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert to uppercase")
+	cmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
+	cmd.Flags().StringVar(&outputFormat, "output", outputFormatText, "Output format")
+	cmd.Flags().BoolVar(&showDiff, "diff", false, "Show diff")
+
+	// Capture stdout
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	// Run the command with one valid file and one non-existent file
+	cmd.SetArgs([]string{tmpFile.Name(), "/nonexistent/file.sql"})
+	err = cmd.Execute()
+	require.NoError(t, err)
+
+	// Restore stdout and capture output
+	_ = w.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	output := buf.String()
+
+	// Verify summary output
+	assert.Contains(t, output, "Summary:")
+	assert.Contains(t, output, "Files checked: 2")
+	assert.Contains(t, output, "Files valid:   1")
+	assert.Contains(t, output, "Files errors:  1")
+	assert.Contains(t, output, "properly formatted")
+	assert.Contains(t, output, "ERROR")
+}
