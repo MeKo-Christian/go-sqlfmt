@@ -125,6 +125,22 @@ path = '.*sqlite_fuzz_test\.go'
 linters = ['err113', 'wrapcheck']
 path = 'cmd/.*\.go'
 
+[[linters.exclusions.rules]]
+linters = ['gosmopolitan']
+path = '.*mysql_formatter_advanced_test\.go'
+
+[[linters.exclusions.rules]]
+linters = ['gosmopolitan']
+path = '.*mysql_fuzz_test\.go'
+
+[[linters.exclusions.rules]]
+linters = ['gosmopolitan']
+path = '.*postgresql_fuzz_test\.go'
+
+[[linters.exclusions.rules]]
+linters = ['dupl']
+path = '.*_test\.go'
+
 [formatters]
 [formatters.exclusions]
 generated = 'lax'

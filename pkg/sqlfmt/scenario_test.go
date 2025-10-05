@@ -9,6 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	dialectPostgreSQL = "postgresql"
+	dialectMySQL      = "mysql"
+	dialectSQLite     = "sqlite"
+	dialectStandard   = "standard"
+)
+
 // TestRealWorldScenarios tests formatting of real-world SQL scenarios
 // including migrations, stored procedures, analytics queries, and mixed DDL/DML.
 func TestRealWorldScenarios(t *testing.T) {
@@ -56,11 +63,11 @@ func testScenarioFile(t *testing.T, filePath string) {
 	// Create formatter config for the detected dialect
 	cfg := NewDefaultConfig()
 	switch dialect {
-	case "postgresql":
+	case dialectPostgreSQL:
 		cfg.Language = PostgreSQL
-	case "mysql":
+	case dialectMySQL:
 		cfg.Language = MySQL
-	case "sqlite":
+	case dialectSQLite:
 		cfg.Language = SQLite
 	default:
 		cfg.Language = StandardSQL
@@ -128,15 +135,15 @@ func testScenarioFile(t *testing.T, filePath string) {
 func detectDialectFromFilename(filename string) string {
 	base := strings.ToLower(filepath.Base(filename))
 	if strings.HasPrefix(base, "postgresql") {
-		return "postgresql"
+		return dialectPostgreSQL
 	}
 	if strings.HasPrefix(base, "mysql") {
-		return "mysql"
+		return dialectMySQL
 	}
 	if strings.HasPrefix(base, "sqlite") {
-		return "sqlite"
+		return dialectSQLite
 	}
-	return "standard"
+	return dialectStandard
 }
 
 // countSQLKeywords counts major SQL keywords in a string.
@@ -235,7 +242,8 @@ func TestScenarioComplexity(t *testing.T) {
 				statementCount := strings.Count(sqlContent, ";")
 
 				// Should handle files with multiple statements
-				require.LessOrEqual(t, statementCount, 100, "Should have reasonable number of statements (max 100, got %d)", statementCount)
+				require.LessOrEqual(t, statementCount, 100,
+					"Should have reasonable number of statements (max 100, got %d)", statementCount)
 			})
 
 			t.Run("line_length", func(t *testing.T) {

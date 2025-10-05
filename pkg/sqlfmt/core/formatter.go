@@ -46,6 +46,7 @@ type formatter struct {
 	insertValuesLengths     []int
 	currentValuesLength     int
 	currentInsertIndex      int
+	valuesParenthesisLevel  int // Track parenthesis depth within VALUES clause
 	// Line length tracking
 	currentLineLength int
 }
@@ -79,6 +80,7 @@ func newFormatter(cfg *Config, tokenizer *tokenizer,
 		insertValuesLengths:     []int{},
 		currentValuesLength:     0,
 		currentInsertIndex:      0,
+		valuesParenthesisLevel:  0,
 		currentLineLength:       0,
 	}
 }
@@ -165,7 +167,8 @@ func (f *formatter) analyzeSelectClause() {
 				columnLengths = append(columnLengths, currentLength)
 				currentLength = 0
 			}
-		} else if tok.Type != types.TokenTypeWhitespace && tok.Type != types.TokenTypeLineComment && tok.Type != types.TokenTypeBlockComment {
+		} else if tok.Type != types.TokenTypeWhitespace && tok.Type != types.TokenTypeLineComment &&
+			tok.Type != types.TokenTypeBlockComment {
 			// Approximate rendered length
 			if tok.Type == types.TokenTypeReserved {
 				currentLength += len(f.formatReservedWord(tok.Value)) + 1 // +1 for space
@@ -235,7 +238,8 @@ func (f *formatter) analyzeUpdateSetClause() {
 			// Skip commas
 			continue
 		default:
-			if tok.Type != types.TokenTypeWhitespace && tok.Type != types.TokenTypeLineComment && tok.Type != types.TokenTypeBlockComment {
+			if tok.Type != types.TokenTypeWhitespace && tok.Type != types.TokenTypeLineComment &&
+				tok.Type != types.TokenTypeBlockComment {
 				// Approximate rendered length
 				if tok.Type == types.TokenTypeReserved {
 					currentLength += len(f.formatReservedWord(tok.Value)) + 1 // +1 for space
@@ -423,13 +427,16 @@ func (f *formatter) formatReservedTopLevelToken(tok types.Token, formattedQuery 
 	switch strings.ToUpper(tok.Value) {
 	case "INSERT":
 		f.inInsertValuesClause = false // Reset, will be set when we encounter VALUES
+		f.valuesParenthesisLevel = 0
 		f.currentInsertIndex++
 	default:
 		if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "VALUES" && f.cfg.AlignValues {
 			f.inInsertValuesClause = true
 			f.currentValuesLength = 0
+			f.valuesParenthesisLevel = 0
 		} else if f.inInsertValuesClause && f.isInsertValuesClauseTerminator(tok.Value) {
 			f.inInsertValuesClause = false
+			f.valuesParenthesisLevel = 0
 		}
 	}
 
@@ -502,7 +509,8 @@ func (f *formatter) formatLineComment(tok types.Token, query *strings.Builder) {
 		spacing := f.calculateCommentSpacing()
 		query.WriteString(strings.Repeat(" ", spacing))
 		// Update line length: remove previous trailing spaces, add new spacing
-		f.currentLineLength = len(strings.TrimRight(query.String()[strings.LastIndex(query.String(), "\n")+1:], " \t")) + spacing
+		f.currentLineLength = len(strings.TrimRight(
+			query.String()[strings.LastIndex(query.String(), "\n")+1:], " \t")) + spacing
 	} else {
 		// Place comment on new line (no extra spacing needed)
 		f.addNewline(query)
@@ -542,7 +550,8 @@ func (f *formatter) formatBlockComment(tok types.Token, query *strings.Builder) 
 			spacing := f.calculateCommentSpacing()
 			query.WriteString(strings.Repeat(" ", spacing))
 			// Update line length: remove previous trailing spaces, add new spacing
-			f.currentLineLength = len(strings.TrimRight(query.String()[strings.LastIndex(query.String(), "\n")+1:], " \t")) + spacing
+			f.currentLineLength = len(strings.TrimRight(
+				query.String()[strings.LastIndex(query.String(), "\n")+1:], " \t")) + spacing
 		} else {
 			// Place comment on new line
 			f.addNewline(query)
@@ -655,6 +664,10 @@ func (f *formatter) formatOpeningParentheses(tok types.Token, query *strings.Bui
 	f.updateLineLength(value)
 
 	f.inlineBlock.BeginIfPossible(f.tokens, f.index)
+	// Track parenthesis depth for INSERT VALUES alignment
+	if f.cfg.AlignValues && f.inInsertValuesClause {
+		f.valuesParenthesisLevel++
+	}
 	// For INSERT VALUES alignment, treat as inline even if not detected as such
 	if !f.inlineBlock.IsActive() && f.cfg.AlignValues && f.inInsertValuesClause {
 		// Skip indentation for VALUES parentheses when alignment is enabled
@@ -676,13 +689,19 @@ func (f *formatter) formatClosingParentheses(tok types.Token, query *strings.Bui
 		tok.Value = value
 	}
 
-	if f.inlineBlock.IsActive() {
+	// Track parenthesis depth for INSERT VALUES alignment
+	if f.cfg.AlignValues && f.inInsertValuesClause && f.valuesParenthesisLevel > 0 {
+		f.valuesParenthesisLevel--
+	}
+
+	switch {
+	case f.inlineBlock.IsActive():
 		f.inlineBlock.End()
 		f.formatWithSpaceAfter(tok, query)
-	} else if f.cfg.AlignValues && f.inInsertValuesClause {
+	case f.cfg.AlignValues && f.inInsertValuesClause:
 		// For INSERT VALUES alignment, treat as inline block
 		f.formatWithSpaceAfter(tok, query)
-	} else {
+	default:
 		f.indentation.DecreaseBlockLevel()
 		f.addNewline(query)
 		f.formatWithSpaces(tok, query)
@@ -722,11 +741,16 @@ func (f *formatter) formatComma(tok types.Token, query *strings.Builder) {
 	}
 
 	// Handle alignment for INSERT VALUES clauses
-	if f.cfg.AlignValues && f.inInsertValuesClause && f.currentInsertIndex-1 < len(f.insertValuesLengths) {
-		// For INSERT VALUES alignment, keep all values in a tuple on the same line
-		// All commas within VALUES should not add newlines
+	if f.cfg.AlignValues && f.inInsertValuesClause {
 		query.WriteString(tok.Value)
-		query.WriteString(" ")
+		// Check if this comma is between tuples (depth 0) or within a tuple (depth > 0)
+		if f.valuesParenthesisLevel == 0 {
+			// Comma between tuples - add newline and indentation
+			f.addNewline(query)
+		} else {
+			// Comma within a tuple - just add space
+			query.WriteString(" ")
+		}
 		return
 	}
 
@@ -744,15 +768,10 @@ func (f *formatter) formatComma(tok types.Token, query *strings.Builder) {
 		return
 	}
 
-	// For alignment, keep values on the same line
-	if f.cfg.AlignValues && f.inInsertValuesClause {
-		return
-	}
-
 	// Check if we should break the line based on max line length
 	shouldBreakForLength := f.cfg.MaxLineLength > 0 && f.currentLineLength > f.cfg.MaxLineLength
 
-	if f.inlineBlock.IsActive() || (f.cfg.AlignValues && f.inInsertValuesClause) {
+	if f.inlineBlock.IsActive() {
 		return
 	}
 	if limitKeywordRegex.MatchString(f.previousReservedWord.Value) && !shouldBreakForLength {

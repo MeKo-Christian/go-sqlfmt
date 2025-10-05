@@ -75,7 +75,8 @@ func TestPostgreSQL_Phase11_StressTestLargeInputs(t *testing.T) {
 			builder.WriteString("WITH RECURSIVE large_cte(n, data) AS (\n")
 			builder.WriteString("  SELECT 1, '{\"start\": true}'::jsonb\n")
 			builder.WriteString("  UNION ALL\n")
-			builder.WriteString(fmt.Sprintf("  SELECT n + 1, data || jsonb_build_object('step', n) FROM large_cte WHERE n < %d\n", size/100))
+			builder.WriteString(fmt.Sprintf("  SELECT n + 1, data || jsonb_build_object('step', n) "+
+				"FROM large_cte WHERE n < %d\n", size/100))
 			builder.WriteString(")\n")
 			builder.WriteString("SELECT \n")
 

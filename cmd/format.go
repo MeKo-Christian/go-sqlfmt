@@ -49,7 +49,8 @@ Examples:
 func init() {
 	rootCmd.AddCommand(formatCmd)
 
-	formatCmd.Flags().StringVar(&lang, "lang", defaultSQLDialect, "SQL dialect (sql, postgresql, mysql, pl/sql, db2, n1ql, sqlite)")
+	formatCmd.Flags().StringVar(&lang, "lang", defaultSQLDialect,
+		"SQL dialect (sql, postgresql, mysql, pl/sql, db2, n1ql, sqlite)")
 	formatCmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	formatCmd.Flags().BoolVarP(&write, "write", "w", false, "Write result to file instead of stdout")
 	formatCmd.Flags().BoolVar(&color, "color", false, "Enable ANSI color formatting")
@@ -66,12 +67,15 @@ func init() {
 		"Keyword casing options",
 	)
 	formatCmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
-	formatCmd.Flags().BoolVar(&autoDetect, "auto-detect", false, "Automatically detect SQL dialect from file extension and content")
+	formatCmd.Flags().BoolVar(&autoDetect, "auto-detect", false,
+		"Automatically detect SQL dialect from file extension and content")
 	formatCmd.Flags().BoolVar(&alignColumnNames, "align-column-names", false, "Align SELECT column names vertically")
-	formatCmd.Flags().BoolVar(&alignAssignments, "align-assignments", false, "Align UPDATE assignment operators vertically")
+	formatCmd.Flags().BoolVar(&alignAssignments, "align-assignments", false,
+		"Align UPDATE assignment operators vertically")
 	formatCmd.Flags().BoolVar(&alignValues, "align-values", false, "Align INSERT VALUES vertically")
 	formatCmd.Flags().IntVar(&maxLineLength, "max-line-length", 0, "Maximum line length (0 = unlimited)")
-	formatCmd.Flags().BoolVar(&preserveCommentIndent, "preserve-comment-indent", false, "Preserve relative indentation of comments")
+	formatCmd.Flags().BoolVar(&preserveCommentIndent, "preserve-comment-indent", false,
+		"Preserve relative indentation of comments")
 	formatCmd.Flags().IntVar(&commentMinSpacing, "comment-min-spacing", 1, "Minimum spaces before inline comments")
 }
 

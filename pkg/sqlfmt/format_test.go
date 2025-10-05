@@ -1551,19 +1551,24 @@ WHERE
 			cfg: Config{AlignAssignments: true},
 		},
 		{
-			name:  "aligns INSERT values when AlignValues is true",
-			query: "INSERT INTO users (id, name, email, address, phone, created_at) VALUES (1, 'John Doe', 'john@example.com', '123 Main St, Anytown, USA', '+1-555-123-4567', '2023-01-01 00:00:00'), (2, 'Jane Smith', 'jane@example.com', '456 Oak Ave, Somewhere, USA', '+1-555-987-6543', '2023-01-02 00:00:00');",
+			name: "aligns INSERT values when AlignValues is true",
+			query: "INSERT INTO users (id, name, email, address, phone, created_at) VALUES " +
+				"(1, 'John Doe', 'john@example.com', '123 Main St, Anytown, USA', '+1-555-123-4567', '2023-01-01 00:00:00'), " +
+				"(2, 'Jane Smith', 'jane@example.com', '456 Oak Ave, Somewhere, USA', '+1-555-987-6543', '2023-01-02 00:00:00');",
 			exp: Dedent(`
 INSERT INTO
   users (id, name, email, address, phone, created_at)
 VALUES
-  (1, 'John Doe', 'john@example.com', '123 Main St, Anytown, USA', '+1-555-123-4567', '2023-01-01 00:00:00'), (2, 'Jane Smith', 'jane@example.com', '456 Oak Ave, Somewhere, USA', '+1-555-987-6543', '2023-01-02 00:00:00');
+  (1, 'John Doe', 'john@example.com', '123 Main St, Anytown, USA', '+1-555-123-4567', '2023-01-01 00:00:00'),
+  (2, 'Jane Smith', 'jane@example.com', '456 Oak Ave, Somewhere, USA', '+1-555-987-6543', '2023-01-02 00:00:00');
 `),
 			cfg: Config{AlignValues: true},
 		},
 		{
-			name:  "does not align INSERT values when AlignValues is false",
-			query: "INSERT INTO users (id, name, email, address, phone, created_at) VALUES (1, 'John Doe', 'john@example.com', '123 Main St, Anytown, USA', '+1-555-123-4567', '2023-01-01 00:00:00'), (2, 'Jane Smith', 'jane@example.com', '456 Oak Ave, Somewhere, USA', '+1-555-987-6543', '2023-01-02 00:00:00');",
+			name: "does not align INSERT values when AlignValues is false",
+			query: "INSERT INTO users (id, name, email, address, phone, created_at) VALUES " +
+				"(1, 'John Doe', 'john@example.com', '123 Main St, Anytown, USA', '+1-555-123-4567', '2023-01-01 00:00:00'), " +
+				"(2, 'Jane Smith', 'jane@example.com', '456 Oak Ave, Somewhere, USA', '+1-555-987-6543', '2023-01-02 00:00:00');",
 			exp: Dedent(`
 INSERT INTO
   users (id, name, email, address, phone, created_at)

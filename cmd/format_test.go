@@ -87,7 +87,8 @@ WHERE
 			expected: `INSERT INTO
   users (id, name)
 VALUES
-  (1, 'John'), (2, 'Jane')`,
+  (1, 'John'),
+  (2, 'Jane')`,
 		},
 	}
 
@@ -244,7 +245,8 @@ align_values: true
 
 	// Create SQL file in the same temp directory
 	tmpSQL := filepath.Join(tmpDir, "test.sql")
-	testSQL := "SELECT id, name FROM users; UPDATE users SET name = 'John' WHERE id = 1; INSERT INTO users (id, name) VALUES (1, 'John');"
+	testSQL := "SELECT id, name FROM users; UPDATE users SET name = 'John' WHERE id = 1; " +
+		"INSERT INTO users (id, name) VALUES (1, 'John');"
 	err = os.WriteFile(tmpSQL, []byte(testSQL), 0o644)
 	require.NoError(t, err)
 

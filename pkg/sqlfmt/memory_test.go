@@ -85,7 +85,8 @@ func TestMemoryUsage_ProfileAllocation(t *testing.T) {
 
 	// Calculate allocations
 	allocations := m2.TotalAlloc - m1.TotalAlloc
-	t.Logf("Total allocations during 100 format operations: %d bytes (%.2f MB)", allocations, float64(allocations)/(1024*1024))
+	t.Logf("Total allocations during 100 format operations: %d bytes (%.2f MB)",
+		allocations, float64(allocations)/(1024*1024))
 
 	// Ensure we didn't have excessive allocations (arbitrary threshold: < 200MB for 100 operations of complex SQL)
 	if allocations > 200*1024*1024 {

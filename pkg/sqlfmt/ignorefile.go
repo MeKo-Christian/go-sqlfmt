@@ -113,37 +113,35 @@ func (ig *IgnoreFile) matchGlobstar(path, pattern string) bool {
 
 	// Remove trailing slash from prefix if present
 	prefix = strings.TrimSuffix(prefix, "/")
+	// Remove leading slash from suffix if present
+	suffix = strings.TrimPrefix(suffix, "/")
 
 	// If prefix is not empty, path must start with prefix/
 	if prefix != "" && !strings.HasPrefix(path, prefix+"/") {
 		return false
 	}
 
-	// If suffix is not empty, we need to check if the remaining path matches
-	if suffix != "" {
-		var remaining string
-		if prefix != "" {
-			remaining = strings.TrimPrefix(path, prefix+"/")
-		} else {
-			remaining = path
-		}
-
-		// For **/*.sql, check if the remaining path ends with .sql
-		// For **/subdir/*.sql, check if it matches the pattern
-		if strings.Contains(suffix, "/") {
-			// Complex pattern like **/subdir/*.sql
-			matched, err := filepath.Match(suffix, remaining)
-			if err == nil && matched {
-				return true
-			}
-		} else {
-			// Simple pattern like **/*.sql
-			matched, err := filepath.Match(suffix, filepath.Base(remaining))
-			if err == nil && matched {
-				return true
-			}
-		}
+	// If suffix is empty, just check prefix match
+	if suffix == "" {
+		return prefix == "" || strings.HasPrefix(path, prefix+"/")
 	}
 
-	return prefix == "" || strings.HasPrefix(path, prefix+"/")
+	// Calculate remaining path after prefix
+	var remaining string
+	if prefix != "" {
+		remaining = strings.TrimPrefix(path, prefix+"/")
+	} else {
+		remaining = path
+	}
+
+	// Check suffix match
+	if strings.Contains(suffix, "/") {
+		// Complex pattern like **/subdir/*.sql
+		matched, err := filepath.Match(suffix, remaining)
+		return err == nil && matched
+	} else {
+		// Simple pattern like **/*.sql
+		matched, err := filepath.Match(suffix, filepath.Base(remaining))
+		return err == nil && matched
+	}
 }

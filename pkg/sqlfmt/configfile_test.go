@@ -12,6 +12,31 @@ const (
 	testPostgreSQLConfig = "language: postgresql"
 )
 
+// testConfigParsing is a helper function for testing config parsing with different values.
+func testConfigParsing(t *testing.T, configKey string, testValue string, assertionFunc func(*Config)) {
+	t.Helper()
+
+	tmpDir := t.TempDir()
+	origDir, err := os.Getwd()
+	require.NoError(t, err)
+	defer func() { _ = os.Chdir(origDir) }()
+	err = os.Chdir(tmpDir)
+	require.NoError(t, err)
+
+	configContent := configKey + ": " + testValue
+	err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
+	require.NoError(t, err)
+
+	configFile, err := LoadConfigFile()
+	require.NoError(t, err)
+
+	config := NewDefaultConfig()
+	err = configFile.ApplyToConfig(config)
+	require.NoError(t, err)
+
+	assertionFunc(config)
+}
+
 // TestLoadConfigFromCurrentDirectory tests loading config from the current directory.
 func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	tests := []struct {
@@ -195,7 +220,7 @@ func TestConfigSearchOrderPrecedence(t *testing.T) {
 	err = os.Chdir(tmpWorkDir)
 	require.NoError(t, err)
 
-	workConfig := `language: postgresql`
+	workConfig := testPostgreSQLConfig
 	err = os.WriteFile(".sqlfmtrc", []byte(workConfig), 0o644)
 	require.NoError(t, err)
 
@@ -303,25 +328,9 @@ func TestParseKeywordCaseVariants(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tmpDir := t.TempDir()
-			origDir, err := os.Getwd()
-			require.NoError(t, err)
-			defer func() { _ = os.Chdir(origDir) }()
-			err = os.Chdir(tmpDir)
-			require.NoError(t, err)
-
-			configContent := "keyword_case: " + tt.yamlKeywordCase
-			err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
-			require.NoError(t, err)
-
-			configFile, err := LoadConfigFile()
-			require.NoError(t, err)
-
-			config := NewDefaultConfig()
-			err = configFile.ApplyToConfig(config)
-			require.NoError(t, err)
-
-			require.Equal(t, tt.wantKeywordCase, config.KeywordCase)
+			testConfigParsing(t, "keyword_case", tt.yamlKeywordCase, func(config *Config) {
+				require.Equal(t, tt.wantKeywordCase, config.KeywordCase)
+			})
 		})
 	}
 }
@@ -453,7 +462,7 @@ func TestPartialConfigFile(t *testing.T) {
 	require.NoError(t, err)
 
 	// Only set language, leave others as default
-	configContent := `language: postgresql`
+	configContent := testPostgreSQLConfig
 	err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
 	require.NoError(t, err)
 
@@ -774,25 +783,9 @@ func TestCaseInsensitiveLanguageParsing(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tmpDir := t.TempDir()
-			origDir, err := os.Getwd()
-			require.NoError(t, err)
-			defer func() { _ = os.Chdir(origDir) }()
-			err = os.Chdir(tmpDir)
-			require.NoError(t, err)
-
-			configContent := "language: " + tt.yamlLanguage
-			err = os.WriteFile(".sqlfmtrc", []byte(configContent), 0o644)
-			require.NoError(t, err)
-
-			configFile, err := LoadConfigFile()
-			require.NoError(t, err)
-
-			config := NewDefaultConfig()
-			err = configFile.ApplyToConfig(config)
-			require.NoError(t, err)
-
-			require.Equal(t, tt.wantLanguage, config.Language)
+			testConfigParsing(t, "language", tt.yamlLanguage, func(config *Config) {
+				require.Equal(t, tt.wantLanguage, config.Language)
+			})
 		})
 	}
 }
