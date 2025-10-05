@@ -1,12 +1,13 @@
 CREATE TRIGGER
-  validate_order_amount BEFORE
+  validate_order_amount
+  BEFORE
 INSERT
-  ON orders FOR EACH ROW
-BEGIN
-SELECT
-  CASE
-    WHEN NEW.amount <= 0 THEN RAISE(ABORT, 'Order amount must be positive')
-    WHEN NEW.amount > 10000 THEN RAISE(ABORT, 'Order amount exceeds maximum limit')
-  END;
+  ON orders
+  FOR EACH ROW BEGIN
+    SELECT
+      CASE
+        WHEN NEW.amount <= 0 THEN RAISE(ABORT, 'Order amount must be positive')
+        WHEN NEW.amount > 10000 THEN RAISE(ABORT, 'Order amount exceeds maximum limit')
+      END;
 
 END;

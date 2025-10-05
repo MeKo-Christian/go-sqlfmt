@@ -27,7 +27,17 @@ var (
 		// Array functions
 		"ARRAY", "UNNEST",
 		// Procedural keywords
-		"LANGUAGE", "RETURNS", "AS", "DECLARE", "BEGIN",
+		"LANGUAGE", "RETURNS", "AS", "DECLARE", "BEGIN", "END",
+		// DDL and Index keywords - MUST come before PL/pgSQL IF to prevent breaking "IF EXISTS"
+		"CONCURRENTLY", "IF NOT EXISTS", "IF EXISTS",
+		// PL/pgSQL control flow - IF must come AFTER "IF EXISTS" and "IF NOT EXISTS"
+		"END IF", "IF", "THEN", "ELSIF", "ELSE",
+		"END LOOP", "LOOP", "WHILE", "FOR", "FOREACH",
+		"EXIT", "CONTINUE", "RETURN", "RAISE",
+		// PL/pgSQL exception handling
+		"EXCEPTION", "WHEN", "SQLSTATE", "SQLERRM",
+		// PL/pgSQL variable declaration
+		"CONSTANT", "NOT NULL", "DEFAULT",
 		// Function modifiers
 		"IMMUTABLE", "STABLE", "VOLATILE", "STRICT", "CALLED ON NULL INPUT",
 		"SECURITY DEFINER", "SECURITY INVOKER", "LEAKPROOF", "NOT LEAKPROOF",
@@ -35,8 +45,6 @@ var (
 		"SETOF", "TABLE", "TRIGGER", "VOID",
 		// Function options
 		"COST", "ROWS", "SUPPORT", "PARALLEL SAFE", "PARALLEL UNSAFE", "PARALLEL RESTRICTED",
-		// DDL and Index keywords
-		"CONCURRENTLY", "IF NOT EXISTS", "IF EXISTS",
 		// Index methods
 		"BTREE", "HASH", "GIN", "GIST", "SPGIST", "BRIN",
 		// Index options
@@ -64,6 +72,9 @@ var (
 		"LATERAL JOIN", "LEFT LATERAL JOIN", "RIGHT LATERAL JOIN", "CROSS JOIN LATERAL",
 		// UPSERT clause keywords
 		"ON CONFLICT",
+		// PL/pgSQL control flow keywords that should start on new lines
+		"ELSIF", "ELSE", "END IF", "END LOOP", "EXCEPTION",
+		"EXIT", "CONTINUE", "RETURN", "RAISE",
 	}...)
 )
 
@@ -109,8 +120,8 @@ func NewPostgreSQLTokenizerConfig() *TokenizerConfig {
 		ReservedNewlineWords:          postgreSQLReservedNewlineWords,
 		ReservedTopLevelWordsNoIndent: postgreSQLReservedTopLevelWordsNoIndent,
 		StringTypes:                   []string{`""`, "N''", "''", "``", "$$"},
-		OpenParens:                    []string{"(", "CASE"},
-		CloseParens:                   []string{")", "END"},
+		OpenParens:                    []string{"(", "CASE", "BEGIN", "LOOP", "WHILE", "FOR", "FOREACH", "EXCEPTION"},
+		CloseParens:                   []string{")", "END", "END IF", "END LOOP"},
 		IndexedPlaceholderTypes:       []string{"$"},
 		NamedPlaceholderTypes:         []string{"@", ":"},
 		LineCommentTypes:              []string{"--"},
@@ -188,6 +199,29 @@ func (psf *PostgreSQLFormatter) tokenOverride(tok types.Token, previousReservedW
 				Key:   tok.Key,
 			}
 		}
+	}
+
+	// Handle THEN keyword - should be inline after IF/ELSIF/WHEN
+	// Don't create newline for THEN after these keywords
+	if tok.Type == types.TokenTypeReserved && strings.ToUpper(tok.Value) == "THEN" {
+		if !previousReservedWord.Empty() {
+			prevVal := strings.ToUpper(previousReservedWord.Value)
+			// After IF, ELSIF, or WHEN, THEN should stay inline
+			if prevVal == "IF" || prevVal == "ELSIF" || strings.HasSuffix(prevVal, "WHEN") {
+				return types.Token{
+					Type:  types.TokenTypeWord,
+					Value: strings.ToLower(tok.Value),
+					Key:   tok.Key,
+				}
+			}
+		}
+	}
+
+	// Handle END keyword context - distinguish between END (block) and END CASE
+	// If previous word suggests we're closing a procedural block, handle accordingly
+	if tok.Type == types.TokenTypeCloseParen && strings.ToUpper(tok.Value) == "END" {
+		// This is just regular END - let it be handled as close paren
+		return tok
 	}
 
 	return tok

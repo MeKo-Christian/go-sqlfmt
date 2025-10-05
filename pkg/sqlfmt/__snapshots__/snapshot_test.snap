@@ -358,14 +358,14 @@ CREATE TRIGGER
   update_modified_time
 AFTER
 UPDATE
-  ON users FOR EACH ROW
-BEGIN
-UPDATE
-  users
-SET
-  modified_at = datetime('now')
-WHERE
-  id = NEW.id;
+  ON users
+  FOR EACH ROW BEGIN
+    UPDATE
+      users
+    SET
+      modified_at = datetime('now')
+    WHERE
+      id = NEW.id;
 
 END;
 ---

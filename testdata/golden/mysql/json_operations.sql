@@ -64,7 +64,7 @@ SELECT
   JSON_TYPE(preferences->'$.theme') as theme_type,
   JSON_VALID(preferences->>'$.custom_css') as css_valid,
   CASE
-    WHEN preferences->'$.plan'->>'$.type' = 'premium' THEN preferences->'$.plan'->'$.features'
+    WHEN preferences->'$.plan'->>'$.type' = 'premium' then preferences->'$.plan'->'$.features'
     ELSE JSON_ARRAY('basic')
   END as available_features
 FROM
@@ -127,7 +127,7 @@ SET
     JSON_OBJECT('mode', settings->>'$.theme', 'updated', NOW()),
     '$.notifications.email',
     CASE
-      WHEN settings->'$.plan'->>'$.type' = 'premium' THEN true
+      WHEN settings->'$.plan'->>'$.type' = 'premium' then true
       ELSE settings->'$.notifications'->>'$.email'
     END
   )

@@ -1,5 +1,4 @@
-DELIMITER
-/ /
+DELIMITER / /
 CREATE PROCEDURE
   ProcessMonthlyReport(IN report_month DATE, IN report_year INT) BEGIN
     DECLARE current_dept_id INT;
@@ -42,12 +41,10 @@ OPEN dept_cursor;
 dept_loop: LOOP
   FETCH dept_cursor INTO current_dept_id;
 
-IF
-  dept_done THEN
-  LEAVE dept_loop;
+IF dept_done then
+LEAVE dept_loop;
 
-END IF
-;
+END IF;
 
 SELECT
   COUNT(e.id),
@@ -126,5 +123,4 @@ ORDER BY
 
 DROP TEMPORARY TABLE monthly_report;
 
-END / / DELIMITER
-;
+END / / DELIMITER;

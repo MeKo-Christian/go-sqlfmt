@@ -31,21 +31,19 @@ FROM
 WHERE
   customer_id = customer_id;
 
-IF
-  total_purchases > 10000 THEN
-  RETURN 'Platinum';
+IF total_purchases > 10000 then
+RETURN 'Platinum';
 
-ELSEIF total_purchases > 5000 THEN
+ELSEIF total_purchases > 5000 then
 RETURN 'Gold';
 
-ELSEIF total_purchases > 1000 THEN
+ELSEIF total_purchases > 1000 then
 RETURN 'Silver';
 
 ELSE
 RETURN 'Bronze';
 
-END IF
-;
+END IF;
 
 END;
 
@@ -63,13 +61,11 @@ FROM
 WHERE
   code = tax_code;
 
-IF
-  tax_rate IS NULL THEN
-  SET
-    tax_rate = 0.10;
+IF tax_rate IS NULL THEN
+SET
+  tax_rate = 0.10;
 
-END IF
-;
+END IF;
 
 SET
   tax_amount = amount * tax_rate;
@@ -94,14 +90,12 @@ SET
 SET
   dot_pos = LOCATE('.', email, at_pos);
 
-IF
-  at_pos > 0
-  AND dot_pos > at_pos THEN
-  SET
-    is_valid = TRUE;
+IF at_pos > 0
+AND dot_pos > at_pos THEN
+SET
+  is_valid = TRUE;
 
-END IF
-;
+END IF;
 
 END;
 

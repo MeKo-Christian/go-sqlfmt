@@ -51,7 +51,6 @@ var (
 		"LOOP", "END LOOP", "LEAVE", "ITERATE",
 		"REPEAT", "UNTIL", "END REPEAT",
 		"CALL", "INOUT", "OUT", "IN",
-		"DELIMITER",
 	}...)
 
 	// MySQL extends standard SQL top-level words with specific clauses.
@@ -87,11 +86,11 @@ var (
 		"ADD COLUMN", "MODIFY COLUMN", "DROP COLUMN",
 		// ALTER TABLE options (not LOCK - conflicts with "LOCK IN SHARE MODE")
 		"ALGORITHM",
-		// Stored procedure control flow keywords
-		"BEGIN", "END", "END IF", "END WHILE", "END LOOP", "END REPEAT",
-		"IF", "ELSEIF", "ELSE", // Remove THEN from newline words - it should follow WHEN/ELSE
-		"WHILE", "DO", "LOOP", "REPEAT", "UNTIL",
-		"DECLARE", "RETURN", "CALL", "LEAVE", "ITERATE",
+		// Stored procedure control flow keywords - proper indentation structure
+		"ELSEIF", "ELSE", "END IF", "END WHILE", "END LOOP", "END REPEAT",
+		// DO is already in standard newline words, WHILE/IF are opening parens
+		"UNTIL", // UNTIL ends a REPEAT block
+		"DECLARE", "RETURN", "CALL", "LEAVE", "ITERATE", "EXIT",
 		"OPEN", "CLOSE", "FETCH",
 	}...)
 )
@@ -115,7 +114,7 @@ func NewMySQLTokenizerConfig() *TokenizerConfig {
 		// Backticks for identifiers, single/double quotes for strings
 		// Hex/bit literal forms X'ABCD' and B'1010'
 		StringTypes:             []string{"''", "\"\"", "``", "X''", "B''"},
-		OpenParens:              []string{"(", "CASE", "BEGIN", "IF", "WHILE", "LOOP", "REPEAT"},
+		OpenParens:              []string{"(", "CASE", "BEGIN", "WHILE", "LOOP", "REPEAT"},
 		CloseParens:             []string{")", "END", "END IF", "END WHILE", "END LOOP", "END REPEAT"},
 		IndexedPlaceholderTypes: []string{"?"},       // MySQL uses ? for parameters
 		NamedPlaceholderTypes:   []string{},          // MySQL doesn't support named parameters
@@ -137,15 +136,26 @@ func (msf *MySQLFormatter) tokenOverride(
 	tok types.Token,
 	previousReservedWord types.Token,
 ) types.Token {
-	// Handle DELIMITER statements as pass-through (for stored procedures)
-	if tok.Type == types.TokenTypeReserved && tok.Value == "DELIMITER" {
-		return msf.handleDelimiterToken(tok)
-	}
-
 	// Handle stored procedure specific keywords
 	if tok.Type == types.TokenTypeReserved {
 		if result := msf.handleStoredRoutineKeywords(tok, previousReservedWord); !result.Empty() {
 			return result
+		}
+	}
+
+	// Handle THEN keyword - should be inline after IF/ELSEIF/WHEN
+	// Don't create newline for THEN after these keywords
+	if tok.Type == types.TokenTypeReserved && strings.ToUpper(tok.Value) == "THEN" {
+		if !previousReservedWord.Empty() {
+			prevVal := strings.ToUpper(previousReservedWord.Value)
+			// After IF, ELSEIF, or WHEN, THEN should stay inline
+			if prevVal == "IF" || prevVal == "ELSEIF" || strings.HasSuffix(prevVal, "WHEN") {
+				return types.Token{
+					Type:  types.TokenTypeWord,
+					Value: strings.ToLower(tok.Value),
+					Key:   tok.Key,
+				}
+			}
 		}
 	}
 
@@ -172,15 +182,6 @@ func (msf *MySQLFormatter) tokenOverride(
 	}
 
 	return tok
-}
-
-func (msf *MySQLFormatter) handleDelimiterToken(tok types.Token) types.Token {
-	// Treat DELIMITER as a special pass-through token that shouldn't be formatted
-	return types.Token{
-		Type:  types.TokenTypeLineComment, // Use comment type to preserve formatting
-		Value: tok.Value,
-		Key:   tok.Key,
-	}
 }
 
 func (msf *MySQLFormatter) handleStoredRoutineKeywords(tok types.Token, previousReservedWord types.Token) types.Token {

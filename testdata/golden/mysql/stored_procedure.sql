@@ -32,12 +32,11 @@ FROM
 WHERE
   id = product_id;
 
-IF
-  stock > 100 THEN
-  SET
-    status = 'In Stock';
+IF stock > 100 then
+SET
+  status = 'In Stock';
 
-ELSEIF stock > 0 THEN
+ELSEIF stock > 0 then
 SET
   status = 'Low Stock';
 
@@ -45,8 +44,7 @@ ELSE
 SET
   status = 'Out of Stock';
 
-END IF
-;
+END IF;
 
 END;
 
@@ -58,8 +56,7 @@ CREATE PROCEDURE
 CREATE TEMPORARY TABLE sequence_table (value INT);
 
 WHILE
-  counter <= max_value
-  DO
+  counter <= max_value DO
   INSERT INTO
     sequence_table
   VALUES
@@ -106,12 +103,10 @@ OPEN sales_cursor;
 read_loop: LOOP
   FETCH sales_cursor INTO sale_amount;
 
-IF
-  done THEN
-  LEAVE read_loop;
+IF done then
+LEAVE read_loop;
 
-END IF
-;
+END IF;
 
 SET
   total = total + sale_amount;
@@ -160,12 +155,10 @@ process_loop: LOOP
   customer_id,
   order_total;
 
-IF
-  done THEN
-  LEAVE process_loop;
+IF done then
+LEAVE process_loop;
 
-END IF
-;
+END IF;
 
 UPDATE
   customers

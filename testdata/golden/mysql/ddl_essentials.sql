@@ -62,15 +62,15 @@ CREATE TABLE products (
   discount_percent DECIMAL(5, 2) DEFAULT 0,
   final_price DECIMAL(10, 2) GENERATED ALWAYS AS (
     CASE
-      WHEN discount_percent > 0 THEN base_price - (base_price * discount_percent / 100)
+      WHEN discount_percent > 0 then base_price - (base_price * discount_percent / 100)
       ELSE base_price
     END
   ) STORED,
   price_category VARCHAR(20) GENERATED ALWAYS AS (
     CASE
-      WHEN final_price < 10.00 THEN 'budget'
-      WHEN final_price < 50.00 THEN 'standard'
-      WHEN final_price < 200.00 THEN 'premium'
+      WHEN final_price < 10.00 then 'budget'
+      WHEN final_price < 50.00 then 'standard'
+      WHEN final_price < 200.00 then 'premium'
       ELSE 'luxury'
     END
   ) VIRTUAL

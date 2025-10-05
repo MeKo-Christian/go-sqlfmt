@@ -49,15 +49,15 @@ CREATE TRIGGER
   update_order_timestamp
 AFTER
 UPDATE
-  ON orders FOR EACH ROW
-  WHEN NEW.status != OLD.status
-BEGIN
-UPDATE
-  orders
-SET
-  modified_at = datetime('now')
-WHERE
-  id = NEW.id;
+  ON orders
+  FOR EACH ROW
+  WHEN NEW.status != OLD.status BEGIN
+    UPDATE
+      orders
+    SET
+      modified_at = datetime('now')
+    WHERE
+      id = NEW.id;
 
 INSERT INTO
   order_audit (order_id, old_status, new_status, changed_at)
@@ -338,7 +338,8 @@ WHERE
   order_date >= date('now', '-1 year');
 
 -- Clean up statements
-DROP TRIGGER IF EXISTS update_order_timestamp;
+DROP TRIGGER
+  IF EXISTS update_order_timestamp;
 
 DROP VIEW IF EXISTS customer_analytics;
 

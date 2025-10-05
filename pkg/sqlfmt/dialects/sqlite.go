@@ -25,8 +25,10 @@ var (
 	}
 
 	sqliteReservedTopLevelWords = []string{
-		"ADD", "AFTER", "ALTER COLUMN", "ALTER TABLE", "BEGIN", "CREATE INDEX", "CREATE TABLE", "CREATE TRIGGER",
+		"ADD", "AFTER", "ALTER COLUMN", "ALTER TABLE", "BEGIN", "CREATE INDEX", "CREATE TABLE",
+		"CREATE TRIGGER", "CREATE TEMP TRIGGER", "CREATE TEMPORARY TRIGGER",
 		"CREATE UNIQUE INDEX", "CREATE VIEW", "DELETE FROM", "DO NOTHING", "DO UPDATE", "DROP INDEX", "DROP TABLE",
+		"DROP TRIGGER",
 		"EXCEPT", "FETCH FIRST", "FROM", "GROUP BY",
 		"HAVING", "INSERT INTO", "INSERT OR ABORT", "INSERT OR FAIL", "INSERT OR IGNORE", "INSERT OR REPLACE",
 		"INSERT OR ROLLBACK",
@@ -40,6 +42,9 @@ var (
 	sqliteReservedNewlineWords = []string{
 		"AND", "CROSS JOIN", "ELSE", "INNER JOIN", "JOIN", "LEFT JOIN", "LEFT OUTER JOIN", "OR",
 		"OUTER JOIN", "RIGHT JOIN", "RIGHT OUTER JOIN", "WHEN",
+		// Trigger-specific keywords
+		"BEFORE", "AFTER", "INSTEAD OF", "FOR EACH ROW", "FOR EACH STATEMENT",
+		"BEGIN", "END",
 	}
 )
 
@@ -59,7 +64,7 @@ func NewSQLiteTokenizerConfig() *TokenizerConfig {
 		ReservedNewlineWords:          sqliteReservedNewlineWords,
 		ReservedTopLevelWordsNoIndent: sqliteReservedTopLevelWordsNoIndent,
 		StringTypes:                   []string{`""`, "''", "``", "[]", "X''"}, // SQLite identifier and string quoting
-		OpenParens:                    []string{"(", "CASE"},
+		OpenParens:                    []string{"(", "CASE", "BEGIN"},
 		CloseParens:                   []string{")", "END"},
 		IndexedPlaceholderTypes:       []string{"?"},           // SQLite supports ? and ?NNN
 		NamedPlaceholderTypes:         []string{":", "@", "$"}, // SQLite named parameters
