@@ -203,7 +203,7 @@ func generateDiff(original, formatted string) string {
 		maxLines = len(formLines)
 	}
 
-	for i := 0; i < maxLines; i++ {
+	for i := range maxLines {
 		var origLine, formLine string
 		if i < len(origLines) {
 			origLine = origLines[i]

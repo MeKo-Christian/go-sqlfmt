@@ -12,6 +12,9 @@ import (
 )
 
 const validationSQLDialect = "sql"
+const testSQL = "SELECT * FROM users WHERE name = 'john'"
+const outputFormatJSON = "json"
+const outputFormatText = "text"
 
 func TestValidateCommand(t *testing.T) {
 	tests := []struct {
@@ -109,7 +112,6 @@ func TestValidateFile(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
-	testSQL := "SELECT * FROM users WHERE name = 'john'"
 	_, err = tmpFile.WriteString(testSQL)
 	require.NoError(t, err)
 	_ = tmpFile.Close()
@@ -184,7 +186,7 @@ func runValidateTest(cmd *cobra.Command, args []string) error {
 	}
 
 	// Output results based on format
-	if outputFormat == "json" {
+	if outputFormat == outputFormatJSON {
 		outputJSON(summary)
 	} else {
 		outputText(summary)
@@ -209,7 +211,7 @@ func TestValidateJSONOutput(t *testing.T) {
 	indent = "  "
 	uppercase = false
 	linesBetween = 2
-	outputFormat = "json"
+	outputFormat = outputFormatJSON
 	showDiff = false
 
 	// Create validate command
@@ -222,7 +224,7 @@ func TestValidateJSONOutput(t *testing.T) {
 	cmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	cmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert to uppercase")
 	cmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
-	cmd.Flags().StringVar(&outputFormat, "output", "json", "Output format")
+	cmd.Flags().StringVar(&outputFormat, "output", outputFormatJSON, "Output format")
 	cmd.Flags().BoolVar(&showDiff, "diff", false, "Show diff")
 
 	// Capture stdout
@@ -251,7 +253,7 @@ func TestValidateJSONOutput(t *testing.T) {
 	assert.Contains(t, output, "\"valid\": false")
 
 	// Reset outputFormat
-	outputFormat = "text"
+	outputFormat = outputFormatText
 }
 
 func TestValidateDiffFlag(t *testing.T) {
@@ -270,7 +272,7 @@ func TestValidateDiffFlag(t *testing.T) {
 	indent = "  "
 	uppercase = false
 	linesBetween = 2
-	outputFormat = "text"
+	outputFormat = outputFormatText
 	showDiff = true
 
 	// Create validate command
@@ -283,7 +285,7 @@ func TestValidateDiffFlag(t *testing.T) {
 	cmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	cmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert to uppercase")
 	cmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
-	cmd.Flags().StringVar(&outputFormat, "output", "text", "Output format")
+	cmd.Flags().StringVar(&outputFormat, "output", outputFormatText, "Output format")
 	cmd.Flags().BoolVar(&showDiff, "diff", true, "Show diff")
 
 	// Capture stdout
@@ -338,7 +340,7 @@ func TestValidateMultipleFiles(t *testing.T) {
 	indent = "  "
 	uppercase = false
 	linesBetween = 2
-	outputFormat = "text"
+	outputFormat = outputFormatText
 	showDiff = false
 
 	// Create validate command
@@ -351,7 +353,7 @@ func TestValidateMultipleFiles(t *testing.T) {
 	cmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	cmd.Flags().BoolVar(&uppercase, "uppercase", false, "Convert to uppercase")
 	cmd.Flags().IntVar(&linesBetween, "lines-between", 2, "Lines between queries")
-	cmd.Flags().StringVar(&outputFormat, "output", "text", "Output format")
+	cmd.Flags().StringVar(&outputFormat, "output", outputFormatText, "Output format")
 	cmd.Flags().BoolVar(&showDiff, "diff", false, "Show diff")
 
 	// Capture stdout

@@ -8,6 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testPostgreSQLConfig = "language: postgresql"
+)
+
 // TestLoadConfigFromCurrentDirectory tests loading config from the current directory.
 func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	tests := []struct {
@@ -65,7 +69,7 @@ indent: "\t\t"`,
 			tmpDir := t.TempDir()
 			origDir, err := os.Getwd()
 			require.NoError(t, err)
-			defer os.Chdir(origDir)
+			defer func() { _ = os.Chdir(origDir) }()
 
 			err = os.Chdir(tmpDir)
 			require.NoError(t, err)
@@ -103,7 +107,7 @@ func TestLoadConfigFromParentDirectories(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 
 	// Create root config
 	rootConfig := `language: postgresql
@@ -139,14 +143,15 @@ func TestLoadConfigFromHomeDirectory(t *testing.T) {
 	// Create temp directory to use as fake home
 	tmpHome := t.TempDir()
 	origHome := os.Getenv("HOME")
-	defer os.Setenv("HOME", origHome)
-	os.Setenv("HOME", tmpHome)
+	defer func() { _ = os.Setenv("HOME", origHome) }()
+	err := os.Setenv("HOME", tmpHome)
+	require.NoError(t, err)
 
 	// Create another temp directory for working directory (without config)
 	tmpWorkDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 	err = os.Chdir(tmpWorkDir)
 	require.NoError(t, err)
 
@@ -174,18 +179,19 @@ func TestConfigSearchOrderPrecedence(t *testing.T) {
 	// Create temp home with config
 	tmpHome := t.TempDir()
 	origHome := os.Getenv("HOME")
-	defer os.Setenv("HOME", origHome)
-	os.Setenv("HOME", tmpHome)
+	defer func() { _ = os.Setenv("HOME", origHome) }()
+	err := os.Setenv("HOME", tmpHome)
+	require.NoError(t, err)
 
 	homeConfig := `language: mysql`
-	err := os.WriteFile(filepath.Join(tmpHome, ".sqlfmtrc"), []byte(homeConfig), 0o644)
+	err = os.WriteFile(filepath.Join(tmpHome, ".sqlfmtrc"), []byte(homeConfig), 0o644)
 	require.NoError(t, err)
 
 	// Create temp work dir with different config
 	tmpWorkDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 	err = os.Chdir(tmpWorkDir)
 	require.NoError(t, err)
 
@@ -211,7 +217,7 @@ func TestParseAllConfigOptions(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
@@ -262,7 +268,7 @@ func TestParseLanguageVariants(t *testing.T) {
 			tmpDir := t.TempDir()
 			origDir, err := os.Getwd()
 			require.NoError(t, err)
-			defer os.Chdir(origDir)
+			defer func() { _ = os.Chdir(origDir) }()
 			err = os.Chdir(tmpDir)
 			require.NoError(t, err)
 
@@ -300,7 +306,7 @@ func TestParseKeywordCaseVariants(t *testing.T) {
 			tmpDir := t.TempDir()
 			origDir, err := os.Getwd()
 			require.NoError(t, err)
-			defer os.Chdir(origDir)
+			defer func() { _ = os.Chdir(origDir) }()
 			err = os.Chdir(tmpDir)
 			require.NoError(t, err)
 
@@ -325,7 +331,7 @@ func TestInvalidYAMLHandling(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
@@ -347,7 +353,7 @@ func TestUnknownLanguageHandling(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
@@ -369,7 +375,7 @@ func TestUnknownKeywordCaseHandling(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
@@ -391,7 +397,7 @@ func TestNoConfigFileFound(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
@@ -412,7 +418,7 @@ func TestEmptyConfigFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
@@ -442,7 +448,7 @@ func TestPartialConfigFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
@@ -480,7 +486,7 @@ func TestGitRootStopsSearch(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 
 	// Create config above git root
 	rootConfig := `language: mysql`
@@ -516,7 +522,7 @@ func TestConfigWithGitRoot(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 
 	// Create .git directory
 	gitDir := filepath.Join(tmpDir, ".git")
@@ -554,12 +560,12 @@ func TestMultipleConfigFilesPrecedence(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
 	// Create multiple config files - .sqlfmtrc should be checked first
-	err = os.WriteFile(".sqlfmtrc", []byte("language: postgresql"), 0o644)
+	err = os.WriteFile(".sqlfmtrc", []byte(testPostgreSQLConfig), 0o644)
 	require.NoError(t, err)
 	err = os.WriteFile(".sqlfmt.yaml", []byte("language: mysql"), 0o644)
 	require.NoError(t, err)
@@ -582,7 +588,7 @@ func TestLoadConfigFileForPath(t *testing.T) {
 	// Create a temporary directory structure
 	tempDir, err := os.MkdirTemp("", "sqlfmt-config-path-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create subdirectory
 	subDir := filepath.Join(tempDir, "subdir")
@@ -621,7 +627,7 @@ func TestGetConfigSearchPathsForPath(t *testing.T) {
 	// Create a temporary directory structure
 	tempDir, err := os.MkdirTemp("", "sqlfmt-search-paths-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create subdirectory
 	subDir := filepath.Join(tempDir, "project", "sql")
@@ -771,7 +777,7 @@ func TestCaseInsensitiveLanguageParsing(t *testing.T) {
 			tmpDir := t.TempDir()
 			origDir, err := os.Getwd()
 			require.NoError(t, err)
-			defer os.Chdir(origDir)
+			defer func() { _ = os.Chdir(origDir) }()
 			err = os.Chdir(tmpDir)
 			require.NoError(t, err)
 
@@ -808,7 +814,7 @@ func TestCaseInsensitiveKeywordCaseParsing(t *testing.T) {
 			tmpDir := t.TempDir()
 			origDir, err := os.Getwd()
 			require.NoError(t, err)
-			defer os.Chdir(origDir)
+			defer func() { _ = os.Chdir(origDir) }()
 			err = os.Chdir(tmpDir)
 			require.NoError(t, err)
 

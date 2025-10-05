@@ -224,21 +224,24 @@ func (f *formatter) analyzeUpdateSetClause() {
 			break
 		}
 
-		if tok.Value == "=" {
+		switch tok.Value {
+		case "=":
 			// Store the length up to the equals sign
 			if currentLength > 0 {
 				assignmentLengths = append(assignmentLengths, currentLength)
 				currentLength = 0
 			}
-		} else if tok.Value == "," {
+		case ",":
 			// Skip commas
 			continue
-		} else if tok.Type != types.TokenTypeWhitespace && tok.Type != types.TokenTypeLineComment && tok.Type != types.TokenTypeBlockComment {
-			// Approximate rendered length
-			if tok.Type == types.TokenTypeReserved {
-				currentLength += len(f.formatReservedWord(tok.Value)) + 1 // +1 for space
-			} else {
-				currentLength += len(tok.Value) + 1 // +1 for space
+		default:
+			if tok.Type != types.TokenTypeWhitespace && tok.Type != types.TokenTypeLineComment && tok.Type != types.TokenTypeBlockComment {
+				// Approximate rendered length
+				if tok.Type == types.TokenTypeReserved {
+					currentLength += len(f.formatReservedWord(tok.Value)) + 1 // +1 for space
+				} else {
+					currentLength += len(tok.Value) + 1 // +1 for space
+				}
 			}
 		}
 	}
@@ -270,12 +273,6 @@ func (f *formatter) analyzeInsertValuesClause() {
 		return
 	}
 
-	// Find the end of the VALUES clause (semicolon, etc.)
-	endIndex := f.findInsertValuesClauseEnd(valuesIndex)
-	if endIndex == -1 {
-		endIndex = len(f.tokens)
-	}
-
 	// For INSERT VALUES, we want to keep all values in each tuple on the same line
 	// So we just need to detect that VALUES alignment is enabled for this INSERT
 	f.insertValuesLengths = append(f.insertValuesLengths, 1) // Just mark that alignment is enabled
@@ -297,17 +294,6 @@ func (f *formatter) findUpdateSetClauseEnd(setIndex int) int {
 	for i := setIndex + 1; i < len(f.tokens); i++ {
 		tok := f.tokens[i]
 		if tok.Type == types.TokenTypeReservedTopLevel && f.isUpdateSetClauseTerminator(tok.Value) {
-			return i
-		}
-	}
-	return -1
-}
-
-// findInsertValuesClauseEnd finds the end of the current INSERT VALUES clause.
-func (f *formatter) findInsertValuesClauseEnd(valuesIndex int) int {
-	for i := valuesIndex + 1; i < len(f.tokens); i++ {
-		tok := f.tokens[i]
-		if tok.Value == ";" || (tok.Type == types.TokenTypeReservedTopLevel && f.isInsertValuesClauseTerminator(tok.Value)) {
 			return i
 		}
 	}
@@ -420,25 +406,31 @@ func (f *formatter) formatReservedTopLevelToken(tok types.Token, formattedQuery 
 	}
 
 	// Track UPDATE SET clause state for alignment
-	if strings.ToUpper(tok.Value) == "UPDATE" {
+	switch strings.ToUpper(tok.Value) {
+	case "UPDATE":
 		f.inUpdateSetClause = false // Reset, will be set when we encounter SET
 		f.currentUpdateIndex++
-	} else if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "SET" && f.cfg.AlignAssignments {
-		f.inUpdateSetClause = true
-		f.currentAssignmentLength = 0
-	} else if f.inUpdateSetClause && f.isUpdateSetClauseTerminator(tok.Value) {
-		f.inUpdateSetClause = false
+	default:
+		if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "SET" && f.cfg.AlignAssignments {
+			f.inUpdateSetClause = true
+			f.currentAssignmentLength = 0
+		} else if f.inUpdateSetClause && f.isUpdateSetClauseTerminator(tok.Value) {
+			f.inUpdateSetClause = false
+		}
 	}
 
 	// Track INSERT VALUES clause state for alignment
-	if strings.ToUpper(tok.Value) == "INSERT" {
+	switch strings.ToUpper(tok.Value) {
+	case "INSERT":
 		f.inInsertValuesClause = false // Reset, will be set when we encounter VALUES
 		f.currentInsertIndex++
-	} else if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "VALUES" && f.cfg.AlignValues {
-		f.inInsertValuesClause = true
-		f.currentValuesLength = 0
-	} else if f.inInsertValuesClause && f.isInsertValuesClauseTerminator(tok.Value) {
-		f.inInsertValuesClause = false
+	default:
+		if tok.Type == types.TokenTypeReservedTopLevel && strings.ToUpper(tok.Value) == "VALUES" && f.cfg.AlignValues {
+			f.inInsertValuesClause = true
+			f.currentValuesLength = 0
+		} else if f.inInsertValuesClause && f.isInsertValuesClauseTerminator(tok.Value) {
+			f.inInsertValuesClause = false
+		}
 	}
 
 	f.previousReservedWord = tok

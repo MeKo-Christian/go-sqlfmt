@@ -16,7 +16,7 @@ type IgnoreFile struct {
 func LoadIgnoreFile() (*IgnoreFile, error) {
 	dir, err := os.Getwd()
 	if err != nil {
-		return &IgnoreFile{}, nil
+		return nil, err
 	}
 
 	// Search for .sqlfmtignore in current directory and parents

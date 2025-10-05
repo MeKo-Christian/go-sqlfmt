@@ -10,6 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	defaultSQLDialect = "sql"
+)
+
 var (
 	lang                  string
 	indent                string
@@ -45,7 +49,7 @@ Examples:
 func init() {
 	rootCmd.AddCommand(formatCmd)
 
-	formatCmd.Flags().StringVar(&lang, "lang", "sql", "SQL dialect (sql, postgresql, mysql, pl/sql, db2, n1ql, sqlite)")
+	formatCmd.Flags().StringVar(&lang, "lang", defaultSQLDialect, "SQL dialect (sql, postgresql, mysql, pl/sql, db2, n1ql, sqlite)")
 	formatCmd.Flags().StringVar(&indent, "indent", "  ", "Indentation string")
 	formatCmd.Flags().BoolVarP(&write, "write", "w", false, "Write result to file instead of stdout")
 	formatCmd.Flags().BoolVar(&color, "color", false, "Enable ANSI color formatting")
@@ -173,7 +177,7 @@ func applyCommandLineFlags(cmd *cobra.Command, config *sqlfmt.Config) {
 
 func applyLanguageFlag(config *sqlfmt.Config) {
 	switch strings.ToLower(lang) {
-	case "sql", "standard":
+	case defaultSQLDialect, "standard":
 		config.WithLang(sqlfmt.StandardSQL)
 	case "postgresql", "postgres":
 		config.WithLang(sqlfmt.PostgreSQL)

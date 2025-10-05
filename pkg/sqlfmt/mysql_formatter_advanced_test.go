@@ -580,7 +580,7 @@ func TestMySQLFormatter_WindowFunctions(t *testing.T) {
 	// Phase 12: Final Polish & Edge Cases Tests
 
 	t.Run("formats backtick identifiers with unicode and emoji", func(t *testing.T) {
-		query := "SELECT `用户ID`, `имя`, `🚀rocket_field`, `café_name` FROM `表格📊` WHERE `数量` > 100;"
+		query := "SELECT `用户ID`, `имя`, `🚀rocket_field`, `café_name` FROM `表格📊` WHERE `数量` > 100;" //nolint:gosmopolitan
 		exp := Dedent(`
             SELECT
               ` + "`用户ID`" + `,

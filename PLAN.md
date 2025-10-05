@@ -14,81 +14,9 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ---
 
-## Phase 1: Cross-Dialect Features
+## Phase 1: CLI Enhancements
 
-### 1.1 Dialect Auto-Detection
-
-**Goal**: Automatically detect SQL dialect from file or content
-
-- [x] Add dialect detection logic in `pkg/sqlfmt/detect.go`:
-  - [x] File extension detection:
-    - `.psql`, `.pgsql` → PostgreSQL
-    - `.mysql`, `.my.sql` → MySQL
-    - `.sqlite`, `.db.sql` → SQLite
-    - `.plsql`, `.ora.sql` → PL/SQL
-  - [x] Content-based detection (heuristics):
-    - PostgreSQL: `::`, `$$`, `$1` placeholders, `RETURNING`
-    - MySQL: backticks, `?` placeholders, `ON DUPLICATE KEY UPDATE`
-    - SQLite: `?`, `:name` placeholders, `WITHOUT ROWID`, `PRAGMA`
-    - PL/SQL: `BEGIN ... END;`, `EXCEPTION`
-- [x] Add `--auto-detect` CLI flag
-- [x] Add tests for detection accuracy
-- [x] Document detection logic and limitations
-
-### 1.2 Multi-Dialect Support
-
-**Goal**: Handle projects with multiple SQL dialects
-
-- [x] Add `.sqlfmtignore` file support (like `.gitignore`)
-- [x] Add per-directory config override support
-- [x] Add inline dialect hints: `-- sqlfmt: dialect=postgresql`
-- [x] Document multi-dialect project setup
-
----
-
-## Phase 2: Advanced Formatting Options
-
-### 2.1 Alignment Options
-
-- [x] Add vertical alignment configuration:
-  - [x] Column name alignment in SELECT
-  - [x] Assignment operator alignment in UPDATE
-  - [x] Values alignment in INSERT
-- [x] Add configuration options in `Config`:
-  - [x] `AlignColumnNames bool`
-  - [x] `AlignAssignments bool`
-  - [x] `AlignValues bool`
-- [x] Implement alignment logic in formatter
-- [x] Add tests for alignment options
-- [x] Document in configuration guide
-
-### 2.2 Line Length Limits
-
-- [x] Add `MaxLineLength int` configuration option
-- [x] Implement line breaking logic:
-  - [x] Break long SELECT column lists
-  - [x] Break long WHERE conditions
-  - [x] Break long function calls
-  - [x] Smart break at appropriate points (commas, operators)
-- [x] Add tests for line length enforcement
-- [x] Document behavior and limitations
-
-### 2.3 Comment Handling Improvements
-
-- [x] Improve inline comment positioning:
-  - [x] Keep inline comments on same line when possible
-  - [x] Move to next line if line length exceeded
-  - [x] Preserve relative position in code
-- [x] Add comment formatting options:
-  - [x] `PreserveCommentIndent bool`
-  - [x] `CommentMinSpacing int` - spaces before inline comments
-- [x] Test comment handling edge cases
-
----
-
-## Phase 3: CLI Enhancements
-
-### 3.1 Watch Mode
+### 1.1 Watch Mode
 
 - [ ] Implement file watcher using `fsnotify`
 - [ ] Add `sqlfmt watch [path]` command
@@ -99,7 +27,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
 - [ ] Add tests for watch functionality
 - [ ] Document watch mode usage
 
-### 3.2 Directory & Git Integration
+### 1.2 Directory & Git Integration
 
 - [ ] Add `sqlfmt format --recursive` for directory trees
 - [ ] Add `sqlfmt format --git-diff` to format only changed files
@@ -109,20 +37,11 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Installation command: `sqlfmt install-hook`
   - [ ] Document hook installation
 
-### 3.3 Validation Improvements
-
-- [x] Enhance `sqlfmt validate` command:
-  - [x] Exit code: 0 (all valid), 1 (some invalid)
-  - [x] JSON output mode: `--output=json`
-  - [x] Summary report: files checked, files valid, files invalid
-- [x] Add `sqlfmt check` alias for validate
-- [x] Add `--diff` flag to show what would change
-
 ---
 
-## Phase 4: Library API Improvements
+## Phase 2: Library API Improvements
 
-### 4.1 Streaming API
+### 2.1 Streaming API
 
 - [ ] Add streaming format functions:
   ```go
@@ -133,7 +52,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
 - [ ] Add streaming tests
 - [ ] Document streaming API
 
-### 4.2 Parse Tree Access
+### 2.2 Parse Tree Access
 
 - [ ] Expose parsed SQL structure:
   ```go
@@ -149,25 +68,11 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Extract column references
 - [ ] Document parse tree structure
 
-### 4.3 Custom Formatter Plugin System
-
-- [ ] Define plugin interface:
-  ```go
-  type FormatterPlugin interface {
-      Name() string
-      Format(query string, cfg *Config) (string, error)
-      SupportsDialect(lang Language) bool
-  }
-  ```
-- [ ] Add plugin registration system
-- [ ] Create example plugins
-- [ ] Document plugin development
-
 ---
 
-## Phase 5: Advanced SQL Features
+## Phase 3: Advanced SQL Features
 
-### 5.1 Enhanced Stored Procedure Support
+### 3.1 Enhanced Stored Procedure Support
 
 - [ ] PostgreSQL PL/pgSQL improvements:
   - [ ] Better block indentation (BEGIN/END, IF/ELSE, LOOP)
@@ -181,7 +86,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Multi-statement trigger bodies
   - [ ] BEFORE/AFTER/INSTEAD OF formatting
 
-### 5.2 Complete DDL Support
+### 3.2 Complete DDL Support
 
 - [ ] Full CREATE TABLE support:
   - [ ] All constraint types
@@ -197,7 +102,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Multi-column changes
   - [ ] Constraint modifications
 
-### 5.3 Extended Comment Support
+### 3.3 Extended Comment Support
 
 - [ ] Structured comments for documentation:
   ```sql
@@ -214,9 +119,9 @@ Most dialect-specific features have been successfully implemented. This plan foc
 
 ---
 
-## Phase 6: Documentation & Polish
+## Phase 4: Documentation & Polish
 
-### 6.1 Comprehensive Documentation
+### 4.1 Comprehensive Documentation
 
 - [ ] Create dialect comparison guide:
   - [ ] Feature matrix across all dialects
@@ -227,7 +132,7 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Performance tips
   - [ ] Known limitations
 
-### 6.2 Editor Integrations
+### 4.2 Editor Integrations
 
 - [ ] VSCode extension:
   - [ ] Format on save
@@ -243,37 +148,20 @@ Most dialect-specific features have been successfully implemented. This plan foc
   - [ ] Interactive formatting
   - [ ] Configuration options
 
-### 6.3 Examples & Demos
-
-- [ ] Create example projects:
-  - [ ] PostgreSQL application
-  - [ ] MySQL application
-  - [ ] SQLite application
-  - [ ] Multi-dialect project
-- [ ] Add interactive online demo
-- [ ] Create GIF demos for README
-
 ---
 
 ## Priority Matrix
 
 ### 🟡 Medium Priority (Next 2-4 Weeks)
 
-1. **Watch mode** (Phase 3.1) - Developer workflow improvement
-2. **Directory & Git integration** (Phase 3.2) - CI/CD integration
+1. **Watch mode** (Phase 1.1) - Developer workflow improvement
+2. **Directory & Git integration** (Phase 1.2) - CI/CD integration
 
 ### 🟢 Low Priority (Future 1-3 Months)
 
-1. **Advanced alignment options** (Phase 2.1) - Nice-to-have
-2. **Streaming API** (Phase 4.1) - Large file handling
-3. **Line length limits** (Phase 2.2) - Style preference
-4. **Enhanced DDL support** (Phase 5.2) - Edge cases
-5. **Editor integrations** (Phase 6.2) - Ecosystem expansion
-
-### ⚪ On Hold / Future
-
-1. **Plugin system** (Phase 4.3) - Complex feature, low demand
-2. **Documentation generation** (Phase 5.3) - Advanced use case
+1. **Streaming API** (Phase 2.1) - Large file handling
+2. **Enhanced DDL support** (Phase 3.2) - Edge cases
+3. **Editor integrations** (Phase 4.2) - Ecosystem expansion
 
 ---
 

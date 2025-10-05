@@ -7,6 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testUpdateKeyword = "UPDATE"
+)
+
 func TestTokenizerDirectRegexAccess(t *testing.T) {
 	// Test direct regex functionality that was previously tested in the disabled test
 	cfg := &TokenizerConfig{
@@ -189,7 +193,7 @@ func TestTokenizerCompoundKeywords(t *testing.T) {
 			"ORDER BY", "GROUP BY", "UNION ALL",
 			"DO", "ON", "ORDER", "GROUP", "UNION",
 		},
-		ReservedTopLevelWords:         []string{"SELECT", "UPDATE"},
+		ReservedTopLevelWords:         []string{"SELECT", testUpdateKeyword},
 		ReservedNewlineWords:          []string{"AND", "OR"},
 		ReservedTopLevelWordsNoIndent: []string{},
 		StringTypes:                   []string{"''"},
@@ -345,7 +349,7 @@ func checkStandaloneDoToken(t *testing.T, tokens []types.Token, doIndex int) {
 		if tokens[j].Type == types.TokenTypeWhitespace {
 			continue
 		}
-		if tokens[j].Value == "UPDATE" {
+		if tokens[j].Value == testUpdateKeyword {
 			t.Errorf("Found standalone 'DO' token at index %d followed by 'UPDATE' at %d. "+
 				"Should be 'DO UPDATE' compound keyword.", doIndex, j)
 		}
@@ -360,7 +364,7 @@ func TestTokenizerFullUpsertQuery(t *testing.T) {
 			"DO UPDATE", "DO NOTHING", "ON CONFLICT", "DO",
 			"SET", "WHERE", "VALUES",
 		},
-		ReservedTopLevelWords:         []string{"INSERT INTO", "INSERT", "UPDATE"},
+		ReservedTopLevelWords:         []string{"INSERT INTO", "INSERT", testUpdateKeyword},
 		ReservedNewlineWords:          []string{"AND", "OR"},
 		ReservedTopLevelWordsNoIndent: []string{},
 		StringTypes:                   []string{"''"},
@@ -392,7 +396,7 @@ func TestTokenizerFullUpsertQuery(t *testing.T) {
 			t.Logf("Found DO UPDATE at index %d", i)
 		}
 
-		// Make sure we don't have standalone "DO" before "UPDATE"
+		// Make sure we don't have standalone "DO" before testUpdateKeyword
 		if tok.Value == "DO" {
 			checkStandaloneDoToken(t, tokens, i)
 		}

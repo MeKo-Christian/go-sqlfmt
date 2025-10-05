@@ -12,12 +12,12 @@ func TestIgnoreFile_LoadIgnoreFile(t *testing.T) {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "sqlfmt-ignore-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Change to temp directory
 	oldWd, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(oldWd)
+	defer func() { _ = os.Chdir(oldWd) }()
 
 	err = os.Chdir(tempDir)
 	require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestIgnoreFile_LoadIgnoreFile_InParentDir(t *testing.T) {
 	// Create a temporary directory structure
 	tempDir, err := os.MkdirTemp("", "sqlfmt-ignore-parent-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create parent directory with ignore file
 	parentDir := filepath.Join(tempDir, "parent")
@@ -122,7 +122,7 @@ func TestIgnoreFile_LoadIgnoreFile_InParentDir(t *testing.T) {
 	// Change to child directory
 	oldWd, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(oldWd)
+	defer func() { _ = os.Chdir(oldWd) }()
 
 	err = os.Chdir(childDir)
 	require.NoError(t, err)

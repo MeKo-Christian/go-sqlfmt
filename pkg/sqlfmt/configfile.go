@@ -149,7 +149,7 @@ func getConfigSearchPathsForPath(filePath string) []string {
 	return paths
 }
 
-// ParseInlineDialectHint parses SQL comments for dialect hints like "-- sqlfmt: dialect=mysql"
+// ParseInlineDialectHint parses SQL comments for dialect hints like "-- sqlfmt: dialect=mysql".
 func ParseInlineDialectHint(content string) (Language, bool) {
 	lines := strings.Split(content, "\n")
 	for _, line := range lines {
@@ -161,19 +161,19 @@ func ParseInlineDialectHint(content string) (Language, bool) {
 				if strings.HasPrefix(directive, "dialect=") {
 					dialectStr := strings.TrimSpace(strings.TrimPrefix(directive, "dialect="))
 					switch strings.ToLower(dialectStr) {
-					case "sql", "standard":
+					case string(StandardSQL), "standard":
 						return StandardSQL, true
-					case "postgresql", "postgres":
+					case string(PostgreSQL), "postgres":
 						return PostgreSQL, true
-					case "mysql", "mariadb":
+					case string(MySQL), "mariadb":
 						return MySQL, true
-					case "pl/sql", "plsql", "oracle":
+					case string(PLSQL), "plsql", "oracle":
 						return PLSQL, true
-					case "db2":
+					case string(DB2):
 						return DB2, true
-					case "n1ql":
+					case string(N1QL):
 						return N1QL, true
-					case "sqlite":
+					case string(SQLite):
 						return SQLite, true
 					}
 				}
