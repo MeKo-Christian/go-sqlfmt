@@ -545,7 +545,7 @@ func (f *formatter) formatLineComment(tok types.Token, query *strings.Builder) {
 
 	// Insert pending empty lines before comment (if preserving empty lines between comments)
 	if f.cfg.PreserveEmptyLinesBetweenComments && f.emptyLinesPending > 0 && atStartOfLine {
-		for i := 0; i < f.emptyLinesPending; i++ {
+		for range f.emptyLinesPending {
 			query.WriteString("\n")
 		}
 		query.WriteString(f.indentation.GetIndent())
@@ -597,7 +597,7 @@ func (f *formatter) formatBlockComment(tok types.Token, query *strings.Builder) 
 
 		// Insert pending empty lines before comment (if preserving empty lines between comments)
 		if f.cfg.PreserveEmptyLinesBetweenComments && f.emptyLinesPending > 0 && atStartOfLine {
-			for i := 0; i < f.emptyLinesPending; i++ {
+			for range f.emptyLinesPending {
 				query.WriteString("\n")
 			}
 			query.WriteString(f.indentation.GetIndent())
@@ -716,12 +716,12 @@ func (f *formatter) formatNewlineReservedWord(tok types.Token, query *strings.Bu
 	}
 }
 
-// isOnKeyword checks if the token is ON (for JOIN conditions)
+// isOnKeyword checks if the token is ON (for JOIN conditions).
 func (f *formatter) isOnKeyword(value string) bool {
 	return strings.ToUpper(value) == "ON"
 }
 
-// isJoinKeyword checks if the token value is a JOIN keyword
+// isJoinKeyword checks if the token value is a JOIN keyword.
 func (f *formatter) isJoinKeyword(value string) bool {
 	joinKeywords := []string{
 		"JOIN", "INNER JOIN", "LEFT JOIN", "RIGHT JOIN",
@@ -739,7 +739,7 @@ func (f *formatter) isJoinKeyword(value string) bool {
 	return false
 }
 
-// formatJoinAtRootLevel formats JOIN keyword at same level as FROM
+// formatJoinAtRootLevel formats JOIN keyword at same level as FROM.
 func (f *formatter) formatJoinAtRootLevel(tok types.Token, query *strings.Builder) {
 	// Decrease to root level (same as FROM)
 	f.indentation.DecreaseTopLevel()
@@ -757,7 +757,7 @@ func (f *formatter) formatJoinAtRootLevel(tok types.Token, query *strings.Builde
 	f.addNewline(query)
 }
 
-// isFromClauseTerminator checks if a keyword terminates the FROM clause
+// isFromClauseTerminator checks if a keyword terminates the FROM clause.
 func (f *formatter) isFromClauseTerminator(value string) bool {
 	terminators := []string{"WHERE", "GROUP BY", "HAVING", "ORDER BY", "LIMIT", "UNION", "INTERSECT", "EXCEPT"}
 	for _, term := range terminators {

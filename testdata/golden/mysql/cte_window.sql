@@ -61,8 +61,8 @@ WITH
       COUNT(ro.order_id) as recent_order_count,
       AVG(ro.total_amount) as avg_recent_order,
       CASE
-        WHEN hvc.lifetime_value >= 5000 then 'VIP'
-        WHEN hvc.lifetime_value >= 2000 then 'Premium'
+        WHEN hvc.lifetime_value >= 5000 THEN 'VIP'
+        WHEN hvc.lifetime_value >= 2000 THEN 'Premium'
         ELSE 'Standard'
       END as customer_tier
     FROM

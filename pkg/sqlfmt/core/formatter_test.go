@@ -79,9 +79,9 @@ FROM
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:                 []string{"SELECT", "FROM", "WHERE", "AS"},
 					ReservedTopLevelWords:         []string{"SELECT", "FROM", "WHERE"},
@@ -146,9 +146,9 @@ FROM
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:                 []string{"SELECT", "FROM", "WHERE", "AND", "OR"},
 					ReservedTopLevelWords:         []string{"SELECT", "FROM", "WHERE"},
@@ -218,9 +218,9 @@ FROM
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"SELECT", "FROM"},
 					ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -290,9 +290,9 @@ WhErE
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  tt.keywordCase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: tt.keywordCase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"SELECT", "FROM", "WHERE"},
 					ReservedTopLevelWords: []string{"SELECT", "FROM", "WHERE"},
@@ -364,9 +364,9 @@ FROM
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"SELECT", "FROM", "COUNT", "UPPER", "TRIM"},
 					ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -399,9 +399,9 @@ FROM
   users`
 
 	cfg := &Config{
-		Indent:       "  ",
-		KeywordCase:  KeywordCaseUppercase,
-		ColorConfig:  &ColorConfig{},
+		Indent:      "  ",
+		KeywordCase: KeywordCaseUppercase,
+		ColorConfig: &ColorConfig{},
 		TokenizerConfig: &TokenizerConfig{
 			ReservedWords:         []string{"SELECT", "FROM", "WHEN", "THEN", "ELSE"},
 			ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -440,9 +440,9 @@ ON
   u.id = us.user_id`
 
 	cfg := &Config{
-		Indent:       "  ",
-		KeywordCase:  KeywordCaseUppercase,
-		ColorConfig:  &ColorConfig{},
+		Indent:      "  ",
+		KeywordCase: KeywordCaseUppercase,
+		ColorConfig: &ColorConfig{},
 		TokenizerConfig: &TokenizerConfig{
 			ReservedWords:         []string{"WITH", "AS", "SELECT", "FROM", "JOIN", "ON", "GROUP BY", "COUNT"},
 			ReservedTopLevelWords: []string{"WITH", "SELECT", "FROM", "JOIN", "ON"},
@@ -491,9 +491,9 @@ FROM
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"SELECT", "FROM"},
 					ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -541,9 +541,9 @@ FROM
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"SELECT", "FROM"},
 					ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -610,10 +610,10 @@ WHERE
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				Params:       tt.params,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				Params:      tt.params,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:           []string{"SELECT", "FROM", "WHERE"},
 					ReservedTopLevelWords:   []string{"SELECT", "FROM", "WHERE"},
@@ -639,10 +639,10 @@ WHERE
 
 func TestFormatterQuerySeparator(t *testing.T) {
 	tests := []struct {
-		name              string
-		input             string
-		linesBetween      int
-		expected          string
+		name         string
+		input        string
+		linesBetween int
+		expected     string
 	}{
 		{
 			name:         "query separator",
@@ -765,9 +765,9 @@ FROM
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"SELECT", "FROM", "AS"},
 					ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -905,9 +905,9 @@ func TestAnalyzeSelectClauses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"SELECT", "FROM", "WHERE", "AS", "UNION", "UPDATE", "SET"},
 					ReservedTopLevelWords: []string{"SELECT", "FROM", "WHERE", "UNION", "UPDATE", "SET"},
@@ -960,9 +960,9 @@ func TestAnalyzeUpdateSetClauses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"UPDATE", "SET", "WHERE", "FROM"},
 					ReservedTopLevelWords: []string{"UPDATE", "SET", "WHERE", "FROM"},
@@ -1015,9 +1015,9 @@ func TestAnalyzeInsertValuesClauses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"INSERT", "INTO", "VALUES", "SELECT", "FROM"},
 					ReservedTopLevelWords: []string{"INSERT", "VALUES", "SELECT", "FROM"},
@@ -1065,9 +1065,9 @@ func TestAnalyzeSelectClause(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"SELECT", "FROM", "AS", "COUNT"},
 					ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -1116,9 +1116,9 @@ func TestAnalyzeUpdateSetClause(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"UPDATE", "SET", "WHERE", "FROM"},
 					ReservedTopLevelWords: []string{"UPDATE", "SET", "WHERE", "FROM"},
@@ -1166,9 +1166,9 @@ func TestAnalyzeInsertValuesClause(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"INSERT", "INTO", "VALUES", "SELECT", "FROM"},
 					ReservedTopLevelWords: []string{"INSERT", "VALUES", "SELECT", "FROM"},
@@ -1232,9 +1232,9 @@ func TestFindSelectClauseEnd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"SELECT", "FROM", "WHERE", "GROUP BY", "ORDER BY", "COUNT"},
 					ReservedTopLevelWords: []string{"SELECT", "FROM", "WHERE", "GROUP BY", "ORDER BY"},
@@ -1293,9 +1293,9 @@ func TestFindUpdateSetClauseEnd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"UPDATE", "SET", "WHERE", "FROM", "RETURNING"},
 					ReservedTopLevelWords: []string{"UPDATE", "SET", "WHERE", "FROM", "RETURNING"},
@@ -1350,7 +1350,7 @@ func TestIsSelectClauseTerminator(t *testing.T) {
 		{"UNION", true},
 		{"INTERSECT", true},
 		{"EXCEPT", true},
-		{"from", true},      // case insensitive
+		{"from", true}, // case insensitive
 		{"SELECT", false},
 		{"AS", false},
 		{"INVALID", false},
@@ -1377,7 +1377,7 @@ func TestIsUpdateSetClauseTerminator(t *testing.T) {
 		{"WHERE", true},
 		{"FROM", true},
 		{"RETURNING", true},
-		{"where", true},    // case insensitive
+		{"where", true}, // case insensitive
 		{"UPDATE", false},
 		{"SET", false},
 		{"INVALID", false},
@@ -1405,7 +1405,7 @@ func TestIsInsertValuesClauseTerminator(t *testing.T) {
 		{"FROM", true},
 		{"RETURNING", true},
 		{"ON", true},
-		{"on", true},       // case insensitive
+		{"on", true}, // case insensitive
 		{"INSERT", false},
 		{"VALUES", false},
 		{"INVALID", false},
@@ -1572,8 +1572,8 @@ func TestFormatDialectSpecificCase(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Language:    tt.language,
-				ColorConfig: &ColorConfig{},
+				Language:        tt.language,
+				ColorConfig:     &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{},
 			}
 			formatter := newFormatter(cfg, nil, nil)
@@ -1724,8 +1724,8 @@ func TestFormatterFormatEdgeCases(t *testing.T) {
 			expected: "",
 		},
 		{
-			name:  "single token",
-			input: "SELECT",
+			name:     "single token",
+			input:    "SELECT",
 			expected: `SELECT`,
 		},
 		{
@@ -1771,14 +1771,14 @@ FROM
 
 func TestFormatReservedTopLevelTokenStateTracking(t *testing.T) {
 	tests := []struct {
-		name                   string
-		query                  string
-		alignColumnNames       bool
-		alignAssignments       bool
-		alignValues            bool
-		expectInSelectClause   bool
+		name                    string
+		query                   string
+		alignColumnNames        bool
+		alignAssignments        bool
+		alignValues             bool
+		expectInSelectClause    bool
 		expectInUpdateSetClause bool
-		expectInInsertValues   bool
+		expectInInsertValues    bool
 	}{
 		{
 			name:                 "SELECT clause state tracking",
@@ -1832,9 +1832,9 @@ func TestFormatReservedTopLevelTokenStateTracking(t *testing.T) {
 
 func TestFormatReservedTopLevelTokenPreviousReservedTracking(t *testing.T) {
 	cfg := &Config{
-		Indent:       "  ",
-		KeywordCase:  KeywordCaseUppercase,
-		ColorConfig:  &ColorConfig{},
+		Indent:      "  ",
+		KeywordCase: KeywordCaseUppercase,
+		ColorConfig: &ColorConfig{},
 		TokenizerConfig: &TokenizerConfig{
 			ReservedWords:         []string{"SELECT", "FROM"},
 			ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -1896,9 +1896,9 @@ FROM
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:       "  ",
-				KeywordCase:  KeywordCaseUppercase,
-				ColorConfig:  &ColorConfig{},
+				Indent:      "  ",
+				KeywordCase: KeywordCaseUppercase,
+				ColorConfig: &ColorConfig{},
 				TokenizerConfig: &TokenizerConfig{
 					ReservedWords:         []string{"SELECT", "FROM"},
 					ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -2147,10 +2147,10 @@ func TestFormatCommaWithAlignAssignments(t *testing.T) {
 func TestFormatCommaWithAlignValues(t *testing.T) {
 	query := "INSERT INTO users (id, name) VALUES (1, 'John'), (2, 'Jane')"
 	cfg := &Config{
-		Indent:       "  ",
-		KeywordCase:  KeywordCaseUppercase,
-		AlignValues:  true,
-		ColorConfig:  &ColorConfig{},
+		Indent:      "  ",
+		KeywordCase: KeywordCaseUppercase,
+		AlignValues: true,
+		ColorConfig: &ColorConfig{},
 		TokenizerConfig: &TokenizerConfig{
 			ReservedWords:         []string{"INSERT", "INTO", "VALUES"},
 			ReservedTopLevelWords: []string{"INSERT", "VALUES"},
@@ -2172,9 +2172,9 @@ func TestFormatCommaWithAlignValues(t *testing.T) {
 func TestFormatCommaWithLimitKeyword(t *testing.T) {
 	query := "SELECT id FROM users LIMIT 10, 20"
 	cfg := &Config{
-		Indent:       "  ",
-		KeywordCase:  KeywordCaseUppercase,
-		ColorConfig:  &ColorConfig{},
+		Indent:      "  ",
+		KeywordCase: KeywordCaseUppercase,
+		ColorConfig: &ColorConfig{},
 		TokenizerConfig: &TokenizerConfig{
 			ReservedWords:         []string{"SELECT", "FROM", "LIMIT"},
 			ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -2195,9 +2195,9 @@ func TestFormatCommaWithLimitKeyword(t *testing.T) {
 func TestFormatCommaBeforeComment(t *testing.T) {
 	query := "SELECT id, -- user id\nname FROM users"
 	cfg := &Config{
-		Indent:       "  ",
-		KeywordCase:  KeywordCaseUppercase,
-		ColorConfig:  &ColorConfig{},
+		Indent:      "  ",
+		KeywordCase: KeywordCaseUppercase,
+		ColorConfig: &ColorConfig{},
 		TokenizerConfig: &TokenizerConfig{
 			ReservedWords:         []string{"SELECT", "FROM"},
 			ReservedTopLevelWords: []string{"SELECT", "FROM"},
@@ -2331,8 +2331,8 @@ func TestFormatWithSpacesLogicalOperators(t *testing.T) {
 func TestFormatWithSpacesFunctionCallFormatting(t *testing.T) {
 	query := "SELECT COUNT(id), MAX(created_at), MIN(updated_at) FROM users"
 	cfg := &Config{
-		Indent:       "  ",
-		KeywordCase:  KeywordCaseUppercase,
+		Indent:      "  ",
+		KeywordCase: KeywordCaseUppercase,
 		ColorConfig: &ColorConfig{
 			FunctionCallFormatOptions: []utils.ANSIFormatOption{utils.FormatBold},
 		},

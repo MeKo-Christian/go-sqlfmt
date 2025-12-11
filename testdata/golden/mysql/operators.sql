@@ -31,8 +31,8 @@ SELECT
   items->'$[*].price' as all_prices,
   CAST(items->>'$[0].price' AS DECIMAL(10, 2)) + CAST(items->>'$[1].price' AS DECIMAL(10, 2)) as first_two_total,
   CASE
-    WHEN JSON_LENGTH(items->'$[*]') > 5 then 'bulk'
-    WHEN JSON_LENGTH(items->'$[*]') > 1 then 'multi'
+    WHEN JSON_LENGTH(items->'$[*]') > 5 THEN 'bulk'
+    WHEN JSON_LENGTH(items->'$[*]') > 1 THEN 'multi'
     ELSE 'single'
   END as order_type
 FROM
@@ -46,7 +46,7 @@ SELECT
   u.username,
   p.profile_data,
   CASE
-    WHEN u.status <=> p.status then 'MATCH'
+    WHEN u.status <=> p.status THEN 'MATCH'
     WHEN u.status <=> NULL THEN 'USER_NULL'
     WHEN p.status <=> NULL THEN 'PROFILE_NULL'
     ELSE 'DIFFERENT'
@@ -209,7 +209,7 @@ SELECT
   COUNT(*) as total_events, -- Aggregate with JSON operators
   COUNT(
     CASE
-      WHEN data->>'$.status' = 'success' then 1
+      WHEN data->>'$.status' = 'success' THEN 1
     END
   ) as success_count,
   AVG(CAST(data->>'$.duration_ms' AS UNSIGNED)) as avg_duration, -- Aggregate with bitwise operations

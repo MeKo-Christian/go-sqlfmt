@@ -11,10 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const validationSQLDialect = "sql"
-const testSQL = "SELECT * FROM users WHERE name = 'john'"
-const outputFormatJSON = "json"
-const outputFormatText = "text"
+const (
+	validationSQLDialect = "sql"
+	testSQL              = "SELECT * FROM users WHERE name = 'john'"
+	outputFormatJSON     = "json"
+	outputFormatText     = "text"
+)
 
 func TestValidateCommand(t *testing.T) {
 	tests := []struct {

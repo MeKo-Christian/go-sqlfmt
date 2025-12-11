@@ -41,39 +41,39 @@ const (
 )
 
 type Config struct {
-	Language              Language
-	Indent                string
-	KeywordCase           KeywordCase
-	LinesBetweenQueries   int
-	Params                *Params
-	ColorConfig           *ColorConfig
-	TokenizerConfig       *TokenizerConfig
-	AlignColumnNames      bool
-	AlignAssignments      bool
-	AlignValues           bool
-	MaxLineLength         int
-	PreserveCommentIndent         bool
-	CommentMinSpacing             int
-	JoinIndentStyle               JoinIndentStyle
+	Language                          Language
+	Indent                            string
+	KeywordCase                       KeywordCase
+	LinesBetweenQueries               int
+	Params                            *Params
+	ColorConfig                       *ColorConfig
+	TokenizerConfig                   *TokenizerConfig
+	AlignColumnNames                  bool
+	AlignAssignments                  bool
+	AlignValues                       bool
+	MaxLineLength                     int
+	PreserveCommentIndent             bool
+	CommentMinSpacing                 int
+	JoinIndentStyle                   JoinIndentStyle
 	PreserveEmptyLinesBetweenComments bool
 }
 
 func NewDefaultConfig() *Config {
 	return &Config{
-		Language:              StandardSQL,
-		Indent:                DefaultIndent,
-		KeywordCase:           DefaultKeywordCase,
-		LinesBetweenQueries:   DefaultLinesBetweenQueries,
-		Params:                NewMapParams(nil),
-		ColorConfig:           &ColorConfig{},
-		TokenizerConfig:       &TokenizerConfig{},
-		AlignColumnNames:      false,
-		AlignAssignments:      false,
-		AlignValues:           false,
-		MaxLineLength:         DefaultMaxLineLength,
-		PreserveCommentIndent:         false,
-		CommentMinSpacing:             1,
-		JoinIndentStyle:               JoinIndentDefault,
+		Language:                          StandardSQL,
+		Indent:                            DefaultIndent,
+		KeywordCase:                       DefaultKeywordCase,
+		LinesBetweenQueries:               DefaultLinesBetweenQueries,
+		Params:                            NewMapParams(nil),
+		ColorConfig:                       &ColorConfig{},
+		TokenizerConfig:                   &TokenizerConfig{},
+		AlignColumnNames:                  false,
+		AlignAssignments:                  false,
+		AlignValues:                       false,
+		MaxLineLength:                     DefaultMaxLineLength,
+		PreserveCommentIndent:             false,
+		CommentMinSpacing:                 1,
+		JoinIndentStyle:                   JoinIndentDefault,
 		PreserveEmptyLinesBetweenComments: false,
 	}
 }

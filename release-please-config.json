@@ -4,9 +4,7 @@
   "packages": {
     ".": {
       "include-component-in-tag": false,
-      "extra-files": [
-        "internal/version/version.go"
-      ]
+      "extra-files": ["internal/version/version.go"]
     }
   }
 }

@@ -457,9 +457,9 @@ func TestPrettyPrintMultipleFiles(t *testing.T) {
 
 func TestPrettyFormatWithDialects(t *testing.T) {
 	tests := []struct {
-		name     string
-		dialect  string
-		input    string
+		name    string
+		dialect string
+		input   string
 	}{
 		{
 			name:    "postgresql dialect",
@@ -534,9 +534,9 @@ func TestPrettyFormatWithDialects(t *testing.T) {
 
 func TestPrettyPrintWithDialects(t *testing.T) {
 	tests := []struct {
-		name     string
-		dialect  string
-		input    string
+		name    string
+		dialect string
+		input   string
 	}{
 		{
 			name:    "postgresql dialect",

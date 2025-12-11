@@ -1877,7 +1877,7 @@ WHERE
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Indent:                        "  ",
+				Indent:                            "  ",
 				PreserveEmptyLinesBetweenComments: tt.preserve,
 			}
 			actual := Format(tt.query, cfg)

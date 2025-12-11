@@ -586,7 +586,7 @@ func TestFormatWhitespaceOnly(t *testing.T) {
 func TestFormatVeryLongQuery(t *testing.T) {
 	// Build a query with many columns
 	var columns []string
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		columns = append(columns, "column"+string(rune('0'+i%10)))
 	}
 	query := "SELECT " + strings.Join(columns, ", ") + " FROM users"

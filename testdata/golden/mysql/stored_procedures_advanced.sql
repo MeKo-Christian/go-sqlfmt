@@ -7,15 +7,16 @@ CREATE PROCEDURE
   ) BEGIN
     DECLARE base_cost DECIMAL(10, 2);
 
-IF weight <= 1 then
-SET
-  base_cost = 5.00;
+IF
+  weight <= 1 THEN
+  SET
+    base_cost = 5.00;
 
-ELSEIF weight <= 5 then
+ELSEIF weight <= 5 THEN
 SET
   base_cost = 10.00;
 
-ELSEIF weight <= 10 then
+ELSEIF weight <= 10 THEN
 SET
   base_cost = 15.00;
 
@@ -23,13 +24,15 @@ ELSE
 SET
   base_cost = 20.00;
 
-END IF;
+END IF
+;
 
-IF distance <= 100 then
-SET
-  cost = base_cost;
+IF
+  distance <= 100 THEN
+  SET
+    cost = base_cost;
 
-ELSEIF distance <= 500 then
+ELSEIF distance <= 500 THEN
 SET
   cost = base_cost * 1.5;
 
@@ -37,7 +40,8 @@ ELSE
 SET
   cost = base_cost * 2.0;
 
-END IF;
+END IF
+;
 
 END;
 
@@ -65,24 +69,27 @@ SET
 OPEN item_cursor;
 
 process_loop: WHILE
-  done = 0 DO
+  done = 0
+  DO
   FETCH item_cursor INTO current_id;
 
-IF done = 0 then
-SELECT
-  item_status INTO status
-FROM
-  items
-WHERE
-  id = current_id;
+IF
+  done = 0 THEN
+  SELECT
+    item_status INTO status
+  FROM
+    items
+  WHERE
+    id = current_id;
 
-IF status = 'pending' THEN
-UPDATE
-  items
-SET
-  item_status = 'processed'
-WHERE
-  id = current_id;
+IF
+  status = 'pending' THEN
+  UPDATE
+    items
+  SET
+    item_status = 'processed'
+  WHERE
+    id = current_id;
 
 ELSEIF status = 'error' THEN
 UPDATE
@@ -92,9 +99,11 @@ SET
 WHERE
   id = current_id;
 
-END IF;
+END IF
+;
 
-END IF;
+END IF
+;
 
 END WHILE
 ;
@@ -114,7 +123,8 @@ DECLARE fib_curr INT DEFAULT 1;
 
 DECLARE fib_next INT;
 
-CREATE TEMPORARY TABLE IF NOT EXISTS fibonacci_results (position INT, value INT);
+CREATE TEMPORARY TABLE IF
+  NOT EXISTS fibonacci_results (position INT, value INT);
 
 REPEAT
   INSERT INTO
@@ -179,25 +189,30 @@ order_loop: LOOP
   v_total,
   v_status;
 
-IF done = 1 then
-LEAVE order_loop;
+IF
+  done = 1 THEN
+  LEAVE order_loop;
 
-END IF;
+END IF
+;
 
-IF v_status = 'cancelled' then
-ITERATE order_loop;
+IF
+  v_status = 'cancelled' THEN
+  ITERATE order_loop;
 
-END IF;
+END IF
+;
 
-IF v_total > 1000 then
-UPDATE
-  orders
-SET
-  priority = 'high'
-WHERE
-  id = v_order_id;
+IF
+  v_total > 1000 THEN
+  UPDATE
+    orders
+  SET
+    priority = 'high'
+  WHERE
+    id = v_order_id;
 
-ELSEIF v_total > 500 then
+ELSEIF v_total > 500 THEN
 UPDATE
   orders
 SET
@@ -213,7 +228,8 @@ SET
 WHERE
   id = v_order_id;
 
-END IF;
+END IF
+;
 
 UPDATE
   orders
@@ -263,10 +279,12 @@ reconcile_loop: LOOP
   FETCH product_cursor INTO v_product_id,
   v_expected_qty;
 
-IF done then
-LEAVE reconcile_loop;
+IF
+  done THEN
+  LEAVE reconcile_loop;
 
-END IF;
+END IF
+;
 
 SELECT
   COUNT(*) INTO v_actual_qty
@@ -279,23 +297,25 @@ WHERE
 SET
   v_difference = v_actual_qty - v_expected_qty;
 
-IF v_difference != 0 then IF v_difference > 0 then
-INSERT INTO
-  inventory_adjustments (
-    product_id,
-    warehouse_id,
-    adjustment_type,
-    quantity
-  )
-VALUES
-  (
-    v_product_id,
-    warehouse_id,
-    'surplus',
-    v_difference
-  );
+IF
+  v_difference != 0 THEN IF
+    v_difference > 0 THEN
+    INSERT INTO
+      inventory_adjustments (
+        product_id,
+        warehouse_id,
+        adjustment_type,
+        quantity
+      )
+    VALUES
+      (
+        v_product_id,
+        warehouse_id,
+        'surplus',
+        v_difference
+      );
 
-ELSEIF v_difference < 0 then
+ELSEIF v_difference < 0 THEN
 INSERT INTO
   inventory_adjustments (
     product_id,
@@ -311,7 +331,8 @@ VALUES
     ABS(v_difference)
   );
 
-END IF;
+END IF
+;
 
 UPDATE
   inventory
@@ -321,7 +342,8 @@ WHERE
   product_id = v_product_id
   AND warehouse_id = warehouse_id;
 
-END IF;
+END IF
+;
 
 END LOOP
 ;

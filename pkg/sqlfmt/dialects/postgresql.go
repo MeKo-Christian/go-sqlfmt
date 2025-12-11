@@ -210,7 +210,7 @@ func (psf *PostgreSQLFormatter) tokenOverride(tok types.Token, previousReservedW
 			if prevVal == "IF" || prevVal == "ELSIF" || strings.HasSuffix(prevVal, "WHEN") {
 				return types.Token{
 					Type:  types.TokenTypeWord,
-					Value: strings.ToLower(tok.Value),
+					Value: tok.Value,
 					Key:   tok.Key,
 				}
 			}

@@ -24,7 +24,7 @@ SELECT
   settings->>'$.theme' AS theme_preference,
   metadata->'$.tags' [0] AS first_tag,
   CASE
-    WHEN preferences->'$.notifications'->>'$.email' = 'enabled' then 'EMAIL_ON'
+    WHEN preferences->'$.notifications'->>'$.email' = 'enabled' THEN 'EMAIL_ON'
     ELSE 'EMAIL_OFF'
   END as email_status
 FROM
@@ -213,7 +213,7 @@ CREATE TABLE products (
   tax_rate DECIMAL(5, 4) DEFAULT 0.0825, -- Generated columns
   discounted_price DECIMAL(10, 2) GENERATED ALWAYS AS (
     CASE
-      WHEN discount_percentage > 0 then base_price * (1 - discount_percentage / 100)
+      WHEN discount_percentage > 0 THEN base_price * (1 - discount_percentage / 100)
       ELSE base_price
     END
   ) VIRTUAL,

@@ -54,7 +54,7 @@ var (
 	}...)
 
 	// MySQL extends standard SQL top-level words with specific clauses.
-	// IMPORTANT: Multi-word keywords must come first so they match before single words
+	// IMPORTANT: Multi-word keywords must come first so they match before single words.
 	mySQLReservedTopLevelWords = append([]string{
 		// Multi-word keywords first (longer matches)
 		"INSERT IGNORE", "ON DUPLICATE KEY UPDATE",
@@ -88,7 +88,8 @@ var (
 		"ALGORITHM",
 		// Stored procedure control flow keywords - proper indentation structure
 		"ELSEIF", "ELSE", "END IF", "END WHILE", "END LOOP", "END REPEAT",
-		// DO is already in standard newline words, WHILE/IF are opening parens
+		// DO starts the body of WHILE loops, WHILE/IF are opening parens
+		"DO",
 		"UNTIL", // UNTIL ends a REPEAT block
 		"DECLARE", "RETURN", "CALL", "LEAVE", "ITERATE", "EXIT",
 		"OPEN", "CLOSE", "FETCH",
@@ -114,7 +115,7 @@ func NewMySQLTokenizerConfig() *TokenizerConfig {
 		// Backticks for identifiers, single/double quotes for strings
 		// Hex/bit literal forms X'ABCD' and B'1010'
 		StringTypes:             []string{"''", "\"\"", "``", "X''", "B''"},
-		OpenParens:              []string{"(", "CASE", "BEGIN", "WHILE", "LOOP", "REPEAT"},
+		OpenParens:              []string{"(", "CASE", "BEGIN", "IF", "WHILE", "LOOP", "REPEAT"},
 		CloseParens:             []string{")", "END", "END IF", "END WHILE", "END LOOP", "END REPEAT"},
 		IndexedPlaceholderTypes: []string{"?"},       // MySQL uses ? for parameters
 		NamedPlaceholderTypes:   []string{},          // MySQL doesn't support named parameters
@@ -152,7 +153,7 @@ func (msf *MySQLFormatter) tokenOverride(
 			if prevVal == "IF" || prevVal == "ELSEIF" || strings.HasSuffix(prevVal, "WHEN") {
 				return types.Token{
 					Type:  types.TokenTypeWord,
-					Value: strings.ToLower(tok.Value),
+					Value: tok.Value,
 					Key:   tok.Key,
 				}
 			}

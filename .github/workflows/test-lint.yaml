@@ -9,12 +9,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache-dependency-path: "*/*.sum"
-      - name: Install just
-        uses: extractions/setup-just@v2
-      - name: Run linter
-        run: just lint
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --config ./.golangci.toml --timeout 5m

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestCrossDialectFormatting tests that the same query formats correctly across all dialects
+// TestCrossDialectFormatting tests that the same query formats correctly across all dialects.
 func TestCrossDialectFormatting(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -108,7 +108,7 @@ func TestCrossDialectFormatting(t *testing.T) {
 	}
 }
 
-// TestDialectSpecificFeatures tests features that are unique to specific dialects
+// TestDialectSpecificFeatures tests features that are unique to specific dialects.
 func TestDialectSpecificFeatures(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -205,7 +205,7 @@ USE KEYS
 	}
 }
 
-// TestDialectSpecificKeywords tests that dialect-specific reserved words are handled correctly
+// TestDialectSpecificKeywords tests that dialect-specific reserved words are handled correctly.
 func TestDialectSpecificKeywords(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -257,7 +257,7 @@ func TestDialectSpecificKeywords(t *testing.T) {
 	}
 }
 
-// TestCrossDialectEdgeCases tests edge cases that should work across multiple dialects
+// TestCrossDialectEdgeCases tests edge cases that should work across multiple dialects.
 func TestCrossDialectEdgeCases(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -378,7 +378,7 @@ func TestCrossDialectEdgeCases(t *testing.T) {
 	}
 }
 
-// TestDialectComparison tests that formatting differs appropriately between dialects
+// TestDialectComparison tests that formatting differs appropriately between dialects.
 func TestDialectComparison(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -433,7 +433,7 @@ func TestDialectComparison(t *testing.T) {
 	}
 }
 
-// TestCrossDialectComments tests comment handling across dialects
+// TestCrossDialectComments tests comment handling across dialects.
 func TestCrossDialectComments(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -495,7 +495,7 @@ FROM users; -- end of query`,
 	}
 }
 
-// TestCrossDialectParameterStyles tests different parameter placeholder styles
+// TestCrossDialectParameterStyles tests different parameter placeholder styles.
 func TestCrossDialectParameterStyles(t *testing.T) {
 	tests := []struct {
 		name     string
