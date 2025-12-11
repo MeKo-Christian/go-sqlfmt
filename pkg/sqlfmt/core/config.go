@@ -29,6 +29,13 @@ const (
 	KeywordCaseDialect   KeywordCase = "dialect"
 )
 
+type JoinIndentStyle string
+
+const (
+	JoinIndentDefault   JoinIndentStyle = "default"
+	JoinIndentRootLevel JoinIndentStyle = "root-level"
+)
+
 // Config represents the configuration for formatting.
 type Config struct {
 	Language              Language
@@ -41,9 +48,11 @@ type Config struct {
 	AlignColumnNames      bool
 	AlignAssignments      bool
 	AlignValues           bool
-	MaxLineLength         int
-	PreserveCommentIndent bool
-	CommentMinSpacing     int
+	MaxLineLength                 int
+	PreserveCommentIndent         bool
+	CommentMinSpacing             int
+	JoinIndentStyle               JoinIndentStyle
+	PreserveEmptyLinesBetweenComments bool
 }
 
 // TokenizerConfig represents tokenizer configuration.

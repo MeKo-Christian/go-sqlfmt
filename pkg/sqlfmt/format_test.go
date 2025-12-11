@@ -1644,3 +1644,244 @@ VALUES
 		})
 	}
 }
+
+func TestJoinIndentStyle(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+		exp   string
+		style JoinIndentStyle
+	}{
+		{
+			name:  "default JOIN formatting (current behavior)",
+			query: "SELECT * FROM users u JOIN posts p ON u.id = p.user_id;",
+			exp: `SELECT
+  *
+FROM
+  users u
+  JOIN posts p ON u.id = p.user_id;`,
+			style: JoinIndentDefault,
+		},
+		{
+			name:  "root-level JOIN formatting",
+			query: "SELECT * FROM users u JOIN posts p ON u.id = p.user_id;",
+			exp: `SELECT
+  *
+FROM
+  users u
+JOIN
+  posts p
+  ON u.id = p.user_id;`,
+			style: JoinIndentRootLevel,
+		},
+		{
+			name:  "multiple JOINs with default style",
+			query: "SELECT * FROM users u JOIN posts p ON u.id = p.user_id LEFT JOIN comments c ON p.id = c.post_id;",
+			exp: `SELECT
+  *
+FROM
+  users u
+  JOIN posts p ON u.id = p.user_id
+  LEFT JOIN comments c ON p.id = c.post_id;`,
+			style: JoinIndentDefault,
+		},
+		{
+			name:  "multiple JOINs with root-level style",
+			query: "SELECT * FROM users u JOIN posts p ON u.id = p.user_id LEFT JOIN comments c ON p.id = c.post_id;",
+			exp: `SELECT
+  *
+FROM
+  users u
+JOIN
+  posts p
+  ON u.id = p.user_id
+LEFT JOIN
+  comments c
+  ON p.id = c.post_id;`,
+			style: JoinIndentRootLevel,
+		},
+		{
+			name: "JOINs in CTE with root-level (respects nesting)",
+			query: `WITH user_posts AS (
+				SELECT u.* FROM users u
+				JOIN posts p ON u.id = p.user_id
+			) SELECT * FROM user_posts;`,
+			exp: `WITH user_posts AS (
+  SELECT
+    u.*
+  FROM
+    users u
+  JOIN
+    posts p
+    ON u.id = p.user_id
+)
+SELECT
+  *
+FROM
+  user_posts;`,
+			style: JoinIndentRootLevel,
+		},
+		{
+			name:  "INNER JOIN with root-level",
+			query: "SELECT * FROM orders o INNER JOIN customers c ON o.customer_id = c.id;",
+			exp: `SELECT
+  *
+FROM
+  orders o
+INNER JOIN
+  customers c
+  ON o.customer_id = c.id;`,
+			style: JoinIndentRootLevel,
+		},
+		{
+			name:  "complex multi-table JOIN with root-level",
+			query: "SELECT u.name, p.title, c.content FROM users u JOIN posts p ON u.id = p.user_id LEFT JOIN comments c ON p.id = c.post_id WHERE u.active = true;",
+			exp: `SELECT
+  u.name,
+  p.title,
+  c.content
+FROM
+  users u
+JOIN
+  posts p
+  ON u.id = p.user_id
+LEFT JOIN
+  comments c
+  ON p.id = c.post_id
+WHERE
+  u.active = true;`,
+			style: JoinIndentRootLevel,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &Config{
+				Indent:          "  ",
+				JoinIndentStyle: tt.style,
+			}
+			actual := Format(tt.query, cfg)
+			require.Equal(t, tt.exp, actual)
+		})
+	}
+}
+
+func TestPreserveEmptyLinesBetweenComments(t *testing.T) {
+	tests := []struct {
+		name     string
+		query    string
+		exp      string
+		preserve bool
+	}{
+		{
+			name: "preserves single empty line between line comments",
+			query: `-- Comment 1
+
+-- Comment 2
+SELECT 1;`,
+			exp: `-- Comment 1
+
+-- Comment 2
+SELECT
+  1;`,
+			preserve: true,
+		},
+		{
+			name: "preserves multiple empty lines between line comments",
+			query: `-- Comment 1
+
+
+-- Comment 2
+SELECT 1;`,
+			exp: `-- Comment 1
+
+
+-- Comment 2
+SELECT
+  1;`,
+			preserve: true,
+		},
+		{
+			name: "does NOT preserve when disabled",
+			query: `-- Comment 1
+
+-- Comment 2
+SELECT 1;`,
+			exp: `-- Comment 1
+-- Comment 2
+SELECT
+  1;`,
+			preserve: false,
+		},
+		{
+			name: "preserves empty lines between block comments",
+			query: `/* Comment 1 */
+
+/* Comment 2 */
+SELECT 1;`,
+			exp: `/* Comment 1 */
+
+/* Comment 2 */
+SELECT
+  1;`,
+			preserve: true,
+		},
+		{
+			name: "mixed line and block comments",
+			query: `-- Line comment
+
+/* Block comment */
+
+-- Another line comment
+SELECT 1;`,
+			exp: `-- Line comment
+
+/* Block comment */
+
+-- Another line comment
+SELECT
+  1;`,
+			preserve: true,
+		},
+		{
+			name: "no empty lines between comments - no change",
+			query: `-- Comment 1
+-- Comment 2
+SELECT 1;`,
+			exp: `-- Comment 1
+-- Comment 2
+SELECT
+  1;`,
+			preserve: true,
+		},
+		{
+			name: "preserves indentation with empty lines",
+			query: `SELECT * FROM users WHERE
+  -- Comment 1
+  
+  -- Comment 2
+  active = true;`,
+			exp: `SELECT
+  *
+FROM
+  users
+WHERE
+  -- Comment 1
+  
+  -- Comment 2
+  active = true;`,
+			preserve: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &Config{
+				Indent:                        "  ",
+				PreserveEmptyLinesBetweenComments: tt.preserve,
+			}
+			actual := Format(tt.query, cfg)
+			require.Equal(t, tt.exp, actual)
+		})
+	}
+}

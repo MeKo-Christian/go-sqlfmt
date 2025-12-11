@@ -4,7 +4,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const version = "v1.61.0"
+// x-release-please-start-version
+const version = "v1.0.0"
+
+// x-release-please-end
 
 var rootCmd = &cobra.Command{
 	Use:   "sqlfmt",

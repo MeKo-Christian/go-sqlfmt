@@ -66,6 +66,8 @@ func createFormatterForLanguage(c *Config) Formatter {
 		AlignAssignments:    c.AlignAssignments,
 		AlignValues:         c.AlignValues,
 		MaxLineLength:       c.MaxLineLength,
+		JoinIndentStyle:     core.JoinIndentStyle(c.JoinIndentStyle),
+		PreserveEmptyLinesBetweenComments: c.PreserveEmptyLinesBetweenComments,
 	}
 
 	return dialects.CreateFormatterForLanguage(coreCfg)
@@ -154,6 +156,8 @@ func convertToInternalConfig(c *Config) *core.Config {
 		MaxLineLength:         c.MaxLineLength,
 		PreserveCommentIndent: c.PreserveCommentIndent,
 		CommentMinSpacing:     c.CommentMinSpacing,
+		JoinIndentStyle:       core.JoinIndentStyle(c.JoinIndentStyle),
+		PreserveEmptyLinesBetweenComments: c.PreserveEmptyLinesBetweenComments,
 	}
 }
 

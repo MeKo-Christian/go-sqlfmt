@@ -49,6 +49,11 @@ type formatter struct {
 	valuesParenthesisLevel  int // Track parenthesis depth within VALUES clause
 	// Line length tracking
 	currentLineLength int
+	// JOIN formatting tracking
+	inFromClause bool
+	// Comment empty line tracking
+	previousTokenType types.TokenType
+	emptyLinesPending int
 }
 
 // newFormatter creates a new formatter instance.
@@ -366,7 +371,17 @@ func (f *formatter) getFormattedQueryFromTokens() string {
 			tok = f.tokenOverride(tok, f.previousReservedWord)
 		}
 
+		// Track empty lines between comments if enabled
+		if f.cfg.PreserveEmptyLinesBetweenComments {
+			f.trackEmptyLinesBetweenComments(tok)
+		}
+
 		f.formatToken(tok, formattedQuery)
+
+		// Update previous token type for comment tracking
+		if tok.Type != types.TokenTypeWhitespace {
+			f.previousTokenType = tok.Type
+		}
 	}
 	return formattedQuery.String()
 }
@@ -399,6 +414,14 @@ func (f *formatter) formatToken(tok types.Token, formattedQuery *strings.Builder
 
 func (f *formatter) formatReservedTopLevelToken(tok types.Token, formattedQuery *strings.Builder) {
 	f.formatTopLevelReservedWord(tok, formattedQuery)
+
+	// Track FROM clause for JOIN formatting
+	upperValue := strings.ToUpper(tok.Value)
+	if upperValue == "FROM" {
+		f.inFromClause = true
+	} else if f.inFromClause && f.isFromClauseTerminator(upperValue) {
+		f.inFromClause = false
+	}
 
 	// Track SELECT clause state for alignment
 	if strings.ToUpper(tok.Value) == "SELECT" {
@@ -454,7 +477,16 @@ func (f *formatter) formatReservedNewlineToken(tok types.Token, formattedQuery *
 }
 
 func (f *formatter) formatReservedToken(tok types.Token, formattedQuery *strings.Builder) {
-	f.formatWithSpaces(tok, formattedQuery)
+	// Special handling for ON keyword in JOIN root-level mode
+	if f.cfg.JoinIndentStyle == JoinIndentRootLevel && f.inFromClause && f.isOnKeyword(tok.Value) {
+		f.addNewline(formattedQuery)
+		value := f.equalizeWhitespace(f.formatReservedWord(tok.Value))
+		formattedQuery.WriteString(value)
+		formattedQuery.WriteString(" ")
+		f.updateLineLength(value + " ")
+	} else {
+		f.formatWithSpaces(tok, formattedQuery)
+	}
 	f.previousReservedWord = tok
 }
 
@@ -484,11 +516,41 @@ func (f *formatter) formatDefaultToken(tok types.Token, formattedQuery *strings.
 	}
 }
 
+// trackEmptyLinesBetweenComments detects and tracks empty lines between consecutive comments.
+func (f *formatter) trackEmptyLinesBetweenComments(tok types.Token) {
+	if tok.Type == types.TokenTypeWhitespace {
+		// Count newlines in whitespace token
+		newlineCount := strings.Count(tok.Value, "\n")
+
+		// Check if previous token was a comment
+		if f.previousTokenType == types.TokenTypeLineComment && newlineCount >= 1 {
+			// Line comments include trailing newline, so whitespace newlines = empty lines
+			f.emptyLinesPending = newlineCount
+		} else if f.previousTokenType == types.TokenTypeBlockComment && newlineCount > 1 {
+			// Block comments don't include trailing newline (formatter adds it)
+			// So we need newlineCount - 1 empty lines
+			f.emptyLinesPending = newlineCount - 1
+		}
+	} else if tok.Type != types.TokenTypeLineComment && tok.Type != types.TokenTypeBlockComment {
+		// Non-comment, non-whitespace token - reset pending empty lines
+		f.emptyLinesPending = 0
+	}
+}
+
 func (f *formatter) formatLineComment(tok types.Token, query *strings.Builder) {
 	value := tok.Value
 
 	// Check if we're at the start of a line (current line only has indentation)
 	atStartOfLine := f.currentLineLength == len(f.indentation.GetIndent())
+
+	// Insert pending empty lines before comment (if preserving empty lines between comments)
+	if f.cfg.PreserveEmptyLinesBetweenComments && f.emptyLinesPending > 0 && atStartOfLine {
+		for i := 0; i < f.emptyLinesPending; i++ {
+			query.WriteString("\n")
+		}
+		query.WriteString(f.indentation.GetIndent())
+		f.emptyLinesPending = 0
+	}
 
 	if atStartOfLine {
 		// Already on a new line, just add the comment without extra spacing
@@ -532,6 +594,15 @@ func (f *formatter) formatBlockComment(tok types.Token, query *strings.Builder) 
 	if isSingleLine {
 		// Check if we're at the start of a line (current line only has indentation)
 		atStartOfLine := f.currentLineLength == len(f.indentation.GetIndent())
+
+		// Insert pending empty lines before comment (if preserving empty lines between comments)
+		if f.cfg.PreserveEmptyLinesBetweenComments && f.emptyLinesPending > 0 && atStartOfLine {
+			for i := 0; i < f.emptyLinesPending; i++ {
+				query.WriteString("\n")
+			}
+			query.WriteString(f.indentation.GetIndent())
+			f.emptyLinesPending = 0
+		}
 
 		if atStartOfLine {
 			// Already on a new line, just add the comment without extra spacing
@@ -630,13 +701,71 @@ func (f *formatter) formatTopLevelReservedWord(tok types.Token, query *strings.B
 }
 
 func (f *formatter) formatNewlineReservedWord(tok types.Token, query *strings.Builder) {
-	// Check if we need to break line due to max length
-	// Even if this is a newline reserved word, we still want to honor that behavior
+	// Check if this is a JOIN keyword and we should use root-level formatting
+	isJoin := f.isJoinKeyword(strings.ToUpper(tok.Value))
+
+	if isJoin && f.cfg.JoinIndentStyle == JoinIndentRootLevel && f.inFromClause {
+		f.formatJoinAtRootLevel(tok, query)
+	} else {
+		// Default behavior: newline without indentation change
+		f.addNewline(query)
+		value := f.equalizeWhitespace(f.formatReservedWord(tok.Value))
+		query.WriteString(value)
+		query.WriteString(" ")
+		f.updateLineLength(value + " ")
+	}
+}
+
+// isOnKeyword checks if the token is ON (for JOIN conditions)
+func (f *formatter) isOnKeyword(value string) bool {
+	return strings.ToUpper(value) == "ON"
+}
+
+// isJoinKeyword checks if the token value is a JOIN keyword
+func (f *formatter) isJoinKeyword(value string) bool {
+	joinKeywords := []string{
+		"JOIN", "INNER JOIN", "LEFT JOIN", "RIGHT JOIN",
+		"LEFT OUTER JOIN", "RIGHT OUTER JOIN", "OUTER JOIN",
+		"CROSS JOIN", "CROSS APPLY", "OUTER APPLY",
+		"FULL JOIN", "FULL OUTER JOIN",
+		"LATERAL JOIN", "LEFT LATERAL JOIN", "RIGHT LATERAL JOIN",
+		"CROSS JOIN LATERAL",
+	}
+	for _, keyword := range joinKeywords {
+		if value == keyword {
+			return true
+		}
+	}
+	return false
+}
+
+// formatJoinAtRootLevel formats JOIN keyword at same level as FROM
+func (f *formatter) formatJoinAtRootLevel(tok types.Token, query *strings.Builder) {
+	// Decrease to root level (same as FROM)
+	f.indentation.DecreaseTopLevel()
 	f.addNewline(query)
+
+	// Increase for content under JOIN (table name, ON clause)
+	f.indentation.IncreaseTopLevel()
+
+	// Write JOIN keyword
 	value := f.equalizeWhitespace(f.formatReservedWord(tok.Value))
 	query.WriteString(value)
-	query.WriteString(" ")
-	f.updateLineLength(value + " ")
+	f.updateLineLength(value)
+
+	// Add newline (will use increased indentation for next line)
+	f.addNewline(query)
+}
+
+// isFromClauseTerminator checks if a keyword terminates the FROM clause
+func (f *formatter) isFromClauseTerminator(value string) bool {
+	terminators := []string{"WHERE", "GROUP BY", "HAVING", "ORDER BY", "LIMIT", "UNION", "INTERSECT", "EXCEPT"}
+	for _, term := range terminators {
+		if strings.ToUpper(value) == term {
+			return true
+		}
+	}
+	return false
 }
 
 // equalizeWhitespace replaces any sequence of whitespace characters with a single space.

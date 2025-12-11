@@ -1,0 +1,16 @@
+{
+  "release-type": "go",
+  "initial-version": "1.0.0",
+  "packages": {
+    ".": {
+      "include-component-in-tag": false,
+      "extra-files": [
+        {
+          "type": "go",
+          "path": "cmd/root.go",
+          "glob": false
+        }
+      ]
+    }
+  }
+}

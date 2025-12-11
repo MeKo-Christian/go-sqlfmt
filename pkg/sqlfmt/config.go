@@ -33,6 +33,13 @@ const (
 	DefaultKeywordCase = KeywordCasePreserve
 )
 
+type JoinIndentStyle string
+
+const (
+	JoinIndentDefault   JoinIndentStyle = "default"
+	JoinIndentRootLevel JoinIndentStyle = "root-level"
+)
+
 type Config struct {
 	Language              Language
 	Indent                string
@@ -45,8 +52,10 @@ type Config struct {
 	AlignAssignments      bool
 	AlignValues           bool
 	MaxLineLength         int
-	PreserveCommentIndent bool
-	CommentMinSpacing     int
+	PreserveCommentIndent         bool
+	CommentMinSpacing             int
+	JoinIndentStyle               JoinIndentStyle
+	PreserveEmptyLinesBetweenComments bool
 }
 
 func NewDefaultConfig() *Config {
@@ -62,8 +71,10 @@ func NewDefaultConfig() *Config {
 		AlignAssignments:      false,
 		AlignValues:           false,
 		MaxLineLength:         DefaultMaxLineLength,
-		PreserveCommentIndent: false,
-		CommentMinSpacing:     1,
+		PreserveCommentIndent:         false,
+		CommentMinSpacing:             1,
+		JoinIndentStyle:               JoinIndentDefault,
+		PreserveEmptyLinesBetweenComments: false,
 	}
 }
 
@@ -135,6 +146,16 @@ func (c *Config) WithPreserveCommentIndent(preserve bool) *Config {
 
 func (c *Config) WithCommentMinSpacing(spacing int) *Config {
 	c.CommentMinSpacing = spacing
+	return c
+}
+
+func (c *Config) WithJoinIndentStyle(style JoinIndentStyle) *Config {
+	c.JoinIndentStyle = style
+	return c
+}
+
+func (c *Config) WithPreserveEmptyLinesBetweenComments(preserve bool) *Config {
+	c.PreserveEmptyLinesBetweenComments = preserve
 	return c
 }
 
