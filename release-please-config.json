@@ -5,11 +5,7 @@
     ".": {
       "include-component-in-tag": false,
       "extra-files": [
-        {
-          "type": "go",
-          "path": "cmd/root.go",
-          "glob": false
-        }
+        "internal/version/version.go"
       ]
     }
   }
