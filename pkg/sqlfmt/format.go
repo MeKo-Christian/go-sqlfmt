@@ -2,6 +2,7 @@ package sqlfmt
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/core"
 	"github.com/MeKo-Christian/go-sqlfmt/pkg/sqlfmt/dialects"
@@ -12,11 +13,19 @@ type Formatter = dialects.Formatter
 
 // Format formats the SQL query according to an optional config.
 func Format(query string, cfg ...*Config) string {
+	// Return empty string for empty input
+	if strings.TrimSpace(query) == "" {
+		return ""
+	}
 	return getFormatter(false, cfg...).Format(query)
 }
 
 // PrettyFormat formats the SQL query the same as Format but with coloring added.
 func PrettyFormat(query string, cfg ...*Config) string {
+	// Return empty string for empty input
+	if strings.TrimSpace(query) == "" {
+		return ""
+	}
 	return getFormatter(true, cfg...).Format(query)
 }
 

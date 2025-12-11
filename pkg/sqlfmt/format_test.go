@@ -102,6 +102,16 @@ func TestFormatBasic(t *testing.T) {
 		cfg   Config
 	}{
 		{
+			name:  "formats empty string",
+			query: "",
+			exp:   "",
+		},
+		{
+			name:  "formats whitespace-only string",
+			query: "   \n\t  \n  ",
+			exp:   "",
+		},
+		{
 			name:  "uses given indent config for indention",
 			query: "SELECT count(*),Column1 FROM Table1;",
 			exp: Dedent(`

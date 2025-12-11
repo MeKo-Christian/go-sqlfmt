@@ -270,6 +270,14 @@ func formatFile(filename string, baseConfig *sqlfmt.Config) error {
 
 	contentStr := string(content)
 
+	// Skip empty files - they're valid and don't need formatting
+	if strings.TrimSpace(contentStr) == "" {
+		if write {
+			fmt.Printf("Skipped %s (empty file)\n", filename)
+		}
+		return nil
+	}
+
 	// Start with base config
 	config := baseConfig
 
