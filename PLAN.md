@@ -149,7 +149,7 @@ The formatter was designed for flat SQL queries where `;` separates independent 
 
 **Files**: `pkg/sqlfmt/core/formatter.go`
 
-- [ ] Modify `formatQuerySeparator()`:
+- [x] Modify `formatQuerySeparator()`:
   ```go
   if f.isInProceduralBlock() {
       // Statement terminator: keep procedural indentation
@@ -185,6 +185,7 @@ The formatter was designed for flat SQL queries where `;` separates independent 
   - Call `DecreaseProcedural()` instead of `DecreaseBlockLevel()`
   - Before formatting END, call `ResetToProceduralBase()` to clear any top-level indents accumulated inside the block
 - [ ] Handle END IF, END LOOP, END WHILE, END REPEAT similarly
+- [ ] Fix existing tests that might now fail due to changed END indentation
 
 **Tests**:
 - `CREATE PROCEDURE foo() BEGIN SELECT 1; END;` - END at column 0

@@ -9,19 +9,16 @@ UPDATE
       user_audit (user_id, old_email, new_email, changed_at)
     VALUES
       (NEW.id, OLD.email, NEW.email, datetime('now'));
-
-UPDATE
-  user_stats
-SET
-  update_count = update_count + 1
-WHERE
-  user_id = NEW.id;
-
-INSERT INTO
-  change_log (table_name, record_id, action)
-VALUES
-  ('users', NEW.id, 'UPDATE');
-
+  UPDATE
+    user_stats
+  SET
+    update_count = update_count + 1
+  WHERE
+    user_id = NEW.id;
+  INSERT INTO
+    change_log (table_name, record_id, action)
+  VALUES
+    ('users', NEW.id, 'UPDATE');
 END;
 
 -- BEFORE INSERT trigger with validation logic
@@ -37,12 +34,10 @@ INSERT
         WHEN NEW.stock < 0 THEN RAISE(ABORT, 'Stock cannot be negative')
         WHEN LENGTH(NEW.name) < 3 THEN RAISE(ABORT, 'Product name too short')
       END;
-
-INSERT INTO
-  product_audit (product_id, action, timestamp)
-VALUES
-  (NEW.id, 'INSERT', datetime('now'));
-
+  INSERT INTO
+    product_audit (product_id, action, timestamp)
+  VALUES
+    (NEW.id, 'INSERT', datetime('now'));
 END;
 
 -- INSTEAD OF trigger for view
@@ -60,19 +55,16 @@ UPDATE
       updated_at = datetime('now')
     WHERE
       id = NEW.id;
-
-UPDATE
-  user_profiles
-SET
-  bio = NEW.bio
-WHERE
-  user_id = NEW.id;
-
-INSERT INTO
-  view_update_log (view_name, user_id, timestamp)
-VALUES
-  ('user_summary_view', NEW.id, datetime('now'));
-
+  UPDATE
+    user_profiles
+  SET
+    bio = NEW.bio
+  WHERE
+    user_id = NEW.id;
+  INSERT INTO
+    view_update_log (view_name, user_id, timestamp)
+  VALUES
+    ('user_summary_view', NEW.id, datetime('now'));
 END;
 
 -- AFTER DELETE trigger with cascading actions
@@ -85,27 +77,22 @@ AFTER
       user_sessions
     WHERE
       user_id = OLD.id;
-
-DELETE FROM
-  user_preferences
-WHERE
-  user_id = OLD.id;
-
-DELETE FROM
-  user_notifications
-WHERE
-  user_id = OLD.id;
-
-INSERT INTO
-  deleted_users (id, email, deleted_at)
-VALUES
-  (OLD.id, OLD.email, datetime('now'));
-
-UPDATE
-  statistics
-SET
-  total_users = total_users - 1;
-
+  DELETE FROM
+    user_preferences
+  WHERE
+    user_id = OLD.id;
+  DELETE FROM
+    user_notifications
+  WHERE
+    user_id = OLD.id;
+  INSERT INTO
+    deleted_users (id, email, deleted_at)
+  VALUES
+    (OLD.id, OLD.email, datetime('now'));
+  UPDATE
+    statistics
+  SET
+    total_users = total_users - 1;
 END;
 
 -- Complex trigger with conditional logic
@@ -134,12 +121,10 @@ UPDATE
             (NEW.id, 'User cancelled', datetime('now'))
         )
       END;
-
-INSERT INTO
-  order_status_history (order_id, old_status, new_status, changed_at)
-VALUES
-  (NEW.id, OLD.status, NEW.status, datetime('now'));
-
+  INSERT INTO
+    order_status_history (order_id, old_status, new_status, changed_at)
+  VALUES
+    (NEW.id, OLD.status, NEW.status, datetime('now'));
 END;
 
 -- BEFORE UPDATE trigger with validation and auto-update
@@ -154,12 +139,10 @@ UPDATE
         WHEN NEW.price < OLD.price * 0.5 THEN RAISE(ABORT, 'Price reduction exceeds 50%')
         WHEN NEW.stock > OLD.stock + 1000 THEN RAISE(ABORT, 'Stock increase too large')
       END;
-
-SELECT
-  NEW.id AS id,
-  NEW.name AS name,
-  NEW.price AS price,
-  NEW.stock AS stock,
-  datetime('now') AS updated_at;
-
+  SELECT
+    NEW.id AS id,
+    NEW.name AS name,
+    NEW.price AS price,
+    NEW.stock AS stock,
+    datetime('now') AS updated_at;
 END;

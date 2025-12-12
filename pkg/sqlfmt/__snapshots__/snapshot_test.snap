@@ -173,7 +173,6 @@ CREATE PROCEDURE
       orders
     WHERE
       customer_id = user_id;
-
 END;
 ---
 
@@ -366,7 +365,6 @@ UPDATE
       modified_at = datetime('now')
     WHERE
       id = NEW.id;
-
 END;
 ---
 

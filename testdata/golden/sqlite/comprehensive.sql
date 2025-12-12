@@ -58,12 +58,10 @@ UPDATE
       modified_at = datetime('now')
     WHERE
       id = NEW.id;
-
-INSERT INTO
-  order_audit (order_id, old_status, new_status, changed_at)
-VALUES
-  (NEW.id, OLD.status, NEW.status, datetime('now'));
-
+  INSERT INTO
+    order_audit (order_id, old_status, new_status, changed_at)
+  VALUES
+    (NEW.id, OLD.status, NEW.status, datetime('now'));
 END;
 
 -- View with CTE and window functions

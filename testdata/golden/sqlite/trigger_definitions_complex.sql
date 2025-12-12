@@ -9,5 +9,4 @@ INSERT
         WHEN NEW.amount <= 0 THEN RAISE(ABORT, 'Order amount must be positive')
         WHEN NEW.amount > 10000 THEN RAISE(ABORT, 'Order amount exceeds maximum limit')
       END;
-
 END;

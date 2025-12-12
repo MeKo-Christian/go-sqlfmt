@@ -1091,12 +1091,23 @@ func (f *formatter) formatDialectSpecificCase(value string) string {
 }
 
 func (f *formatter) formatQuerySeparator(tok types.Token, query *strings.Builder) {
-	f.indentation.ResetIndentation()
-	trimSpacesEnd(query)
-	query.WriteString(tok.Value)
-	f.updateLineLength(tok.Value)
-	query.WriteString(strings.Repeat("\n", f.cfg.LinesBetweenQueries))
-	f.currentLineLength = 0 // Reset after query separator
+	if f.isInProceduralBlock() {
+		// Statement terminator: keep procedural indentation
+		f.indentation.ResetToProceduralBase()
+		trimSpacesEnd(query)
+		query.WriteString(tok.Value)
+		query.WriteString("\n")
+		// Set line length to indentation after newline
+		f.currentLineLength = len(f.indentation.GetIndent())
+	} else {
+		// Query separator: full reset + blank lines
+		f.indentation.ResetIndentation()
+		trimSpacesEnd(query)
+		query.WriteString(tok.Value)
+		f.updateLineLength(tok.Value)
+		query.WriteString(strings.Repeat("\n", f.cfg.LinesBetweenQueries))
+		f.currentLineLength = 0 // Reset after query separator
+	}
 }
 
 func (f *formatter) formatString(tok types.Token, query *strings.Builder) {

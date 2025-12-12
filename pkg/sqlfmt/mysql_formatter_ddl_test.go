@@ -203,7 +203,6 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				      users
 				    WHERE
 				      id = user_id;
-
 				END;
 			`)
 		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
@@ -228,14 +227,12 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				      users
 				    WHERE
 				      id = user_id;
-
-				UPDATE
-				  users
-				SET
-				  name = new_name
-				WHERE
-				  id = user_id;
-
+				  UPDATE
+				    users
+				  SET
+				    name = new_name
+				  WHERE
+				    id = user_id;
 				END;
 			`)
 		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
@@ -249,7 +246,6 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				CREATE FUNCTION
 				  calculate_tax(price DECIMAL(10, 2)) RETURNS DECIMAL(10, 2) BEGIN
 				    RETURN price * 0.08;
-
 				END;
 			`)
 		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
@@ -267,37 +263,31 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				CREATE PROCEDURE
 				  process_order(IN order_id INT) BEGIN
 				    DECLARE status VARCHAR(20);
-
-				SELECT
-				  order_status INTO status
-				FROM
-				  orders
-				WHERE
-				  id = order_id;
-
+				  SELECT
+				    order_status INTO status
+				  FROM
+				    orders
+				  WHERE
+				    id = order_id;
 				IF
-				  status = 'pending' THEN
+				    status = 'pending' THEN
+				    UPDATE
+				      orders
+				    SET
+				      order_status = 'processing'
+				    WHERE
+				      id = order_id;
+				  ELSEIF status = 'processing' THEN
 				  UPDATE
 				    orders
 				  SET
-				    order_status = 'processing'
+				    order_status = 'completed'
 				  WHERE
 				    id = order_id;
-
-				ELSEIF status = 'processing' THEN
-				UPDATE
-				  orders
-				SET
-				  order_status = 'completed'
-				WHERE
-				  id = order_id;
-
-				ELSE SIGNAL SQLSTATE '45000'
-				SET
-				  MESSAGE_TEXT = 'Invalid order status';
-
+				  ELSE SIGNAL SQLSTATE '45000'
+				  SET
+				    MESSAGE_TEXT = 'Invalid order status';
 				END IF;
-
 				END;
 			`)
 		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
@@ -312,16 +302,13 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				CREATE PROCEDURE
 				  countdown(IN start_value INT) BEGIN
 				    DECLARE counter INT DEFAULT start_value;
-
 				WHILE
-				  counter > 0
-				  DO
-				  SELECT
-				    counter;
-
-				SET
-				  counter = counter - 1;
-
+				    counter > 0
+				    DO
+				    SELECT
+				      counter;
+				  SET
+				    counter = counter - 1;
 				END WHILE;
 
 				END;
@@ -340,26 +327,19 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				CREATE PROCEDURE
 				  find_max(IN limit_val INT) BEGIN
 				    DECLARE i INT DEFAULT 1;
-
-				DECLARE max_val INT DEFAULT 0;
-
+				  DECLARE max_val INT DEFAULT 0;
 				my_loop: LOOP
-				  IF
-				    i > limit_val THEN
-				    LEAVE my_loop;
-
+				    IF
+				      i > limit_val THEN
+				      LEAVE my_loop;
 				END IF;
-
 				IF
 				  i > max_val THEN
 				  SET
 				    max_val = i;
-
 				END IF;
-
 				SET
 				  i = i + 1;
-
 				END LOOP my_loop;
 
 				SELECT
@@ -379,15 +359,12 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				CREATE PROCEDURE
 				  repeat_example() BEGIN
 				    DECLARE counter INT DEFAULT 0;
-
 				REPEAT
-				  SET
-				    counter = counter + 1;
-
-				SELECT
-				  CONCAT('Count: ', counter);
-
-				UNTIL counter >= 5
+				    SET
+				      counter = counter + 1;
+				  SELECT
+				    CONCAT('Count: ', counter);
+				  UNTIL counter >= 5
 				END REPEAT;
 
 				END;
@@ -404,14 +381,11 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				CREATE FUNCTION
 				  get_user_count() RETURNS INT DETERMINISTIC BEGIN
 				    DECLARE user_count INT;
-
-				SELECT
-				  COUNT(*) INTO user_count
-				FROM
-				  users;
-
-				RETURN user_count;
-
+				  SELECT
+				    COUNT(*) INTO user_count
+				  FROM
+				    users;
+				  RETURN user_count;
 				END;
 			`)
 		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)

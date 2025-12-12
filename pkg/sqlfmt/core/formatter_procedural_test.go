@@ -87,25 +87,24 @@ FROM
 		{
 			name:  "BEGIN/END block",
 			input: "BEGIN SELECT 1; END",
+			// After task 2.4: semicolons inside BEGIN blocks act as statement terminators (no blank lines)
 			expected: `BEGIN
   SELECT
     1;
-
 END`,
 		},
 		{
 			name:  "nested BEGIN blocks",
 			input: "BEGIN BEGIN SELECT 1; END; END",
-			// TODO: Both END keywords should be indented to align with their BEGINs
+			// After task 2.4: semicolons inside BEGIN blocks act as statement terminators (no blank lines)
+			// TODO (task 2.5): Both END keywords should be indented to align with their BEGINs
 			// Current behavior: Both ENDs are at column 0
 			// Expected future: Inner END should be at column 2, outer END at column 0
 			expected: `BEGIN
   BEGIN
     SELECT
       1;
-
-END;
-
+  END;
 END`,
 		},
 	}
