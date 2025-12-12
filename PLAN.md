@@ -94,47 +94,52 @@ The formatter was designed for flat SQL queries where `;` separates independent 
 
 ---
 
-#### 2.2 Refactor Indentation to Track Sources
+#### 2.2 Refactor Indentation to Track Sources ✅
 
 **Goal**: Make the indentation system aware of WHERE each indent came from.
 
 **Files**: `pkg/sqlfmt/utils/indentation.go`
 
-- [ ] Add `indentSource` field to track origin: `"top-level"`, `"block"`, `"procedural-block"`
-- [ ] Create `IndentEntry` struct: `{type: indentType, source: string, keyword: string}`
-- [ ] Replace `indentTypes []indentType` with `indentStack []IndentEntry`
-- [ ] Add methods:
+- [x] Add `indentSource` field to track origin: `"top-level"`, `"block"`, `"procedural-block"`
+- [x] Create `IndentEntry` struct: `{type: indentType, source: string, keyword: string}`
+- [x] Replace `indentTypes []indentType` with `indentStack []IndentEntry`
+- [x] Add methods:
   - `IncreaseProcedural(keyword string)` - for BEGIN, IF, LOOP, etc.
   - `DecreaseProcedural()` - only removes procedural indents
   - `GetProceduralDepth() int` - count of procedural blocks
   - `ResetToProceduralBase()` - keep procedural indents, reset top-level
-- [ ] Preserve backward compatibility: existing methods work unchanged
+- [x] Preserve backward compatibility: existing methods work unchanged
 
 **Tests**:
-- Unit tests for new IndentEntry tracking
-- Verify existing tests pass (no behavior change yet)
 
-**Acceptance**: All existing tests pass. New methods available for use.
+- [x] Unit tests for new IndentEntry tracking
+- [x] Verify existing tests pass (no behavior change yet)
+
+**Acceptance**: ✅ All existing tests pass. New methods available for use.
 
 ---
 
-#### 2.3 Add Procedural Block Tracking to Formatter
+#### 2.3 Add Procedural Block Tracking to Formatter ✅
 
 **Goal**: Formatter tracks when it enters/exits procedural blocks (BEGIN/END).
 
-**Files**: `pkg/sqlfmt/core/formatter.go`
+**Files**: `pkg/sqlfmt/core/formatter.go`, `pkg/sqlfmt/core/formatter_procedural_test.go`
 
-- [ ] Add `proceduralDepth int` field to formatter struct
-- [ ] Increment in `formatOpeningParentheses()` when token is BEGIN
-- [ ] Decrement in `formatClosingParentheses()` when token is END
-- [ ] Add `isInProceduralBlock() bool` helper method
-- [ ] Use `IncreaseProcedural()` instead of `IncreaseBlockLevel()` for BEGIN
+- [x] Add `proceduralDepth int` field to formatter struct
+- [x] Increment in `formatOpeningParentheses()` when token is BEGIN
+- [x] Decrement in `formatClosingParentheses()` when token is END
+- [x] Add `isInProceduralBlock() bool` helper method
+- [x] Use `IncreaseProcedural()` instead of `IncreaseBlockLevel()` for BEGIN
+- [x] Document known issue in tests: END keywords currently at column 0 (will be fixed in 2.5)
 
 **Tests**:
 - Test procedural depth tracking across various queries
 - Verify existing behavior unchanged
+- Added TODO comments noting END indentation issue to be fixed in task 2.5
 
-**Acceptance**: Procedural depth accurately tracked. All tests pass.
+**Known Issue**: END keywords are currently formatted at column 0 instead of aligning with their opening BEGIN. This is documented in test comments and will be fixed in task 2.5.
+
+**Acceptance**: ✅ Procedural depth accurately tracked. All tests pass.
 
 ---
 

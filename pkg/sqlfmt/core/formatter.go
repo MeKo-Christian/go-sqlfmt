@@ -56,6 +56,8 @@ type formatter struct {
 	emptyLinesPending int
 	// Block context tracking (for IF/CASE/BEGIN differentiation)
 	blockStack []string
+	// Procedural block tracking (for BEGIN/END depth)
+	proceduralDepth int
 }
 
 // newFormatter creates a new formatter instance.
@@ -90,6 +92,7 @@ func newFormatter(cfg *Config, tokenizer *tokenizer,
 		valuesParenthesisLevel:  0,
 		currentLineLength:       0,
 		blockStack:              []string{},
+		proceduralDepth:         0,
 	}
 }
 
@@ -797,6 +800,10 @@ func (f *formatter) formatOpeningParentheses(tok types.Token, query *strings.Bui
 	upperValue := strings.ToUpper(value)
 	if upperValue == "IF" || upperValue == "CASE" || upperValue == "BEGIN" {
 		f.pushBlock(upperValue)
+		// Track procedural depth for BEGIN blocks
+		if upperValue == "BEGIN" {
+			f.proceduralDepth++
+		}
 	}
 
 	query.WriteString(value)
@@ -813,7 +820,12 @@ func (f *formatter) formatOpeningParentheses(tok types.Token, query *strings.Bui
 		return
 	}
 	if !f.inlineBlock.IsActive() {
-		f.indentation.IncreaseBlockLevel()
+		// Use procedural indentation for BEGIN blocks, regular block level for others
+		if upperValue == "BEGIN" {
+			f.indentation.IncreaseProcedural("BEGIN")
+		} else {
+			f.indentation.IncreaseBlockLevel()
+		}
 		f.addNewline(query)
 	}
 }
@@ -833,6 +845,14 @@ func (f *formatter) formatClosingParentheses(tok types.Token, query *strings.Bui
 		f.valuesParenthesisLevel--
 	}
 
+	// Check if this is an END keyword before the switch
+	upperValue := strings.ToUpper(value)
+	isEndKeyword := upperValue == "END" || upperValue == "END IF" || upperValue == "END CASE" ||
+		upperValue == "END LOOP" || upperValue == "END WHILE" || upperValue == "END REPEAT"
+
+	// Check if we're closing a BEGIN block
+	isClosingBegin := isEndKeyword && f.currentBlock() == "BEGIN"
+
 	switch {
 	case f.inlineBlock.IsActive():
 		f.inlineBlock.End()
@@ -841,16 +861,24 @@ func (f *formatter) formatClosingParentheses(tok types.Token, query *strings.Bui
 		// For INSERT VALUES alignment, treat as inline block
 		f.formatWithSpaceAfter(tok, query)
 	default:
-		f.indentation.DecreaseBlockLevel()
+		// Decrease indentation first (this affects the NEXT line after END, not END itself)
+		if isClosingBegin {
+			f.indentation.DecreaseProcedural()
+		} else {
+			f.indentation.DecreaseBlockLevel()
+		}
+		// Add newline at the decreased level
 		f.addNewline(query)
 		f.formatWithSpaces(tok, query)
 	}
 
 	// Pop block context for closing keywords
-	upperValue := strings.ToUpper(value)
-	if upperValue == "END" || upperValue == "END IF" || upperValue == "END CASE" ||
-		upperValue == "END LOOP" || upperValue == "END WHILE" || upperValue == "END REPEAT" {
-		f.popBlock()
+	if isEndKeyword {
+		popped := f.popBlock()
+		// Decrement procedural depth if we're closing a BEGIN block
+		if popped == "BEGIN" && f.proceduralDepth > 0 {
+			f.proceduralDepth--
+		}
 	}
 }
 
@@ -1192,4 +1220,9 @@ func (f *formatter) isInBlock(blockType string) bool {
 		}
 	}
 	return false
+}
+
+// isInProceduralBlock returns true if we're currently inside at least one BEGIN block.
+func (f *formatter) isInProceduralBlock() bool {
+	return f.proceduralDepth > 0
 }
