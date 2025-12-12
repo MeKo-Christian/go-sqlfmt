@@ -55,24 +55,27 @@ IF
 
 ---
 
-#### 2.1 Add Block Context Stack (Infrastructure - No Behavior Change)
+#### 2.1 Add Block Context Stack (Infrastructure - No Behavior Change) ✅
 
 **Goal**: Add tracking infrastructure without changing any output.
 
-**Files**: `pkg/sqlfmt/core/formatter.go`
+**Files**: `pkg/sqlfmt/core/formatter.go`, `pkg/sqlfmt/core/formatter_blockstack_test.go`
 
-- [ ] Add `blockStack []string` field to `formatter` struct
-- [ ] Add helper methods:
+- [x] Add `blockStack []string` field to `formatter` struct
+- [x] Add helper methods:
   - `pushBlock(blockType string)` - push to stack
   - `popBlock()` - pop from stack
   - `currentBlock() string` - peek top (empty string if empty)
   - `isInBlock(blockType string) bool` - check if anywhere in stack
-- [ ] Call `pushBlock("CASE")` in `formatOpeningParentheses()` when token is CASE
-- [ ] Call `pushBlock("IF")` in `formatOpeningParentheses()` when token is IF
-- [ ] Call `pushBlock("BEGIN")` in `formatOpeningParentheses()` when token is BEGIN
-- [ ] Call `popBlock()` in `formatClosingParentheses()` for END, END IF, END LOOP, etc.
+- [x] Call `pushBlock("CASE")` in `formatOpeningParentheses()` when token is CASE
+- [x] Call `pushBlock("IF")` in `formatOpeningParentheses()` when token is IF
+- [x] Call `pushBlock("BEGIN")` in `formatOpeningParentheses()` when token is BEGIN
+- [x] Call `popBlock()` in `formatClosingParentheses()` for END, END IF, END LOOP, etc.
+- [x] Comprehensive tests for helper methods
+- [x] Tests for MySQL, PostgreSQL, and Standard SQL block tracking
+- [x] Tests verify no output changes
 
-**Acceptance**: All existing tests pass unchanged.
+**Acceptance**: ✅ All existing tests pass unchanged. New tests verify stack behavior.
 
 ---
 

@@ -54,6 +54,8 @@ type formatter struct {
 	// Comment empty line tracking
 	previousTokenType types.TokenType
 	emptyLinesPending int
+	// Block context tracking (for IF/CASE/BEGIN differentiation)
+	blockStack []string
 }
 
 // newFormatter creates a new formatter instance.
@@ -87,6 +89,7 @@ func newFormatter(cfg *Config, tokenizer *tokenizer,
 		currentInsertIndex:      0,
 		valuesParenthesisLevel:  0,
 		currentLineLength:       0,
+		blockStack:              []string{},
 	}
 }
 
@@ -789,6 +792,13 @@ func (f *formatter) formatOpeningParentheses(tok types.Token, query *strings.Bui
 	if f.cfg.KeywordCase == KeywordCaseUppercase {
 		value = strings.ToUpper(value)
 	}
+
+	// Track block context for IF/CASE/BEGIN differentiation
+	upperValue := strings.ToUpper(value)
+	if upperValue == "IF" || upperValue == "CASE" || upperValue == "BEGIN" {
+		f.pushBlock(upperValue)
+	}
+
 	query.WriteString(value)
 	f.updateLineLength(value)
 
@@ -834,6 +844,13 @@ func (f *formatter) formatClosingParentheses(tok types.Token, query *strings.Bui
 		f.indentation.DecreaseBlockLevel()
 		f.addNewline(query)
 		f.formatWithSpaces(tok, query)
+	}
+
+	// Pop block context for closing keywords
+	upperValue := strings.ToUpper(value)
+	if upperValue == "END" || upperValue == "END IF" || upperValue == "END CASE" ||
+		upperValue == "END LOOP" || upperValue == "END WHILE" || upperValue == "END REPEAT" {
+		f.popBlock()
 	}
 }
 
@@ -1137,4 +1154,42 @@ func (f *formatter) nextToken(offset ...int) types.Token {
 		return types.Token{}
 	}
 	return f.tokens[f.index+o]
+}
+
+// pushBlock adds a block type to the context stack.
+// Used to track whether we're inside IF, CASE, BEGIN, etc.
+func (f *formatter) pushBlock(blockType string) {
+	f.blockStack = append(f.blockStack, blockType)
+}
+
+// popBlock removes the most recent block from the context stack.
+// Returns the popped block type, or empty string if stack was empty.
+func (f *formatter) popBlock() string {
+	if len(f.blockStack) == 0 {
+		return ""
+	}
+	popped := f.blockStack[len(f.blockStack)-1]
+	f.blockStack = f.blockStack[:len(f.blockStack)-1]
+	return popped
+}
+
+// currentBlock returns the type of the most recent block on the stack,
+// or empty string if the stack is empty.
+func (f *formatter) currentBlock() string {
+	if len(f.blockStack) == 0 {
+		return ""
+	}
+	return f.blockStack[len(f.blockStack)-1]
+}
+
+// isInBlock checks if the given block type is anywhere in the current stack.
+// This is useful for checking if we're inside a BEGIN block, even if nested
+// inside other blocks like IF or CASE.
+func (f *formatter) isInBlock(blockType string) bool {
+	for _, b := range f.blockStack {
+		if b == blockType {
+			return true
+		}
+	}
+	return false
 }
