@@ -28,7 +28,7 @@ CREATE PROCEDURE
     inventory
   WHERE
     id = product_id;
-IF
+  IF
     stock > 100 THEN
     SET
       status = 'In Stock';
@@ -38,7 +38,7 @@ IF
   ELSE
   SET
     status = 'Out of Stock';
-END IF;
+  END IF;
 END;
 
 -- Procedure with WHILE loop
@@ -85,12 +85,12 @@ CREATE PROCEDURE
   OPEN sales_cursor;
 read_loop: LOOP
     FETCH sales_cursor INTO sale_amount;
-IF
+  IF
     done THEN
     LEAVE read_loop;
-END IF;
-SET
-  total = total + sale_amount;
+  END IF;
+  SET
+    total = total + sale_amount;
 END LOOP;
 
 CLOSE sales_cursor;
@@ -125,22 +125,22 @@ process_loop: LOOP
     FETCH orders_cursor INTO order_id,
     customer_id,
     order_total;
-IF
+  IF
     done THEN
     LEAVE process_loop;
-END IF;
-UPDATE
-  customers
-SET
-  total_purchases = total_purchases + order_total
-WHERE
-  id = customer_id;
-UPDATE
-  orders
-SET
-  processed = 1
-WHERE
-  id = order_id;
+  END IF;
+  UPDATE
+    customers
+  SET
+    total_purchases = total_purchases + order_total
+  WHERE
+    id = customer_id;
+  UPDATE
+    orders
+  SET
+    processed = 1
+  WHERE
+    id = order_id;
 END LOOP;
 
 CLOSE orders_cursor;

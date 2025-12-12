@@ -205,6 +205,7 @@ func TestStatementTerminatorWithVariousBlocks(t *testing.T) {
 			name:  "IF block with statements - semicolon maintains procedural indent",
 			input: "BEGIN IF x > 0 THEN SELECT 1; SELECT 2; END IF; END;",
 			// Note: IF formatting and THEN position will be improved in tasks 2.6-2.7
+			// After task 2.5: END IF resets to procedural base (column 2, aligning with IF)
 			expected: `BEGIN
   IF
     x > 0 THEN
@@ -212,12 +213,13 @@ func TestStatementTerminatorWithVariousBlocks(t *testing.T) {
       1;
   SELECT
     2;
-END IF;
+  END IF;
 END;`,
 		},
 		{
 			name:  "CASE expression maintains indentation",
 			input: "BEGIN SELECT CASE WHEN x = 1 THEN 'a' WHEN x = 2 THEN 'b' END; END;",
+			// CASE END maintains its normal indentation (not affected by task 2.5)
 			expected: `BEGIN
   SELECT
     CASE

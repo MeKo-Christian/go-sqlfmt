@@ -806,6 +806,12 @@ func (f *formatter) formatOpeningParentheses(tok types.Token, query *strings.Bui
 		}
 	}
 
+	// For IF inside procedural blocks, add newline and indentation before writing IF
+	// This ensures IF appears at the procedural base level, not at column 0
+	if upperValue == "IF" && f.isInProceduralBlock() {
+		f.addNewline(query)
+	}
+
 	query.WriteString(value)
 	f.updateLineLength(value)
 
@@ -850,8 +856,13 @@ func (f *formatter) formatClosingParentheses(tok types.Token, query *strings.Bui
 	isEndKeyword := upperValue == "END" || upperValue == "END IF" || upperValue == "END CASE" ||
 		upperValue == "END LOOP" || upperValue == "END WHILE" || upperValue == "END REPEAT"
 
-	// Check if we're closing a BEGIN block
-	isClosingBegin := isEndKeyword && f.currentBlock() == "BEGIN"
+	// Check if we're closing a procedural block (BEGIN, IF, etc.) vs a CASE expression
+	currentBlockType := f.currentBlock()
+	// Differentiate between blocks that use procedural indentation (BEGIN) vs regular block indentation (IF, LOOP, etc.)
+	isClosingBegin := isEndKeyword && currentBlockType == "BEGIN"
+	// IF/LOOP/WHILE/REPEAT blocks use regular block indentation, not procedural
+	isClosingNonProceduralBlock := upperValue == "END IF" || upperValue == "END LOOP" ||
+		upperValue == "END WHILE" || upperValue == "END REPEAT"
 
 	switch {
 	case f.inlineBlock.IsActive():
@@ -861,15 +872,32 @@ func (f *formatter) formatClosingParentheses(tok types.Token, query *strings.Bui
 		// For INSERT VALUES alignment, treat as inline block
 		f.formatWithSpaceAfter(tok, query)
 	default:
-		// Decrease indentation first (this affects the NEXT line after END, not END itself)
+		// Handle END keywords based on what type of block they're closing (task 2.5)
 		if isClosingBegin {
+			// END closing BEGIN: Reset to procedural base, then decrease procedural level
+			// This makes END appear at the same level as BEGIN
+			f.indentation.ResetToProceduralBase()
 			f.indentation.DecreaseProcedural()
-		} else {
+			f.addNewline(query)
+			f.formatWithSpaces(tok, query)
+		} else if isClosingNonProceduralBlock && f.isInProceduralBlock() {
+			// END IF/LOOP/WHILE/REPEAT: Reset to procedural base but DON'T decrease procedural
+			// because these blocks use regular block indentation, not procedural
+			// This makes END IF appear at the procedural base level (same as IF keyword)
+			f.indentation.ResetToProceduralBase()
+			f.addNewline(query)
+			f.formatWithSpaces(tok, query)
+		} else if !isEndKeyword {
+			// Regular closing parens - decrease and format normally
 			f.indentation.DecreaseBlockLevel()
+			f.addNewline(query)
+			f.formatWithSpaces(tok, query)
+		} else {
+			// For END keywords not in procedural blocks (like CASE END), decrease normally
+			f.indentation.DecreaseBlockLevel()
+			f.addNewline(query)
+			f.formatWithSpaces(tok, query)
 		}
-		// Add newline at the decreased level
-		f.addNewline(query)
-		f.formatWithSpaces(tok, query)
 	}
 
 	// Pop block context for closing keywords

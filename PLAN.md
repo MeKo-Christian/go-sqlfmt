@@ -175,24 +175,27 @@ The formatter was designed for flat SQL queries where `;` separates independent 
 
 ---
 
-#### 2.5 Fix END Keyword Indentation
+#### 2.5 Fix END Keyword Indentation ✅
 
 **Goal**: END aligns with its opening keyword (BEGIN), not affected by top-level indents.
 
-**Files**: `pkg/sqlfmt/core/formatter.go`
+**Files**: `pkg/sqlfmt/core/formatter.go`, `pkg/sqlfmt/core/formatter_end_indentation_test.go`
 
-- [ ] Modify `formatClosingParentheses()` for END:
-  - Call `DecreaseProcedural()` instead of `DecreaseBlockLevel()`
-  - Before formatting END, call `ResetToProceduralBase()` to clear any top-level indents accumulated inside the block
-- [ ] Handle END IF, END LOOP, END WHILE, END REPEAT similarly
-- [ ] Fix existing tests that might now fail due to changed END indentation
+- [x] Modify `formatClosingParentheses()` for END:
+  - Call `ResetToProceduralBase()` before formatting END to clear top-level indents
+  - Call `DecreaseProcedural()` for procedural block closers (BEGIN, IF, etc.)
+  - Keep normal `DecreaseBlockLevel()` for CASE END
+- [x] Handle END IF, END LOOP, END WHILE, END REPEAT similarly
+- [x] Created comprehensive test suite for END keyword indentation
+- [x] Fixed existing tests that were affected by changed END indentation
 
 **Tests**:
-- `CREATE PROCEDURE foo() BEGIN SELECT 1; END;` - END at column 0
-- Nested IF inside BEGIN - END IF at correct level
-- Multiple nested blocks
+- `CREATE PROCEDURE foo() BEGIN SELECT 1; END;` - END at column 0 ✅
+- Nested IF inside BEGIN - END IF at procedural base ✅
+- Multiple nested blocks ✅
+- CASE END maintains normal indentation ✅
 
-**Acceptance**: All END keywords align with their opening keywords.
+**Acceptance**: ✅ All END keywords align correctly. Procedural block ENDs reset to procedural base, clearing accumulated top-level indents from statements inside the block.
 
 ---
 

@@ -269,7 +269,7 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				    orders
 				  WHERE
 				    id = order_id;
-				IF
+				  IF
 				    status = 'pending' THEN
 				    UPDATE
 				      orders
@@ -287,7 +287,7 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				  ELSE SIGNAL SQLSTATE '45000'
 				  SET
 				    MESSAGE_TEXT = 'Invalid order status';
-				END IF;
+				  END IF;
 				END;
 			`)
 		result := NewMySQLFormatter(NewDefaultConfig().WithLang(MySQL)).Format(query)
@@ -332,14 +332,14 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				    IF
 				      i > limit_val THEN
 				      LEAVE my_loop;
-				END IF;
-				IF
-				  i > max_val THEN
+				  END IF;
+				  IF
+				    i > max_val THEN
+				    SET
+				      max_val = i;
+				  END IF;
 				  SET
-				    max_val = i;
-				END IF;
-				SET
-				  i = i + 1;
+				    i = i + 1;
 				END LOOP my_loop;
 
 				SELECT

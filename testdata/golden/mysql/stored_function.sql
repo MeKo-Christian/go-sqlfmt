@@ -25,7 +25,7 @@ CREATE FUNCTION
     orders
   WHERE
     customer_id = customer_id;
-IF
+  IF
     total_purchases > 10000 THEN
     RETURN 'Platinum';
   ELSEIF total_purchases > 5000 THEN
@@ -34,7 +34,7 @@ IF
   RETURN 'Silver';
   ELSE
   RETURN 'Bronze';
-END IF;
+  END IF;
 END;
 
 -- Function with local variables and complex logic
@@ -48,14 +48,14 @@ CREATE FUNCTION
     tax_rates
   WHERE
     code = tax_code;
-IF
+  IF
     tax_rate IS NULL THEN
     SET
       tax_rate = 0.10;
-END IF;
-SET
-  tax_amount = amount * tax_rate;
-RETURN tax_amount;
+  END IF;
+  SET
+    tax_amount = amount * tax_rate;
+  RETURN tax_amount;
 END;
 
 -- Function with nested blocks
@@ -69,12 +69,12 @@ BEGIN
       at_pos = LOCATE('@', email);
     SET
       dot_pos = LOCATE('.', email, at_pos);
-IF
+    IF
       at_pos > 0
       AND dot_pos > at_pos THEN
       SET
         is_valid = TRUE;
-  END IF;
-END;
-RETURN is_valid;
+    END IF;
+  END;
+  RETURN is_valid;
 END;
