@@ -79,76 +79,201 @@ IF
 
 ---
 
-#### 2.2 Preserve Indentation Inside BEGIN/END Blocks
+### Architectural Analysis
 
-**Goal**: Semicolons inside stored procedures shouldn't reset indentation.
+**Why simple patches fail:**
 
-**Files**: `pkg/sqlfmt/core/formatter.go`, `pkg/sqlfmt/utils/indentation.go`
+The formatter was designed for flat SQL queries where `;` separates independent queries. Stored procedures introduce nested blocks where `;` terminates statements but doesn't separate queries. Key issues:
 
-- [ ] Add `IsInsideBlock() bool` method to `Indentation` struct
+1. **Semicolon semantics**: `formatQuerySeparator()` calls `ResetIndentation()` unconditionally
+2. **Indentation origin**: The `Indentation` struct tracks indent *levels* but not *sources* (top-level from CREATE PROCEDURE vs block-level from BEGIN)
+3. **addNewline() coupling**: Always adds current indentation, causing double-indent when called by both semicolon and subsequent keyword
+4. **ELSE ambiguity**: Same token used in IF blocks (procedural) and CASE expressions (declarative) with different formatting needs
+
+**Sustainable solution:** Refactor the indentation system to understand procedural blocks as a distinct concept.
+
+---
+
+#### 2.2 Refactor Indentation to Track Sources
+
+**Goal**: Make the indentation system aware of WHERE each indent came from.
+
+**Files**: `pkg/sqlfmt/utils/indentation.go`
+
+- [ ] Add `indentSource` field to track origin: `"top-level"`, `"block"`, `"procedural-block"`
+- [ ] Create `IndentEntry` struct: `{type: indentType, source: string, keyword: string}`
+- [ ] Replace `indentTypes []indentType` with `indentStack []IndentEntry`
+- [ ] Add methods:
+  - `IncreaseProcedural(keyword string)` - for BEGIN, IF, LOOP, etc.
+  - `DecreaseProcedural()` - only removes procedural indents
+  - `GetProceduralDepth() int` - count of procedural blocks
+  - `ResetToProceduralBase()` - keep procedural indents, reset top-level
+- [ ] Preserve backward compatibility: existing methods work unchanged
+
+**Tests**:
+- Unit tests for new IndentEntry tracking
+- Verify existing tests pass (no behavior change yet)
+
+**Acceptance**: All existing tests pass. New methods available for use.
+
+---
+
+#### 2.3 Add Procedural Block Tracking to Formatter
+
+**Goal**: Formatter tracks when it enters/exits procedural blocks (BEGIN/END).
+
+**Files**: `pkg/sqlfmt/core/formatter.go`
+
+- [ ] Add `proceduralDepth int` field to formatter struct
+- [ ] Increment in `formatOpeningParentheses()` when token is BEGIN
+- [ ] Decrement in `formatClosingParentheses()` when token is END
+- [ ] Add `isInProceduralBlock() bool` helper method
+- [ ] Use `IncreaseProcedural()` instead of `IncreaseBlockLevel()` for BEGIN
+
+**Tests**:
+- Test procedural depth tracking across various queries
+- Verify existing behavior unchanged
+
+**Acceptance**: Procedural depth accurately tracked. All tests pass.
+
+---
+
+#### 2.4 Differentiate Statement Terminators from Query Separators
+
+**Goal**: Semicolons inside procedural blocks behave as statement terminators, not query separators.
+
+**Files**: `pkg/sqlfmt/core/formatter.go`
+
 - [ ] Modify `formatQuerySeparator()`:
-  - If `isInBlock("BEGIN")`: don't call `ResetIndentation()`, just add newline
-  - Else: keep current behavior (reset + blank lines between queries)
+  ```go
+  if f.isInProceduralBlock() {
+      // Statement terminator: keep procedural indentation
+      f.indentation.ResetToProceduralBase()
+      trimSpacesEnd(query)
+      query.WriteString(tok.Value)
+      query.WriteString("\n")
+  } else {
+      // Query separator: full reset + blank lines
+      f.indentation.ResetIndentation()
+      trimSpacesEnd(query)
+      query.WriteString(tok.Value)
+      query.WriteString(strings.Repeat("\n", f.cfg.LinesBetweenQueries))
+  }
+  ```
 
-**Test**: Write test with `BEGIN DECLARE x; SELECT 1; END;` - verify DECLARE and SELECT maintain indentation.
+**Tests**:
+- `BEGIN DECLARE x; SELECT 1; END;` - statements maintain procedural indent
+- `SELECT 1; SELECT 2;` - queries separated with blank lines (unchanged)
+- Nested: `BEGIN BEGIN SELECT 1; END; END;` - proper indent levels
 
-**Acceptance**: Stored procedure tests pass with proper indentation. All other tests unchanged.
+**Acceptance**: Semicolons respect procedural context. Existing query tests unchanged.
 
 ---
 
-#### 2.3 Compact IF Formatting (IF condition THEN on one line)
+#### 2.5 Fix END Keyword Indentation
 
-**Goal**: `IF x > 0 THEN` on single line instead of `IF\n  x > 0 THEN`.
+**Goal**: END aligns with its opening keyword (BEGIN), not affected by top-level indents.
 
 **Files**: `pkg/sqlfmt/core/formatter.go`
 
-- [ ] Write failing test: `IF x > 0 THEN y; END IF;` → expects `IF x > 0 THEN` on one line
-- [ ] Modify `formatOpeningParentheses()`:
-  - If token is IF: write space instead of newline after IF
-- [ ] Verify test passes
+- [ ] Modify `formatClosingParentheses()` for END:
+  - Call `DecreaseProcedural()` instead of `DecreaseBlockLevel()`
+  - Before formatting END, call `ResetToProceduralBase()` to clear any top-level indents accumulated inside the block
+- [ ] Handle END IF, END LOOP, END WHILE, END REPEAT similarly
 
-**Acceptance**: New IF test passes. CASE tests still pass (CASE doesn't use OpenParen).
+**Tests**:
+- `CREATE PROCEDURE foo() BEGIN SELECT 1; END;` - END at column 0
+- Nested IF inside BEGIN - END IF at correct level
+- Multiple nested blocks
+
+**Acceptance**: All END keywords align with their opening keywords.
 
 ---
 
-#### 2.4 Context-Aware ELSE/ELSEIF Handling
+#### 2.6 Compact IF Formatting
 
-**Goal**: ELSE in IF blocks should align with IF. ELSE in CASE should stay indented.
+**Goal**: `IF condition THEN` on single line.
 
 **Files**: `pkg/sqlfmt/core/formatter.go`
 
-- [ ] Write failing test for IF/ELSE alignment
-- [ ] Write test verifying CASE/ELSE still works
+- [ ] Modify `formatOpeningParentheses()` for IF:
+  - Use `IncreaseProcedural("IF")`
+  - Write space instead of newline after IF
+- [ ] Condition and THEN stay on same line as IF
+
+**Tests**:
+- `IF x > 0 THEN SELECT 1; END IF;` → `IF x > 0 THEN` on one line
+- Nested IF statements
+- IF with complex conditions
+
+**Acceptance**: IF formatting is compact. CASE formatting unchanged.
+
+---
+
+#### 2.7 Context-Aware ELSE/ELSEIF Handling
+
+**Goal**: ELSE in IF blocks aligns with IF. ELSE in CASE stays indented.
+
+**Files**: `pkg/sqlfmt/core/formatter.go`
+
 - [ ] Modify `formatNewlineReservedWord()` for ELSE/ELSEIF:
-  - If `currentBlock() == "IF"`: decrease block level, format, increase block level
-  - Else: keep current behavior (just newline + format)
-- [ ] Verify both tests pass
+  ```go
+  if f.currentBlock() == "IF" {
+      f.indentation.DecreaseProcedural()  // Close IF block
+      f.addNewline(query)
+      f.formatKeyword(tok, query)
+      f.indentation.IncreaseProcedural("ELSE")  // Open ELSE block
+  } else {
+      // CASE ELSE: default behavior
+      f.addNewline(query)
+      f.formatKeyword(tok, query)
+  }
+  ```
 
-**Acceptance**: IF/ELSE aligns correctly. CASE/ELSE unchanged.
+**Tests**:
+- IF/ELSE alignment test
+- IF/ELSEIF/ELSE alignment test
+- CASE/WHEN/ELSE test (must remain unchanged)
+- Nested IF inside CASE
+
+**Acceptance**: IF and CASE ELSE format correctly and independently.
 
 ---
 
-#### 2.5 END IF Indentation Fix
+#### 2.8 Comprehensive Integration Tests
 
-**Goal**: `END IF` should align with the opening `IF`.
+**Goal**: Verify all stored procedure patterns work correctly across dialects.
 
-**Files**: `pkg/sqlfmt/core/formatter.go`
+**Files**: `pkg/sqlfmt/mysql_formatter_ddl_test.go`, `pkg/sqlfmt/postgresql_formatter_test.go`
 
-- [ ] Write failing test: nested IF inside LOOP should have END IF at correct indent
-- [ ] Modify `formatClosingParentheses()`:
-  - Before decreasing block level, check if this closes an IF block
-  - Ensure indentation matches the IF level
+- [ ] MySQL stored procedures with all control structures
+- [ ] PostgreSQL PL/pgSQL functions
+- [ ] Nested control structures (IF inside LOOP inside BEGIN)
+- [ ] Multiple procedures in one file
+- [ ] Edge cases: empty blocks, single-statement blocks
 
-**Acceptance**: Nested control structures indent correctly.
+**Acceptance**: All dialect-specific stored procedure tests pass.
 
 ---
 
 ### Implementation Order
 
-1. **2.1** - Add infrastructure (safe, no behavior change)
-2. **2.2** - Fix semicolon handling (fixes stored procedures)
-3. **2.3** - Compact IF (isolated change, doesn't affect CASE)
-4. **2.4** - ELSE handling (uses block context to differentiate IF vs CASE)
-5. **2.5** - END IF alignment (polish)
+```
+2.2 Refactor Indentation (foundation)
+ ↓
+2.3 Procedural Block Tracking (uses 2.2)
+ ↓
+2.4 Statement vs Query Separator (uses 2.3)
+ ↓
+2.5 END Indentation Fix (uses 2.4)
+ ↓
+2.6 Compact IF (uses 2.5)
+ ↓
+2.7 ELSE Handling (uses 2.6)
+ ↓
+2.8 Integration Tests (validates all)
+```
 
-Each step is independently committable with passing tests.
+**Each step is independently committable with passing tests.**
+
+**Estimated complexity**: Medium-high. The indentation refactor (2.2) is the foundation - get it right and subsequent steps become straightforward.
