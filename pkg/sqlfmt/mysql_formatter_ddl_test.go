@@ -296,8 +296,7 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				SET
 				  MESSAGE_TEXT = 'Invalid order status';
 
-				END IF
-				;
+				END IF;
 
 				END;
 			`)
@@ -323,8 +322,7 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				SET
 				  counter = counter - 1;
 
-				END WHILE
-				;
+				END WHILE;
 
 				END;
 			`)
@@ -350,22 +348,19 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				    i > limit_val THEN
 				    LEAVE my_loop;
 
-				END IF
-				;
+				END IF;
 
 				IF
 				  i > max_val THEN
 				  SET
 				    max_val = i;
 
-				END IF
-				;
+				END IF;
 
 				SET
 				  i = i + 1;
 
-				END LOOP
-				  my_loop;
+				END LOOP my_loop;
 
 				SELECT
 				  max_val;
@@ -393,8 +388,7 @@ func TestMySQLFormatter_DDL_StoredRoutines(t *testing.T) {
 				  CONCAT('Count: ', counter);
 
 				UNTIL counter >= 5
-				END REPEAT
-				;
+				END REPEAT;
 
 				END;
 			`)

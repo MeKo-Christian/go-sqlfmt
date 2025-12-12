@@ -24,8 +24,7 @@ ELSE
 SET
   base_cost = 20.00;
 
-END IF
-;
+END IF;
 
 IF
   distance <= 100 THEN
@@ -40,8 +39,7 @@ ELSE
 SET
   cost = base_cost * 2.0;
 
-END IF
-;
+END IF;
 
 END;
 
@@ -99,14 +97,11 @@ SET
 WHERE
   id = current_id;
 
-END IF
-;
+END IF;
 
-END IF
-;
+END IF;
 
-END WHILE
-;
+END WHILE;
 
 CLOSE item_cursor;
 
@@ -145,8 +140,7 @@ SET
   counter = counter + 1;
 
 UNTIL counter >= n
-END REPEAT
-;
+END REPEAT;
 
 SELECT
   *
@@ -193,15 +187,13 @@ IF
   done = 1 THEN
   LEAVE order_loop;
 
-END IF
-;
+END IF;
 
 IF
   v_status = 'cancelled' THEN
   ITERATE order_loop;
 
-END IF
-;
+END IF;
 
 IF
   v_total > 1000 THEN
@@ -228,8 +220,7 @@ SET
 WHERE
   id = v_order_id;
 
-END IF
-;
+END IF;
 
 UPDATE
   orders
@@ -238,8 +229,7 @@ SET
 WHERE
   id = v_order_id;
 
-END LOOP
-;
+END LOOP;
 
 CLOSE order_cursor;
 
@@ -283,8 +273,7 @@ IF
   done THEN
   LEAVE reconcile_loop;
 
-END IF
-;
+END IF;
 
 SELECT
   COUNT(*) INTO v_actual_qty
@@ -331,8 +320,7 @@ VALUES
     ABS(v_difference)
   );
 
-END IF
-;
+END IF;
 
 UPDATE
   inventory
@@ -342,11 +330,9 @@ WHERE
   product_id = v_product_id
   AND warehouse_id = warehouse_id;
 
-END IF
-;
+END IF;
 
-END LOOP
-;
+END LOOP;
 
 CLOSE product_cursor;
 

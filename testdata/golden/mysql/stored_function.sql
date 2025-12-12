@@ -44,8 +44,7 @@ RETURN 'Silver';
 ELSE
 RETURN 'Bronze';
 
-END IF
-;
+END IF;
 
 END;
 
@@ -68,8 +67,7 @@ IF
   SET
     tax_rate = 0.10;
 
-END IF
-;
+END IF;
 
 SET
   tax_amount = amount * tax_rate;
@@ -100,8 +98,7 @@ IF
   SET
     is_valid = TRUE;
 
-END IF
-;
+END IF;
 
 END;
 

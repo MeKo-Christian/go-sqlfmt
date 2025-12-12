@@ -45,8 +45,7 @@ ELSE
 SET
   status = 'Out of Stock';
 
-END IF
-;
+END IF;
 
 END;
 
@@ -68,8 +67,7 @@ WHILE
 SET
   counter = counter + 1;
 
-END WHILE
-;
+END WHILE;
 
 SELECT
   *
@@ -110,14 +108,12 @@ IF
   done THEN
   LEAVE read_loop;
 
-END IF
-;
+END IF;
 
 SET
   total = total + sale_amount;
 
-END LOOP
-;
+END LOOP;
 
 CLOSE sales_cursor;
 
@@ -164,8 +160,7 @@ IF
   done THEN
   LEAVE process_loop;
 
-END IF
-;
+END IF;
 
 UPDATE
   customers
@@ -181,8 +176,7 @@ SET
 WHERE
   id = order_id;
 
-END LOOP
-;
+END LOOP;
 
 CLOSE orders_cursor;
 

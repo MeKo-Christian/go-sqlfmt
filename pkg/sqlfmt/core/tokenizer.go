@@ -103,8 +103,15 @@ func createStringPattern(stringTypes []string) string {
 }
 
 func createParenRegex(parens []string) *regexp.Regexp {
-	patterns := make([]string, len(parens))
-	for i, p := range parens {
+	// Sort by length descending to prioritize longer matches (e.g., "END IF" before "END")
+	sorted := make([]string, len(parens))
+	copy(sorted, parens)
+	sort.Slice(sorted, func(i, j int) bool {
+		return len(sorted[i]) > len(sorted[j])
+	})
+
+	patterns := make([]string, len(sorted))
+	for i, p := range sorted {
 		patterns[i] = escapeParen(p)
 	}
 	return regexp.MustCompile(`(?i)^(` + strings.Join(patterns, `|`) + `)`)
@@ -114,7 +121,10 @@ func escapeParen(paren string) string {
 	if len(paren) == 1 {
 		return regexp.QuoteMeta(paren)
 	} else {
-		return `\b` + paren + `\b`
+		// For multi-word keywords, escape spaces and use word boundaries
+		// This ensures "END IF" is treated as a unit and not matched by just "END"
+		escaped := regexp.QuoteMeta(paren)
+		return `\b` + escaped + `\b`
 	}
 }
 

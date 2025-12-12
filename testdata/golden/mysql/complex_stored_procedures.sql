@@ -45,8 +45,7 @@ IF
   dept_done THEN
   LEAVE dept_loop;
 
-END IF
-;
+END IF;
 
 SELECT
   COUNT(e.id),
@@ -111,8 +110,7 @@ FROM
 WHERE
   d.id = current_dept_id;
 
-END LOOP
-  dept_loop;
+END LOOP dept_loop;
 
 CLOSE dept_cursor;
 
