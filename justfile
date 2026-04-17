@@ -132,3 +132,6 @@ deps:
 # Show help
 help:
     @just --list
+fix:
+    just lint-fix
+    just fmt
